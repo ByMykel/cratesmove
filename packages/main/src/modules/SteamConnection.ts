@@ -235,7 +235,11 @@ class SteamConnection implements AppModule {
     )));
     this.#sendToRenderer('steam:debug-raw-inventory', rawDump);
 
-    const filtered = inventory.filter((item: any) => item.def_index !== 1201);
+    const filtered = inventory.filter((item: any) =>
+      item.def_index !== 1201   // Exclude storage units
+      && !item.casket_id        // Exclude items already inside a storage unit
+      && item.quality !== 0     // Exclude default/stock items (Normal quality)
+    );
     return filtered.map((item: any) => this.#formatItem(item));
   }
 
