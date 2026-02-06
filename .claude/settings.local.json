@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:github.com)",
+      "Bash(npm info:*)",
+      "Bash(npm install:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nAdd renderer package with Vue, Vite, and Tailwind CSS\n\nSet up the renderer Electron package with Vue 3, Vite, TypeScript,\nTailwind CSS v4, and shadcn-vue. Includes entry point, global styles,\nutility helpers, and project configuration.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nAdd shadcn/ui component primitives\n\nBadge, Button, Card, Checkbox, Dialog, Input, Progress, ScrollArea,\nSeparator, and Tabs components built on Radix Vue.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nAdd Steam connection, item data service, and preload IPC bridge\n\nImplement the main process backend:\n- SteamConnection: auth \\(credential + saved session\\), GC inventory,\n  storage unit operations \\(inspect, deposit, retrieve, rename\\)\n- ItemDataService: resolves CSOEconItem GC data to human-readable\n  names/images via inventory.json lookup \\(skins, crates, collectibles,\n  stickers, graffiti with tint fallback, music kits\\)\n- Preload: expose IPC channels to the renderer\n- inventory.json: pre-built database for all 6 item categories\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nAdd renderer app shell, pages, composables, and components\n\nBuild the full Vue frontend:\n- App shell with Vue Router \\(login → inventory → storage unit pages\\)\n- Composables: useSteam \\(auth state\\), useInventory \\(items + search\\),\n  useStorageUnits \\(inspect, deposit, retrieve, rename\\)\n- Pages: LoginPage, InventoryPage, StorageUnitPage\n- Components: AppHeader, AppLayout, ConnectionStatus, CredentialLogin,\n  ItemCard, ItemGrid, BulkActions, MoveItemsDialog, OperationProgress,\n  RenameDialog, StorageUnitCard\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nAdd item resolution documentation and casemove reference\n\n- ITEM_RESOLUTION.md: documents CSOEconItem structure, attribute\n  extraction \\(166, 233, 80, 140, 277\\), inventory.json key formats,\n  resolution algorithm priority chain, and graffiti tint fallback\n- logic-casemove-repo.md: reference logic from the original casemove\n  project for comparison\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")"
+    ]
+  }
+}
