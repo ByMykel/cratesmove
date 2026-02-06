@@ -341,15 +341,17 @@ class SteamConnection implements AppModule {
     const defIndex = item.def_index ?? 0;
     const paintIndex = item.paint_index ?? 0;
 
-    // Extract music_index (attribute 166) and graffiti_tint (attribute 233) from raw attributes
+    // Extract attributes from raw attribute[] array
     const musicIndex = this.#getAttributeUint32(item, 166);
     const graffitiTint = this.#getAttributeUint32(item, 233);
+    const keychainIndex = this.#getAttributeUint32(item, 299);
 
     const resolved = resolveItem({
       def_index: defIndex,
       paint_index: paintIndex,
       music_index: musicIndex,
       graffiti_tint: graffitiTint,
+      keychain_index: keychainIndex,
       stickers: item.stickers,
     });
 

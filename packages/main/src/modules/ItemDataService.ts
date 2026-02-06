@@ -15,6 +15,8 @@ interface InventoryData {
   stickers: Record<string, ItemEntry>;
   graffiti: Record<string, ItemEntry>;
   music_kits: Record<string, ItemEntry>;
+  keychains: Record<string, ItemEntry>;
+  highlights: Record<string, ItemEntry>;
 }
 
 export interface ResolvedItemData {
@@ -45,7 +47,7 @@ export async function loadItemData(): Promise<void> {
     loaded = true;
 
     const skinCount = Object.values(data!.skins).reduce((sum, weapon) => sum + Object.keys(weapon).length, 0);
-    console.log(`[ItemDataService] Loaded: ${skinCount} skins, ${Object.keys(data!.crates).length} crates, ${Object.keys(data!.collectibles).length} collectibles, ${Object.keys(data!.stickers).length} stickers, ${Object.keys(data!.graffiti).length} graffiti, ${Object.keys(data!.music_kits).length} music_kits`);
+    console.log(`[ItemDataService] Loaded: ${skinCount} skins, ${Object.keys(data!.crates).length} crates, ${Object.keys(data!.collectibles).length} collectibles, ${Object.keys(data!.stickers).length} stickers, ${Object.keys(data!.graffiti).length} graffiti, ${Object.keys(data!.music_kits).length} music_kits, ${Object.keys(data!.keychains).length} keychains, ${Object.keys(data!.highlights).length} highlights`);
   } catch (err) {
     console.error('[ItemDataService] Failed to load inventory.json:', err);
   }
@@ -57,6 +59,7 @@ export async function loadItemData(): Promise<void> {
  * - Music kits: music_index (from attribute 166)
  * - Graffiti: stickers[0].sticker_id + graffiti_tint (from attribute 233)
  *   Keys in JSON: "{sticker_id}_{tint}" for tinted, "{sticker_id}" for monochrome
+ * - Keychains (charms): keychain_index (from attribute 299)
  * - Stickers/patches: stickers[0].sticker_id
  * - Crates/cases/keys: def_index
  * - Collectibles (coins, pins): def_index
@@ -67,6 +70,7 @@ export function resolveItem(gcItem: {
   stickers?: any[];
   music_index?: number;
   graffiti_tint?: number;
+  keychain_index?: number;
 }): ResolvedItemData | null {
   if (!data) return null;
 
@@ -87,7 +91,13 @@ export function resolveItem(gcItem: {
     if (kit) return {name: kit.name, image: kit.image};
   }
 
-  // 3. Graffiti: uses stickers[0].sticker_id + graffiti_tint (extracted from attribute 233)
+  // 3. Keychains (charms): keychain_index (extracted from attribute 299)
+  if (gcItem.keychain_index && gcItem.keychain_index > 0) {
+    const keychain = data.keychains[String(gcItem.keychain_index)];
+    if (keychain) return {name: keychain.name, image: keychain.image};
+  }
+
+  // 4. Graffiti: uses stickers[0].sticker_id + graffiti_tint (extracted from attribute 233)
   // Key format: "{sticker_id}_{tint}" for tinted graffiti, "{sticker_id}" for monochrome
   if (gcItem.graffiti_tint !== undefined && gcItem.stickers?.length) {
     const stickerId = gcItem.stickers[0].sticker_id;
@@ -103,15 +113,15 @@ export function resolveItem(gcItem: {
     }
   }
 
-  // 4. Crates / cases / keys
+  // 5. Crates / cases / keys
   const crate = data.crates[defIdx];
   if (crate) return {name: crate.name, image: crate.image};
 
-  // 5. Collectibles (coins, pins, etc.)
+  // 6. Collectibles (coins, pins, etc.)
   const collectible = data.collectibles[defIdx];
   if (collectible) return {name: collectible.name, image: collectible.image};
 
-  // 6. Stickers/patches as items: use stickers[0].sticker_id
+  // 7. Stickers/patches as items: use stickers[0].sticker_id
   if (gcItem.stickers?.length) {
     const stickerId = gcItem.stickers[0].sticker_id;
     if (stickerId) {
