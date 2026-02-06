@@ -1,3 +1,0 @@
-<component name="DependencyValidationManager">
-  <scope name="preload" pattern="file[vite-electron-builder]:packages/preload/*||file[vite-electron-builder]:packages/preload//*" />
-</component>
