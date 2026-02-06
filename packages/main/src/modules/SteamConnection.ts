@@ -375,6 +375,8 @@ class SteamConnection implements AppModule {
   #sendInventoryUpdate() {
     const items = this.#getInventory();
     this.#sendToRenderer('steam:inventory-updated', items);
+    const units = this.#getStorageUnits();
+    this.#sendToRenderer('steam:storage-units-updated', units);
   }
 
   #sendToRenderer(channel: string, data: unknown) {

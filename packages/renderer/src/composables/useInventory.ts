@@ -18,6 +18,10 @@ function registerListeners() {
     items.value = data;
   });
 
+  onSteamEvent('steam:storage-units-updated', (_event: unknown, data: StorageUnit[]) => {
+    storageUnits.value = data;
+  });
+
   onSteamEvent('steam:debug-raw-inventory', (_event: unknown, data: any[]) => {
     rawItemsMap.clear();
     for (const item of data) {
