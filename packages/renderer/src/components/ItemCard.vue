@@ -2,15 +2,24 @@
 import type {InventoryItem} from '@/types/steam';
 import {cn} from '@/lib/utils';
 import {computed} from 'vue';
+import {useInventory} from '@/composables/useInventory';
 
 const props = defineProps<{
   item: InventoryItem;
   selected?: boolean;
 }>();
 
-defineEmits<{
+const emit = defineEmits<{
   click: [];
 }>();
+
+const {getRawItem} = useInventory();
+
+function handleClick() {
+  const raw = getRawItem(props.item.id);
+  console.log('[ItemCard] Raw GC data:', raw ?? 'not found');
+  emit('click');
+}
 
 const wearLabel = computed(() => {
   const w = props.item.paint_wear;
@@ -42,7 +51,7 @@ const borderStyle = computed(() => {
       selected && 'ring-2 ring-primary bg-secondary',
     )"
     :style="borderStyle"
-    @click="$emit('click')"
+    @click="handleClick"
   >
     <div class="flex flex-col items-center gap-1">
       <img

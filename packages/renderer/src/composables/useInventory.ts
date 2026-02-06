@@ -6,6 +6,7 @@ const items = ref<InventoryItem[]>([]);
 const storageUnits = ref<StorageUnit[]>([]);
 const selectedItemIds = ref<Set<string>>(new Set());
 const loading = ref(false);
+const rawItemsMap = new Map<string, any>();
 
 let listenersRegistered = false;
 
@@ -18,9 +19,9 @@ function registerListeners() {
   });
 
   onSteamEvent('steam:debug-raw-inventory', (_event: unknown, data: any[]) => {
-    console.log('[DEBUG] Raw GC inventory (' + data.length + ' items):');
+    rawItemsMap.clear();
     for (const item of data) {
-      console.log('[DEBUG] RAW ITEM:', item);
+      rawItemsMap.set(String(item.id), item);
     }
   });
 }
@@ -67,6 +68,10 @@ export function useInventory() {
     selectedItemIds.value = new Set();
   }
 
+  function getRawItem(id: string): any | undefined {
+    return rawItemsMap.get(id);
+  }
+
   return {
     items: readonly(items),
     storageUnits: readonly(storageUnits),
@@ -79,5 +84,6 @@ export function useInventory() {
     toggleSelection,
     selectAll,
     clearSelection,
+    getRawItem,
   };
 }
