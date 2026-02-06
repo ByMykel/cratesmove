@@ -355,6 +355,10 @@ class SteamConnection implements AppModule {
       stickers: item.stickers,
     });
 
+    if (!resolved) {
+      console.warn(`[SteamConnection] Could not resolve item: id=${item.id}, def_index=${defIndex}, paint_index=${paintIndex}`);
+    }
+
     return {
       id: String(item.id),
       classid: String(item.classid ?? ''),

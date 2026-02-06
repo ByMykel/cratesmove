@@ -17,7 +17,11 @@ const {getRawItem} = useInventory();
 
 function handleClick() {
   const raw = getRawItem(props.item.id);
-  console.log('[ItemCard] Raw GC data:', raw ?? 'not found');
+  if (!raw) {
+    console.warn('[ItemCard] Raw GC data not found for item:', props.item.id);
+  } else {
+    console.log('[ItemCard] Raw GC data:', raw);
+  }
   emit('click');
 }
 
