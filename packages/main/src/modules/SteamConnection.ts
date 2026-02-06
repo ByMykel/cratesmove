@@ -94,6 +94,7 @@ class SteamConnection implements AppModule {
       console.log('[SteamConnection] Connected to GC, inventory length:', this.#csgo.inventory?.length ?? 0);
       await loadItemData();
       console.log('[SteamConnection] Item data loaded, inventory length:', this.#csgo.inventory?.length ?? 0);
+      this.#sendInventoryUpdate();
     });
 
     this.#csgo.on('itemAcquired', () => {
