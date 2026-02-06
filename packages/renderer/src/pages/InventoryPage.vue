@@ -51,7 +51,7 @@ function openStorage(id: string) {
   <AppLayout>
     <!-- Main inventory panel -->
     <div class="flex flex-1 flex-col overflow-hidden">
-      <div class="flex items-center justify-between border-b border-border px-4 py-2">
+      <div class="flex h-10 shrink-0 items-center justify-between border-b border-border px-4">
         <h2 class="text-sm font-semibold">
           Inventory
           <span class="text-muted-foreground">({{ items.length }})</span>
@@ -59,17 +59,18 @@ function openStorage(id: string) {
         <div class="flex items-center gap-2">
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
+            class="h-6 w-6"
             :disabled="loading"
             @click="handleRefresh"
           >
             <Loader2
               v-if="loading"
-              class="h-4 w-4 animate-spin"
+              class="h-3.5 w-3.5 animate-spin"
             />
             <RefreshCw
               v-else
-              class="h-4 w-4"
+              class="h-3.5 w-3.5"
             />
           </Button>
         </div>
@@ -99,7 +100,7 @@ function openStorage(id: string) {
 
     <!-- Storage units sidebar -->
     <div class="flex w-64 flex-col border-l border-border">
-      <div class="flex items-center justify-between border-b border-border px-4 py-2">
+      <div class="flex h-10 items-center justify-between border-b border-border px-4">
         <h2 class="flex items-center gap-2 text-sm font-semibold">
           <Archive class="h-4 w-4" />
           Storage Units
