@@ -254,7 +254,7 @@ class SteamConnection implements AppModule {
 
   #inspectStorage(id: string): Promise<any[]> {
     return new Promise((resolve, reject) => {
-      this.#csgo.getCasketContents(BigInt(id), (err: Error | null, items: any[]) => {
+      this.#csgo.getCasketContents(id, (err: Error | null, items: any[]) => {
         if (err) {
           reject(err);
           return;
@@ -274,7 +274,7 @@ class SteamConnection implements AppModule {
       });
 
       await new Promise<void>((resolve, reject) => {
-        this.#csgo.addToCasket(BigInt(storageId), BigInt(itemId));
+        this.#csgo.addToCasket(storageId, itemId);
         const timeout = setTimeout(() => resolve(), OPERATION_DELAY_MS + 1000);
         const handler = () => {
           clearTimeout(timeout);
@@ -303,7 +303,7 @@ class SteamConnection implements AppModule {
       });
 
       await new Promise<void>((resolve, reject) => {
-        this.#csgo.removeFromCasket(BigInt(storageId), BigInt(itemId));
+        this.#csgo.removeFromCasket(storageId, itemId);
         const timeout = setTimeout(() => resolve(), OPERATION_DELAY_MS + 1000);
         const handler = () => {
           clearTimeout(timeout);
@@ -323,7 +323,7 @@ class SteamConnection implements AppModule {
   }
 
   async #renameStorage({storageId, name}: RenameArgs) {
-    this.#csgo.nameItem(BigInt(storageId), name);
+    this.#csgo.nameItem(0, storageId, name);
   }
 
   #getAttributeUint32(item: any, attrDefIndex: number): number | undefined {
