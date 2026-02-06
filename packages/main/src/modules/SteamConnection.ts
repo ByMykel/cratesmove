@@ -247,7 +247,7 @@ class SteamConnection implements AppModule {
       .map((item: any) => ({
         id: String(item.id),
         name: item.custom_name || 'Storage Unit',
-        item_count: item.casket_item_count ?? 0,
+        item_count: item.casket_contained_item_count ?? 0,
         custom_name: item.custom_name || null,
       }));
   }
