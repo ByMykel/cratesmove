@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import {Button} from '@/components/ui/button';
-import ConnectionStatus from './ConnectionStatus.vue';
 import {useSteam} from '@/composables/useSteam';
 import {LogOut, Package} from 'lucide-vue-next';
 
-const {authState, userInfo, logout} = useSteam();
+const {userInfo, logout} = useSteam();
 </script>
 
 <template>
@@ -14,28 +13,23 @@ const {authState, userInfo, logout} = useSteam();
       <h1 class="text-lg font-semibold">CratesMove</h1>
     </div>
 
-    <div class="flex items-center gap-4">
-      <ConnectionStatus :state="authState" />
+    <div v-if="userInfo" class="flex items-center gap-3">
+      <img
+        v-if="userInfo.avatarUrl"
+        :src="userInfo.avatarUrl"
+        class="h-7 w-7 rounded-full ring-1 ring-border"
+        alt="avatar"
+      />
+      <span class="text-sm text-muted-foreground">{{ userInfo.personaName }}</span>
 
-      <template v-if="userInfo">
-        <div class="flex items-center gap-2">
-          <img
-            v-if="userInfo.avatarUrl"
-            :src="userInfo.avatarUrl"
-            class="h-7 w-7 rounded-full"
-            alt="avatar"
-          />
-          <span class="text-sm">{{ userInfo.personaName }}</span>
-        </div>
-
-        <Button
-          variant="ghost"
-          size="icon"
-          @click="logout"
-        >
-          <LogOut class="h-4 w-4" />
-        </Button>
-      </template>
+      <Button
+        variant="ghost"
+        size="icon"
+        class="h-7 w-7 text-muted-foreground hover:text-foreground"
+        @click="logout"
+      >
+        <LogOut class="h-3.5 w-3.5" />
+      </Button>
     </div>
   </header>
 </template>

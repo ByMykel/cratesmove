@@ -69,6 +69,11 @@ class SteamConnection implements AppModule {
     this.#steamUser.on('loggedOn', () => {
       this.#sendToRenderer('steam:auth-state', {state: 'connected'});
       this.#steamUser.gamesPlayed([730], true);
+
+      // Explicitly request our own persona data so the 'user' event fires
+      if (this.#steamUser.steamID) {
+        this.#steamUser.getPersonas([this.#steamUser.steamID]);
+      }
     });
 
     this.#steamUser.on('user', (sid, user) => {
