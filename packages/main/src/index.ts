@@ -7,6 +7,7 @@ import {hardwareAccelerationMode} from './modules/HardwareAccelerationModule.js'
 import {autoUpdater} from './modules/AutoUpdater.js';
 import {allowInternalOrigins} from './modules/BlockNotAllowdOrigins.js';
 import {allowExternalUrls} from './modules/ExternalUrls.js';
+import {createSteamConnection} from './modules/SteamConnection.js';
 
 
 export async function initApp(initConfig: AppInitConfig) {
@@ -16,9 +17,7 @@ export async function initApp(initConfig: AppInitConfig) {
     .init(terminateAppOnLastWindowClose())
     .init(hardwareAccelerationMode({enable: false}))
     .init(autoUpdater())
-
-    // Install DevTools extension if needed
-    // .init(chromeDevToolsExtension({extension: 'VUEJS3_DEVTOOLS'}))
+    .init(createSteamConnection())
 
     // Security
     .init(allowInternalOrigins(
@@ -28,14 +27,6 @@ export async function initApp(initConfig: AppInitConfig) {
       new Set(
         initConfig.renderer instanceof URL
           ? [
-            'https://vite.dev',
-            'https://developer.mozilla.org',
-            'https://solidjs.com',
-            'https://qwik.dev',
-            'https://lit.dev',
-            'https://react.dev',
-            'https://preactjs.com',
-            'https://www.typescriptlang.org',
             'https://vuejs.org',
           ]
           : [],

@@ -14,7 +14,11 @@
   "dependencies": {
     "@app/preload": "*",
     "@app/renderer": "*",
-    "electron-updater": "6.7.3"
+    "electron-updater": "6.7.3",
+    "steam-user": "^5.2.0",
+    "globaloffensive": "^3.1.0",
+    "steam-session": "^1.8.0",
+    "steam-totp": "^2.1.2"
   },
   "devDependencies": {
     "@app/electron-versions": "*",

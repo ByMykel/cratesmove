@@ -1,6 +1,9 @@
 import {getNodeMajorVersion} from '@app/electron-versions';
 import {spawn} from 'child_process';
 import electronPath from 'electron';
+import {copyFileSync, mkdirSync} from 'node:fs';
+import {resolve, dirname} from 'node:path';
+import {fileURLToPath} from 'node:url';
 
 export default /**
  * @type {import('vite').UserConfig}
@@ -26,9 +29,28 @@ export default /**
     reportCompressedSize: false,
   },
   plugins: [
+    copyDataFiles(),
     handleHotReload(),
   ],
 });
+
+
+/**
+ * Copy data files (inventory.json) to dist/data/ so they're available at runtime.
+ * @return {import('vite').Plugin}
+ */
+function copyDataFiles() {
+  const __dirname = dirname(fileURLToPath(import.meta.url));
+  return {
+    name: '@app/copy-data-files',
+    writeBundle() {
+      const src = resolve(__dirname, 'src/data/inventory.json');
+      const destDir = resolve(__dirname, 'dist/data');
+      mkdirSync(destDir, {recursive: true});
+      copyFileSync(src, resolve(destDir, 'inventory.json'));
+    },
+  };
+}
 
 
 /**
