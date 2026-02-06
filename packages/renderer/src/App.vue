@@ -1,10 +1,18 @@
 <script setup lang="ts">
 import {useSteam} from '@/composables/useSteam';
+import {useToast} from '@/composables/useToast';
+import ToastContainer from '@/components/ToastContainer.vue';
 import {watch, onMounted} from 'vue';
 import {useRouter} from 'vue-router';
+import {onSteamEvent} from '@app/preload';
 
 const {isConnected, trySavedSession} = useSteam();
+const {error: showError} = useToast();
 const router = useRouter();
+
+onSteamEvent('steam:error', (_event: unknown, data: {message: string}) => {
+  showError(data.message);
+});
 
 // Auth guard
 router.beforeEach((to) => {
@@ -33,4 +41,5 @@ onMounted(() => {
 
 <template>
   <router-view />
+  <ToastContainer />
 </template>
