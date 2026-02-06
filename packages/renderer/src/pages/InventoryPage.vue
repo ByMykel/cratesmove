@@ -8,7 +8,7 @@ import BulkActions from '@/components/BulkActions.vue';
 import OperationProgress from '@/components/OperationProgress.vue';
 import {ScrollArea} from '@/components/ui/scroll-area';
 import {Button} from '@/components/ui/button';
-import {Separator} from '@/components/ui/separator';
+
 import {useInventory} from '@/composables/useInventory';
 import {useStorageUnits} from '@/composables/useStorageUnits';
 import {Loader2, RefreshCw, Archive, Eye, EyeOff} from 'lucide-vue-next';
@@ -69,14 +69,8 @@ function openStorage(id: string) {
             class="h-6 gap-1 px-2 text-xs text-muted-foreground"
             @click="showNonMovable = !showNonMovable"
           >
-            <EyeOff
-              v-if="showNonMovable"
-              class="h-3 w-3"
-            />
-            <Eye
-              v-else
-              class="h-3 w-3"
-            />
+            <EyeOff v-if="showNonMovable" class="h-3 w-3" />
+            <Eye v-else class="h-3 w-3" />
             <span>{{ showNonMovable ? 'Hide' : 'Show' }} non-movable</span>
           </Button>
           <Button
@@ -86,22 +80,13 @@ function openStorage(id: string) {
             :disabled="loading"
             @click="handleRefresh"
           >
-            <Loader2
-              v-if="loading"
-              class="h-3.5 w-3.5 animate-spin"
-            />
-            <RefreshCw
-              v-else
-              class="h-3.5 w-3.5"
-            />
+            <Loader2 v-if="loading" class="h-3.5 w-3.5 animate-spin" />
+            <RefreshCw v-else class="h-3.5 w-3.5" />
           </Button>
         </div>
       </div>
 
-      <div
-        v-if="loading && items.length === 0"
-        class="flex flex-1 items-center justify-center"
-      >
+      <div v-if="loading && items.length === 0" class="flex flex-1 items-center justify-center">
         <Loader2 class="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
 
@@ -134,7 +119,6 @@ function openStorage(id: string) {
           v-if="storageUnits.length === 0"
           class="flex flex-col items-center gap-2 p-4 text-center text-sm text-muted-foreground"
         >
-          <Archive class="h-8 w-8" />
           <p>No storage units found</p>
         </div>
 
@@ -149,9 +133,6 @@ function openStorage(id: string) {
       </ScrollArea>
     </div>
 
-    <OperationProgress
-      :progress="operationProgress"
-      :in-progress="operationInProgress"
-    />
+    <OperationProgress :progress="operationProgress" :in-progress="operationInProgress" />
   </AppLayout>
 </template>

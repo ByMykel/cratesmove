@@ -23,8 +23,6 @@ const percentage = computed(() => {
       Moving items... {{ progress.current }}/{{ progress.total }}
     </p>
     <Progress :model-value="percentage" />
-    <p class="mt-1 text-xs text-muted-foreground">
-      {{ percentage }}% complete
-    </p>
+    <p class="mt-1 text-xs text-muted-foreground">{{ percentage }}% complete</p>
   </div>
 </template>

@@ -30,7 +30,12 @@ export interface UserInfo {
   avatarUrl: string;
 }
 
-export type AuthState = 'disconnected' | 'connecting' | 'waiting-for-steam-guard' | 'connected' | 'error';
+export type AuthState =
+  | 'disconnected'
+  | 'connecting'
+  | 'waiting-for-steam-guard'
+  | 'connected'
+  | 'error';
 
 export interface OperationProgress {
   current: number;

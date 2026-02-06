@@ -42,23 +42,13 @@ async function handleSteamGuard() {
       autofocus
     />
 
-    <Button type="submit" :disabled="!steamGuardCode">
-      Verify
-    </Button>
+    <Button type="submit" :disabled="!steamGuardCode"> Verify </Button>
   </form>
 
   <!-- Login Form -->
-  <form
-    v-else
-    class="flex flex-col gap-4"
-    @submit.prevent="handleLogin"
-  >
+  <form v-else class="flex flex-col gap-4" @submit.prevent="handleLogin">
     <div class="flex flex-col gap-2">
-      <Input
-        v-model="username"
-        placeholder="Username"
-        autocomplete="username"
-      />
+      <Input v-model="username" placeholder="Username" autocomplete="username" />
       <Input
         v-model="password"
         type="password"
@@ -67,21 +57,12 @@ async function handleSteamGuard() {
       />
     </div>
 
-    <p
-      v-if="error"
-      class="text-sm text-destructive-foreground"
-    >
+    <p v-if="error" class="text-sm text-destructive-foreground">
       {{ error }}
     </p>
 
-    <Button
-      type="submit"
-      :disabled="!username || !password || authState === 'connecting'"
-    >
-      <Loader2
-        v-if="authState === 'connecting'"
-        class="h-4 w-4 animate-spin"
-      />
+    <Button type="submit" :disabled="!username || !password || authState === 'connecting'">
+      <Loader2 v-if="authState === 'connecting'" class="h-4 w-4 animate-spin" />
       <span v-else>Sign In</span>
     </Button>
   </form>

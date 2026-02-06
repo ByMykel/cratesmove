@@ -20,7 +20,8 @@ const {toasts, remove} = useToast();
         :key="toast.id"
         :class="[
           'flex items-center gap-2 rounded-md border px-4 py-3 text-sm shadow-lg max-w-sm',
-          toast.type === 'error' && 'border-destructive/50 bg-destructive/10 text-destructive-foreground',
+          toast.type === 'error' &&
+            'border-destructive/50 bg-destructive/10 text-destructive-foreground',
           toast.type === 'success' && 'border-green-500/50 bg-green-500/10 text-foreground',
           toast.type === 'info' && 'border-border bg-background text-foreground',
         ]"

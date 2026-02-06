@@ -4,7 +4,6 @@ import {ModuleContext} from '../ModuleContext.js';
 export class HardwareAccelerationModule implements AppModule {
   readonly #shouldBeDisabled: boolean;
 
-
   constructor({enable}: {enable: boolean}) {
     this.#shouldBeDisabled = !enable;
   }
@@ -16,6 +15,8 @@ export class HardwareAccelerationModule implements AppModule {
   }
 }
 
-export function hardwareAccelerationMode(...args: ConstructorParameters<typeof HardwareAccelerationModule>) {
+export function hardwareAccelerationMode(
+  ...args: ConstructorParameters<typeof HardwareAccelerationModule>
+) {
   return new HardwareAccelerationModule(...args);
 }

@@ -19,7 +19,15 @@ interface InventoryData {
   highlights: Record<string, ItemEntry>;
 }
 
-export type ItemCategory = 'skin' | 'music_kit' | 'keychain' | 'graffiti' | 'crate' | 'collectible' | 'sticker' | 'highlight';
+export type ItemCategory =
+  | 'skin'
+  | 'music_kit'
+  | 'keychain'
+  | 'graffiti'
+  | 'crate'
+  | 'collectible'
+  | 'sticker'
+  | 'highlight';
 
 export interface ResolvedItemData {
   name: string;
@@ -49,8 +57,13 @@ export async function loadItemData(): Promise<void> {
     data = JSON.parse(raw);
     loaded = true;
 
-    const skinCount = Object.values(data!.skins).reduce((sum, weapon) => sum + Object.keys(weapon).length, 0);
-    console.log(`[ItemDataService] Loaded: ${skinCount} skins, ${Object.keys(data!.crates).length} crates, ${Object.keys(data!.collectibles).length} collectibles, ${Object.keys(data!.stickers).length} stickers, ${Object.keys(data!.graffiti).length} graffiti, ${Object.keys(data!.music_kits).length} music_kits, ${Object.keys(data!.keychains).length} keychains, ${Object.keys(data!.highlights).length} highlights`);
+    const skinCount = Object.values(data!.skins).reduce(
+      (sum, weapon) => sum + Object.keys(weapon).length,
+      0,
+    );
+    console.log(
+      `[ItemDataService] Loaded: ${skinCount} skins, ${Object.keys(data!.crates).length} crates, ${Object.keys(data!.collectibles).length} collectibles, ${Object.keys(data!.stickers).length} stickers, ${Object.keys(data!.graffiti).length} graffiti, ${Object.keys(data!.music_kits).length} music_kits, ${Object.keys(data!.keychains).length} keychains, ${Object.keys(data!.highlights).length} highlights`,
+    );
   } catch (err) {
     console.error('[ItemDataService] Failed to load inventory.json:', err);
   }
@@ -122,7 +135,8 @@ export function resolveItem(gcItem: {
 
   // 6. Collectibles (coins, pins, etc.)
   const collectible = data.collectibles[defIdx];
-  if (collectible) return {name: collectible.name, image: collectible.image, category: 'collectible'};
+  if (collectible)
+    return {name: collectible.name, image: collectible.image, category: 'collectible'};
 
   // 7. Stickers/patches as items: use stickers[0].sticker_id
   if (gcItem.stickers?.length) {

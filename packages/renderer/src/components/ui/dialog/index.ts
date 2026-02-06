@@ -1,9 +1,4 @@
-export {
-  DialogRoot as Dialog,
-  DialogTrigger,
-  DialogClose,
-  DialogPortal,
-} from 'radix-vue';
+export {DialogRoot as Dialog, DialogTrigger, DialogClose, DialogPortal} from 'radix-vue';
 export {default as DialogContent} from './DialogContent.vue';
 export {default as DialogDescription} from './DialogDescription.vue';
 export {default as DialogFooter} from './DialogFooter.vue';

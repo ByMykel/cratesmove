@@ -9,7 +9,6 @@ import {allowInternalOrigins} from './modules/BlockNotAllowdOrigins.js';
 import {allowExternalUrls} from './modules/ExternalUrls.js';
 import {createSteamConnection} from './modules/SteamConnection.js';
 
-
 export async function initApp(initConfig: AppInitConfig) {
   const moduleRunner = createModuleRunner()
     .init(createWindowManagerModule({initConfig, openDevTools: import.meta.env.DEV}))
@@ -20,17 +19,13 @@ export async function initApp(initConfig: AppInitConfig) {
     .init(createSteamConnection())
 
     // Security
-    .init(allowInternalOrigins(
-      new Set(initConfig.renderer instanceof URL ? [initConfig.renderer.origin] : []),
-    ))
-    .init(allowExternalUrls(
-      new Set(
-        initConfig.renderer instanceof URL
-          ? [
-            'https://vuejs.org',
-          ]
-          : [],
-      )),
+    .init(
+      allowInternalOrigins(
+        new Set(initConfig.renderer instanceof URL ? [initConfig.renderer.origin] : []),
+      ),
+    )
+    .init(
+      allowExternalUrls(new Set(initConfig.renderer instanceof URL ? ['https://vuejs.org'] : [])),
     );
 
   await moduleRunner;

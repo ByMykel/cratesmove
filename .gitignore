@@ -3,6 +3,7 @@ node_modules
 dist
 *.local
 thumbs.db
+.claude/settings.local.json
 
 .eslintcache
 

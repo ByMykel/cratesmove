@@ -1,5 +1,11 @@
 import {ref, readonly} from 'vue';
-import {onSteamEvent, steamCredentialLogin, steamSubmitSteamGuard, steamLogout, steamTrySavedSession} from '@app/preload';
+import {
+  onSteamEvent,
+  steamCredentialLogin,
+  steamSubmitSteamGuard,
+  steamLogout,
+  steamTrySavedSession,
+} from '@app/preload';
 import type {AuthState, UserInfo} from '@/types/steam';
 
 const authState = ref<AuthState>('disconnected');
@@ -30,10 +36,13 @@ function registerListeners() {
     }
   });
 
-  onSteamEvent('steam:steam-guard-required', (_event: unknown, data: {type: 'email' | 'mobile'}) => {
-    steamGuardType.value = data.type;
-    authState.value = 'waiting-for-steam-guard';
-  });
+  onSteamEvent(
+    'steam:steam-guard-required',
+    (_event: unknown, data: {type: 'email' | 'mobile'}) => {
+      steamGuardType.value = data.type;
+      authState.value = 'waiting-for-steam-guard';
+    },
+  );
 
   onSteamEvent('steam:user-info', (_event: unknown, data: UserInfo) => {
     userInfo.value = data;

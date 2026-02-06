@@ -15,7 +15,7 @@ onSteamEvent('steam:error', (_event: unknown, data: {message: string}) => {
 });
 
 // Auth guard
-router.beforeEach((to) => {
+router.beforeEach(to => {
   if (to.meta.requiresAuth && !isConnected.value) {
     return '/login';
   }
@@ -25,7 +25,7 @@ router.beforeEach((to) => {
 });
 
 // Redirect on connection state change
-watch(isConnected, (connected) => {
+watch(isConnected, connected => {
   if (connected) {
     router.push('/inventory');
   } else {

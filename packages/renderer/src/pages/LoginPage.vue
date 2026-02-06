@@ -13,17 +13,12 @@ const {error, restoringSession} = useSteam();
       <CardHeader class="items-center text-center">
         <Package class="mb-2 h-10 w-10 text-primary" />
         <CardTitle class="text-2xl">CratesMove</CardTitle>
-        <p class="text-sm text-muted-foreground">
-          Sign in with your Steam account
-        </p>
+        <p class="text-sm text-muted-foreground">Sign in with your Steam account</p>
       </CardHeader>
 
       <CardContent>
         <!-- Restoring saved session -->
-        <div
-          v-if="restoringSession"
-          class="flex flex-col items-center gap-3 py-8"
-        >
+        <div v-if="restoringSession" class="flex flex-col items-center gap-3 py-8">
           <Loader2 class="h-8 w-8 animate-spin text-muted-foreground" />
           <p class="text-sm text-muted-foreground">Restoring session...</p>
         </div>

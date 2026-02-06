@@ -26,10 +26,7 @@ function handleClick(item: InventoryItem) {
     >
       No items found
     </div>
-    <div
-      v-else
-      class="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-2 p-4"
-    >
+    <div v-else class="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-2 p-4">
       <ItemCard
         v-for="item in items"
         :key="item.id"

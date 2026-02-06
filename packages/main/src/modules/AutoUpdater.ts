@@ -4,20 +4,16 @@ import electronUpdater, {type AppUpdater, type Logger} from 'electron-updater';
 type DownloadNotification = Parameters<AppUpdater['checkForUpdatesAndNotify']>[0];
 
 export class AutoUpdater implements AppModule {
-
   readonly #logger: Logger | null;
   readonly #notification: DownloadNotification;
 
-  constructor(
-    {
-      logger = null,
-      downloadNotification = undefined,
-    }:
-      {
-        logger?: Logger | null | undefined,
-        downloadNotification?: DownloadNotification
-      } = {},
-  ) {
+  constructor({
+    logger = null,
+    downloadNotification = undefined,
+  }: {
+    logger?: Logger | null | undefined;
+    downloadNotification?: DownloadNotification;
+  } = {}) {
     this.#logger = logger;
     this.#notification = downloadNotification;
   }
@@ -55,7 +51,6 @@ export class AutoUpdater implements AppModule {
     }
   }
 }
-
 
 export function autoUpdater(...args: ConstructorParameters<typeof AutoUpdater>) {
   return new AutoUpdater(...args);

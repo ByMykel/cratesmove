@@ -50,12 +50,14 @@ const borderStyle = computed(() => {
 
 <template>
   <div
-    :class="cn(
-      'group relative rounded-md border-l-2 bg-secondary/50 p-2 transition-colors',
-      item.movable !== false && 'cursor-pointer hover:bg-secondary',
-      item.movable === false && 'opacity-40 cursor-default',
-      selected && 'ring-2 ring-primary bg-secondary',
-    )"
+    :class="
+      cn(
+        'group relative rounded-md border-l-2 bg-secondary/50 p-2 transition-colors',
+        item.movable !== false && 'cursor-pointer hover:bg-secondary',
+        item.movable === false && 'opacity-40 cursor-default',
+        selected && 'ring-2 ring-primary bg-secondary',
+      )
+    "
     :style="borderStyle"
     @click="handleClick"
   >
@@ -67,20 +69,14 @@ const borderStyle = computed(() => {
         class="h-16 w-auto object-contain"
         loading="lazy"
       />
-      <div
-        v-else
-        class="flex h-16 w-full items-center justify-center text-muted-foreground"
-      >
+      <div v-else class="flex h-16 w-full items-center justify-center text-muted-foreground">
         <span class="text-2xl">?</span>
       </div>
       <div class="w-full text-center">
         <p class="truncate text-xs font-medium">
           {{ item.custom_name || item.name }}
         </p>
-        <p
-          v-if="wearLabel"
-          class="text-[10px] text-muted-foreground"
-        >
+        <p v-if="wearLabel" class="text-[10px] text-muted-foreground">
           {{ wearLabel }}
         </p>
       </div>

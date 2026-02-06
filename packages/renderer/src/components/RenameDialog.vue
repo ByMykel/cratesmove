@@ -23,9 +23,12 @@ const emits = defineEmits<{
 
 const name = ref(props.currentName);
 
-watch(() => props.currentName, (val) => {
-  name.value = val;
-});
+watch(
+  () => props.currentName,
+  val => {
+    name.value = val;
+  },
+);
 
 function handleConfirm() {
   if (!name.value.trim()) return;
@@ -39,9 +42,7 @@ function handleConfirm() {
     <DialogContent class="max-w-sm">
       <DialogHeader>
         <DialogTitle>Rename Storage Unit</DialogTitle>
-        <DialogDescription>
-          Enter a new name for this storage unit.
-        </DialogDescription>
+        <DialogDescription> Enter a new name for this storage unit. </DialogDescription>
       </DialogHeader>
 
       <Input
@@ -52,12 +53,8 @@ function handleConfirm() {
       />
 
       <DialogFooter>
-        <Button variant="outline" @click="emits('update:open', false)">
-          Cancel
-        </Button>
-        <Button :disabled="!name.trim()" @click="handleConfirm">
-          Rename
-        </Button>
+        <Button variant="outline" @click="emits('update:open', false)"> Cancel </Button>
+        <Button :disabled="!name.trim()" @click="handleConfirm"> Rename </Button>
       </DialogFooter>
     </DialogContent>
   </Dialog>

@@ -24,15 +24,18 @@ function registerListeners() {
     operationProgress.value = data;
   });
 
-  onSteamEvent('steam:operation-complete', (_event: unknown, data: {success: boolean; error?: string}) => {
-    operationInProgress.value = false;
-    if (!data.success && data.error) {
-      operationError.value = data.error;
-      const {error: showError} = useToast();
-      showError(data.error);
-    }
-    operationProgress.value = null;
-  });
+  onSteamEvent(
+    'steam:operation-complete',
+    (_event: unknown, data: {success: boolean; error?: string}) => {
+      operationInProgress.value = false;
+      if (!data.success && data.error) {
+        operationError.value = data.error;
+        const {error: showError} = useToast();
+        showError(data.error);
+      }
+      operationProgress.value = null;
+    },
+  );
 }
 
 export function useStorageUnits() {

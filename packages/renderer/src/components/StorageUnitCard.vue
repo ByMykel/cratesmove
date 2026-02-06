@@ -21,8 +21,6 @@ defineEmits<{
     <div class="flex-1 truncate">
       <p class="truncate text-sm font-medium">{{ unit.custom_name || unit.name }}</p>
     </div>
-    <Badge variant="secondary" class="shrink-0">
-      {{ unit.item_count }}/1000
-    </Badge>
+    <Badge variant="secondary" class="shrink-0"> {{ unit.item_count }}/1000 </Badge>
   </div>
 </template>

@@ -6,7 +6,7 @@ import {readFile, writeFile, unlink, mkdir} from 'node:fs/promises';
 import SteamUser from 'steam-user';
 import GlobalOffensive from 'globaloffensive';
 import {LoginSession, EAuthTokenPlatformType, EAuthSessionGuardType} from 'steam-session';
-import SteamTotp from 'steam-totp';
+
 import {loadItemData, resolveItem, type ResolvedItemData} from './ItemDataService.js';
 
 interface CredentialLoginArgs {
@@ -53,15 +53,21 @@ class SteamConnection implements AppModule {
   }
 
   #registerIpcHandlers() {
-    ipcMain.handle('steam:credential-login', (_e, creds: CredentialLoginArgs) => this.#credentialLogin(creds));
+    ipcMain.handle('steam:credential-login', (_e, creds: CredentialLoginArgs) =>
+      this.#credentialLogin(creds),
+    );
     ipcMain.handle('steam:submit-steam-guard', (_e, code: string) => this.#submitSteamGuard(code));
     ipcMain.handle('steam:logout', () => this.#logout());
     ipcMain.handle('steam:try-saved-session', () => this.#trySavedSession());
     ipcMain.handle('steam:get-inventory', () => this.#getInventory());
     ipcMain.handle('steam:get-storage-units', () => this.#getStorageUnits());
     ipcMain.handle('steam:inspect-storage', (_e, id: string) => this.#inspectStorage(id));
-    ipcMain.handle('steam:deposit-to-storage', (_e, args: DepositArgs) => this.#depositToStorage(args));
-    ipcMain.handle('steam:retrieve-from-storage', (_e, args: RetrieveArgs) => this.#retrieveFromStorage(args));
+    ipcMain.handle('steam:deposit-to-storage', (_e, args: DepositArgs) =>
+      this.#depositToStorage(args),
+    );
+    ipcMain.handle('steam:retrieve-from-storage', (_e, args: RetrieveArgs) =>
+      this.#retrieveFromStorage(args),
+    );
     ipcMain.handle('steam:rename-storage', (_e, args: RenameArgs) => this.#renameStorage(args));
   }
 
@@ -86,7 +92,7 @@ class SteamConnection implements AppModule {
       }
     });
 
-    this.#steamUser.on('error', (err) => {
+    this.#steamUser.on('error', err => {
       this.#sendToRenderer('steam:error', {message: err.message, code: (err as any).eresult});
       this.#sendToRenderer('steam:auth-state', {state: 'error', error: err.message});
     });
@@ -96,9 +102,15 @@ class SteamConnection implements AppModule {
     });
 
     this.#csgo.on('connectedToGC', async () => {
-      console.log('[SteamConnection] Connected to GC, inventory length:', this.#csgo.inventory?.length ?? 0);
+      console.log(
+        '[SteamConnection] Connected to GC, inventory length:',
+        this.#csgo.inventory?.length ?? 0,
+      );
       await loadItemData();
-      console.log('[SteamConnection] Item data loaded, inventory length:', this.#csgo.inventory?.length ?? 0);
+      console.log(
+        '[SteamConnection] Item data loaded, inventory length:',
+        this.#csgo.inventory?.length ?? 0,
+      );
       this.#sendInventoryUpdate();
     });
 
@@ -163,7 +175,7 @@ class SteamConnection implements AppModule {
       this.#sendToRenderer('steam:auth-state', {state: 'connecting'});
       this.#steamUser.logOn({refreshToken: token});
       return true;
-    } catch (err: any) {
+    } catch {
       await this.#clearRefreshToken();
       this.#sendToRenderer('steam:auth-state', {state: 'disconnected'});
       return false;
@@ -193,7 +205,9 @@ class SteamConnection implements AppModule {
 
       if (startResult.actionRequired) {
         const guard = startResult.validActions?.find(
-          a => a.type === EAuthSessionGuardType.EmailCode || a.type === EAuthSessionGuardType.DeviceCode,
+          a =>
+            a.type === EAuthSessionGuardType.EmailCode ||
+            a.type === EAuthSessionGuardType.DeviceCode,
         );
 
         if (guard) {
@@ -233,17 +247,21 @@ class SteamConnection implements AppModule {
     if (!inventory || inventory.length === 0) return [];
 
     // Send raw GC items to renderer for debugging (visible in DevTools console)
-    const rawDump = inventory.map((item: any) => JSON.parse(JSON.stringify(item, (_key, value) =>
-      typeof value === 'bigint' ? value.toString() : value,
-    )));
+    const rawDump = inventory.map((item: any) =>
+      JSON.parse(
+        JSON.stringify(item, (_key, value) =>
+          typeof value === 'bigint' ? value.toString() : value,
+        ),
+      ),
+    );
     this.#sendToRenderer('steam:debug-raw-inventory', rawDump);
 
     const result = [];
     for (const item of inventory) {
-      if (item.def_index === 1201) continue;                              // Storage units
-      if (item.casket_id) continue;                                        // Items inside a storage unit
-      if (SteamConnection.#EXCLUDED_IDS.has(String(item.id))) continue;    // Known system items
-      if (this.#getAttributeUint32(item, 277) === 1) continue;            // Free reward items
+      if (item.def_index === 1201) continue; // Storage units
+      if (item.casket_id) continue; // Items inside a storage unit
+      if (SteamConnection.#EXCLUDED_IDS.has(String(item.id))) continue; // Known system items
+      if (this.#getAttributeUint32(item, 277) === 1) continue; // Free reward items
 
       const formatted = this.#formatItem(item);
       formatted.movable = this.#isItemMovable(item, formatted._resolved);
@@ -307,7 +325,7 @@ class SteamConnection implements AppModule {
         itemId,
       });
 
-      await new Promise<void>((resolve, reject) => {
+      await new Promise<void>(resolve => {
         this.#csgo.addToCasket(storageId, itemId);
         const timeout = setTimeout(() => resolve(), OPERATION_DELAY_MS + 1000);
         const handler = () => {
@@ -336,7 +354,7 @@ class SteamConnection implements AppModule {
         itemId,
       });
 
-      await new Promise<void>((resolve, reject) => {
+      await new Promise<void>(resolve => {
         this.#csgo.removeFromCasket(storageId, itemId);
         const timeout = setTimeout(() => resolve(), OPERATION_DELAY_MS + 1000);
         const handler = () => {
@@ -390,7 +408,9 @@ class SteamConnection implements AppModule {
     });
 
     if (!resolved) {
-      console.warn(`[SteamConnection] Could not resolve item: id=${item.id}, def_index=${defIndex}, paint_index=${paintIndex}`);
+      console.warn(
+        `[SteamConnection] Could not resolve item: id=${item.id}, def_index=${defIndex}, paint_index=${paintIndex}`,
+      );
     }
 
     return {
@@ -409,7 +429,7 @@ class SteamConnection implements AppModule {
       paint_wear: item.paint_wear ?? null,
       custom_name: item.custom_name || null,
       stickers: item.stickers || [],
-      _resolved: resolved,  // Used internally for movability check, stripped before sending
+      _resolved: resolved, // Used internally for movability check, stripped before sending
     };
   }
 

@@ -4,7 +4,6 @@ import {shell} from 'electron';
 import {URL} from 'node:url';
 
 export class ExternalUrls implements AppModule {
-
   readonly #externalUrls: Set<string>;
 
   constructor(externalUrls: Set<string>) {
@@ -28,7 +27,6 @@ export class ExternalUrls implements AppModule {
     });
   }
 }
-
 
 export function allowExternalUrls(...args: ConstructorParameters<typeof ExternalUrls>) {
   return new ExternalUrls(...args);

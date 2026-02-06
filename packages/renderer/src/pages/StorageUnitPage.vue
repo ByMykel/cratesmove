@@ -34,21 +34,15 @@ const showAddDialog = ref(false);
 const showRenameDialog = ref(false);
 
 const contents = computed(() => getContents(storageId.value));
-const currentUnit = computed(() =>
-  storageUnits.value.find(u => u.id === storageId.value),
-);
-const unitName = computed(() =>
-  currentUnit.value?.custom_name || currentUnit.value?.name || 'Storage Unit',
+const currentUnit = computed(() => storageUnits.value.find(u => u.id === storageId.value));
+const unitName = computed(
+  () => currentUnit.value?.custom_name || currentUnit.value?.name || 'Storage Unit',
 );
 
 onMounted(async () => {
   loading.value = true;
   try {
-    await Promise.all([
-      inspectStorage(storageId.value),
-      fetchInventory(),
-      fetchStorageUnits(),
-    ]);
+    await Promise.all([inspectStorage(storageId.value), fetchInventory(), fetchStorageUnits()]);
   } finally {
     loading.value = false;
   }
@@ -83,11 +77,7 @@ async function handleRename(name: string) {
 }
 
 async function refresh() {
-  await Promise.all([
-    inspectStorage(storageId.value),
-    fetchInventory(),
-    fetchStorageUnits(),
-  ]);
+  await Promise.all([inspectStorage(storageId.value), fetchInventory(), fetchStorageUnits()]);
 }
 </script>
 
@@ -96,49 +86,30 @@ async function refresh() {
     <div class="flex flex-1 flex-col overflow-hidden">
       <!-- Header -->
       <div class="flex items-center gap-3 border-b border-border px-4 py-2">
-        <Button
-          variant="ghost"
-          size="icon"
-          @click="router.push('/inventory')"
-        >
+        <Button variant="ghost" size="icon" @click="router.push('/inventory')">
           <ArrowLeft class="h-4 w-4" />
         </Button>
 
         <div class="flex-1">
           <h2 class="text-sm font-semibold">{{ unitName }}</h2>
-          <p class="text-xs text-muted-foreground">
-            {{ contents.length }} items
-          </p>
+          <p class="text-xs text-muted-foreground">{{ contents.length }} items</p>
         </div>
 
-        <Badge variant="secondary">
-          {{ contents.length }}/1000
-        </Badge>
+        <Badge variant="secondary"> {{ contents.length }}/1000 </Badge>
 
-        <Button
-          variant="outline"
-          size="sm"
-          @click="showRenameDialog = true"
-        >
+        <Button variant="outline" size="sm" @click="showRenameDialog = true">
           <Pencil class="h-3.5 w-3.5" />
           <span>Rename</span>
         </Button>
 
-        <Button
-          variant="outline"
-          size="sm"
-          @click="showAddDialog = true"
-        >
+        <Button variant="outline" size="sm" @click="showAddDialog = true">
           <Plus class="h-3.5 w-3.5" />
           <span>Add Items</span>
         </Button>
       </div>
 
       <!-- Contents -->
-      <div
-        v-if="loading"
-        class="flex flex-1 items-center justify-center"
-      >
+      <div v-if="loading" class="flex flex-1 items-center justify-center">
         <Loader2 class="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
 
@@ -154,9 +125,7 @@ async function refresh() {
         v-if="selectedIds.size > 0"
         class="sticky bottom-0 flex items-center justify-between border-t border-border bg-background px-4 py-3"
       >
-        <span class="text-sm font-medium">
-          {{ selectedIds.size }} items selected
-        </span>
+        <span class="text-sm font-medium"> {{ selectedIds.size }} items selected </span>
         <Button @click="handleRetrieve">
           <ArrowUpFromLine class="h-4 w-4" />
           <span>Retrieve from Storage</span>
@@ -180,9 +149,6 @@ async function refresh() {
       @confirm="handleRename"
     />
 
-    <OperationProgress
-      :progress="operationProgress"
-      :in-progress="operationInProgress"
-    />
+    <OperationProgress :progress="operationProgress" :in-progress="operationInProgress" />
   </AppLayout>
 </template>

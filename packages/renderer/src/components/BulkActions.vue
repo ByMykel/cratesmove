@@ -4,7 +4,7 @@ import type {StorageUnit} from '@/types/steam';
 import {ArrowRight, X} from 'lucide-vue-next';
 import {ref} from 'vue';
 
-const props = defineProps<{
+defineProps<{
   selectionCount: number;
   storageUnits: StorageUnit[];
 }>();
@@ -29,11 +29,7 @@ function handleDeposit(storageId: string) {
   >
     <div class="flex items-center gap-2">
       <span class="text-sm font-medium">{{ selectionCount }} items selected</span>
-      <Button
-        variant="ghost"
-        size="icon"
-        @click="emits('clear')"
-      >
+      <Button variant="ghost" size="icon" @click="emits('clear')">
         <X class="h-4 w-4" />
       </Button>
     </div>
@@ -48,10 +44,7 @@ function handleDeposit(storageId: string) {
         v-if="showDropdown"
         class="absolute bottom-full right-0 mb-2 w-64 rounded-md border border-border bg-popover p-1 shadow-lg"
       >
-        <div
-          v-if="storageUnits.length === 0"
-          class="px-3 py-2 text-sm text-muted-foreground"
-        >
+        <div v-if="storageUnits.length === 0" class="px-3 py-2 text-sm text-muted-foreground">
           No storage units found
         </div>
         <button

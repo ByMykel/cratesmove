@@ -32,9 +32,8 @@ const filteredItems = computed(() => {
   const movable = props.items.filter(i => i.movable !== false);
   if (!search.value) return movable;
   const q = search.value.toLowerCase();
-  return movable.filter(item =>
-    item.name.toLowerCase().includes(q) ||
-    item.market_hash_name.toLowerCase().includes(q),
+  return movable.filter(
+    item => item.name.toLowerCase().includes(q) || item.market_hash_name.toLowerCase().includes(q),
   );
 });
 
@@ -73,11 +72,7 @@ function handleOpenChange(val: boolean) {
         </DialogDescription>
       </DialogHeader>
 
-      <Input
-        v-model="search"
-        placeholder="Search items..."
-        class="mb-2"
-      />
+      <Input v-model="search" placeholder="Search items..." class="mb-2" />
 
       <ScrollArea class="h-80">
         <div class="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-2 p-1">
@@ -92,9 +87,7 @@ function handleOpenChange(val: boolean) {
       </ScrollArea>
 
       <DialogFooter>
-        <Button variant="outline" @click="handleOpenChange(false)">
-          Cancel
-        </Button>
+        <Button variant="outline" @click="handleOpenChange(false)"> Cancel </Button>
         <Button :disabled="selectedIds.size === 0" @click="handleConfirm">
           Add {{ selectedIds.size }} items
         </Button>
