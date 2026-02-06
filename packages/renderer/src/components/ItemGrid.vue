@@ -3,14 +3,19 @@ import type {InventoryItem} from '@/types/steam';
 import ItemCard from './ItemCard.vue';
 import {ScrollArea} from '@/components/ui/scroll-area';
 
-const props = defineProps<{
+defineProps<{
   items: InventoryItem[];
   selectedIds: Set<string>;
 }>();
 
-defineEmits<{
+const emit = defineEmits<{
   toggleItem: [id: string];
 }>();
+
+function handleClick(item: InventoryItem) {
+  if (item.movable === false) return;
+  emit('toggleItem', item.id);
+}
 </script>
 
 <template>
@@ -30,7 +35,7 @@ defineEmits<{
         :key="item.id"
         :item="item"
         :selected="selectedIds.has(item.id)"
-        @click="$emit('toggleItem', item.id)"
+        @click="handleClick(item)"
       />
     </div>
   </ScrollArea>

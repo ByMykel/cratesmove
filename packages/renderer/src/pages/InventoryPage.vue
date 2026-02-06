@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {onMounted} from 'vue';
+import {onMounted, ref, computed} from 'vue';
 import {useRouter} from 'vue-router';
 import AppLayout from '@/components/AppLayout.vue';
 import ItemGrid from '@/components/ItemGrid.vue';
@@ -11,7 +11,7 @@ import {Button} from '@/components/ui/button';
 import {Separator} from '@/components/ui/separator';
 import {useInventory} from '@/composables/useInventory';
 import {useStorageUnits} from '@/composables/useStorageUnits';
-import {Loader2, RefreshCw, Archive} from 'lucide-vue-next';
+import {Loader2, RefreshCw, Archive, Eye, EyeOff} from 'lucide-vue-next';
 
 const router = useRouter();
 const {
@@ -26,6 +26,12 @@ const {
   clearSelection,
 } = useInventory();
 const {operationProgress, operationInProgress, depositToStorage} = useStorageUnits();
+
+const showNonMovable = ref(false);
+const displayedItems = computed(() =>
+  showNonMovable.value ? items.value : items.value.filter(i => i.movable !== false),
+);
+const movableCount = computed(() => items.value.filter(i => i.movable !== false).length);
 
 onMounted(async () => {
   await Promise.all([fetchInventory(), fetchStorageUnits()]);
@@ -54,9 +60,25 @@ function openStorage(id: string) {
       <div class="flex h-10 shrink-0 items-center justify-between border-b border-border px-4">
         <h2 class="text-sm font-semibold">
           Inventory
-          <span class="text-muted-foreground">({{ items.length }})</span>
+          <span class="text-muted-foreground">({{ movableCount }})</span>
         </h2>
         <div class="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            class="h-6 gap-1 px-2 text-xs text-muted-foreground"
+            @click="showNonMovable = !showNonMovable"
+          >
+            <EyeOff
+              v-if="showNonMovable"
+              class="h-3 w-3"
+            />
+            <Eye
+              v-else
+              class="h-3 w-3"
+            />
+            <span>{{ showNonMovable ? 'Hide' : 'Show' }} non-movable</span>
+          </Button>
           <Button
             variant="ghost"
             size="icon"
@@ -85,7 +107,7 @@ function openStorage(id: string) {
 
       <ItemGrid
         v-else
-        :items="items"
+        :items="displayedItems"
         :selected-ids="selectedItemIds"
         @toggle-item="toggleSelection"
       />

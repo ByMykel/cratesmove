@@ -65,7 +65,7 @@ export function useInventory() {
   }
 
   function selectAll() {
-    selectedItemIds.value = new Set(items.value.map(i => i.id));
+    selectedItemIds.value = new Set(items.value.filter(i => i.movable !== false).map(i => i.id));
   }
 
   function clearSelection() {

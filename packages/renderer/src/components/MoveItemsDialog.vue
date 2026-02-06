@@ -29,9 +29,10 @@ const search = ref('');
 const selectedIds = ref<Set<string>>(new Set());
 
 const filteredItems = computed(() => {
-  if (!search.value) return props.items;
+  const movable = props.items.filter(i => i.movable !== false);
+  if (!search.value) return movable;
   const q = search.value.toLowerCase();
-  return props.items.filter(item =>
+  return movable.filter(item =>
     item.name.toLowerCase().includes(q) ||
     item.market_hash_name.toLowerCase().includes(q),
   );

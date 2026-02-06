@@ -6,6 +6,7 @@ export interface InventoryItem {
   market_hash_name: string;
   icon_url: string;
   tradable: boolean;
+  movable: boolean;
   def_index: number;
   paint_index?: number;
   rarity?: string;

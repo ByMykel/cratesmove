@@ -19,9 +19,12 @@ interface InventoryData {
   highlights: Record<string, ItemEntry>;
 }
 
+export type ItemCategory = 'skin' | 'music_kit' | 'keychain' | 'graffiti' | 'crate' | 'collectible' | 'sticker' | 'highlight';
+
 export interface ResolvedItemData {
   name: string;
   image: string;
+  category: ItemCategory;
 }
 
 let data: InventoryData | null = null;
@@ -81,20 +84,20 @@ export function resolveItem(gcItem: {
     const weapon = data.skins[defIdx];
     if (weapon) {
       const skin = weapon[String(gcItem.paint_index)];
-      if (skin) return {name: skin.name, image: skin.image};
+      if (skin) return {name: skin.name, image: skin.image, category: 'skin'};
     }
   }
 
   // 2. Music kits: music_index (extracted from attribute 166)
   if (gcItem.music_index && gcItem.music_index > 0) {
     const kit = data.music_kits[String(gcItem.music_index)];
-    if (kit) return {name: kit.name, image: kit.image};
+    if (kit) return {name: kit.name, image: kit.image, category: 'music_kit'};
   }
 
   // 3. Keychains (charms): keychain_index (extracted from attribute 299)
   if (gcItem.keychain_index && gcItem.keychain_index > 0) {
     const keychain = data.keychains[String(gcItem.keychain_index)];
-    if (keychain) return {name: keychain.name, image: keychain.image};
+    if (keychain) return {name: keychain.name, image: keychain.image, category: 'keychain'};
   }
 
   // 4. Graffiti: uses stickers[0].sticker_id + graffiti_tint (extracted from attribute 233)
@@ -105,28 +108,28 @@ export function resolveItem(gcItem: {
       // Try tinted key first: "1699_8"
       const tintedKey = `${stickerId}_${gcItem.graffiti_tint}`;
       const tinted = data.graffiti[tintedKey];
-      if (tinted) return {name: tinted.name, image: tinted.image};
+      if (tinted) return {name: tinted.name, image: tinted.image, category: 'graffiti'};
 
       // Fallback to monochrome key: "1653"
       const mono = data.graffiti[String(stickerId)];
-      if (mono) return {name: mono.name, image: mono.image};
+      if (mono) return {name: mono.name, image: mono.image, category: 'graffiti'};
     }
   }
 
   // 5. Crates / cases / keys
   const crate = data.crates[defIdx];
-  if (crate) return {name: crate.name, image: crate.image};
+  if (crate) return {name: crate.name, image: crate.image, category: 'crate'};
 
   // 6. Collectibles (coins, pins, etc.)
   const collectible = data.collectibles[defIdx];
-  if (collectible) return {name: collectible.name, image: collectible.image};
+  if (collectible) return {name: collectible.name, image: collectible.image, category: 'collectible'};
 
   // 7. Stickers/patches as items: use stickers[0].sticker_id
   if (gcItem.stickers?.length) {
     const stickerId = gcItem.stickers[0].sticker_id;
     if (stickerId) {
       const sticker = data.stickers[String(stickerId)];
-      if (sticker) return {name: sticker.name, image: sticker.image};
+      if (sticker) return {name: sticker.name, image: sticker.image, category: 'sticker'};
     }
   }
 

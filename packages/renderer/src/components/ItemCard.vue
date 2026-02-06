@@ -51,7 +51,9 @@ const borderStyle = computed(() => {
 <template>
   <div
     :class="cn(
-      'group relative cursor-pointer rounded-md border-l-2 bg-secondary/50 p-2 transition-colors hover:bg-secondary',
+      'group relative rounded-md border-l-2 bg-secondary/50 p-2 transition-colors',
+      item.movable !== false && 'cursor-pointer hover:bg-secondary',
+      item.movable === false && 'opacity-40 cursor-default',
       selected && 'ring-2 ring-primary bg-secondary',
     )"
     :style="borderStyle"

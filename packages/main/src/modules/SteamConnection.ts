@@ -7,7 +7,7 @@ import SteamUser from 'steam-user';
 import GlobalOffensive from 'globaloffensive';
 import {LoginSession, EAuthTokenPlatformType, EAuthSessionGuardType} from 'steam-session';
 import SteamTotp from 'steam-totp';
-import {loadItemData, resolveItem} from './ItemDataService.js';
+import {loadItemData, resolveItem, type ResolvedItemData} from './ItemDataService.js';
 
 interface CredentialLoginArgs {
   username: string;
@@ -225,6 +225,9 @@ class SteamConnection implements AppModule {
 
   // --- Inventory ---
 
+  // IDs known to be non-movable system items (from casemove)
+  static #EXCLUDED_IDS = new Set(['17293822569110896676', '17293822569102708641']);
+
   #getInventory() {
     const inventory = this.#csgo.inventory;
     if (!inventory || inventory.length === 0) return [];
@@ -235,12 +238,39 @@ class SteamConnection implements AppModule {
     )));
     this.#sendToRenderer('steam:debug-raw-inventory', rawDump);
 
-    const filtered = inventory.filter((item: any) =>
-      item.def_index !== 1201   // Exclude storage units
-      && !item.casket_id        // Exclude items already inside a storage unit
-      && item.quality !== 0     // Exclude default/stock items (Normal quality)
-    );
-    return filtered.map((item: any) => this.#formatItem(item));
+    const result = [];
+    for (const item of inventory) {
+      if (item.def_index === 1201) continue;                              // Storage units
+      if (item.casket_id) continue;                                        // Items inside a storage unit
+      if (SteamConnection.#EXCLUDED_IDS.has(String(item.id))) continue;    // Known system items
+      if (this.#getAttributeUint32(item, 277) === 1) continue;            // Free reward items
+
+      const formatted = this.#formatItem(item);
+      formatted.movable = this.#isItemMovable(item, formatted._resolved);
+      delete formatted._resolved;
+      result.push(formatted);
+    }
+    return result;
+  }
+
+  /**
+   * Determines if an item can be moved to/from a storage unit.
+   * Based on casemove's itemProcessorCanBeMoved logic.
+   */
+  #isItemMovable(item: any, resolved: ResolvedItemData | null): boolean {
+    // ★ items (quality 3, e.g. knives/gloves) are always movable
+    if (item.quality === 3) return true;
+
+    // Collectibles (coins, service medals, pins) are generally non-movable
+    if (resolved?.category === 'collectible') return false;
+
+    // Promotional music kits (origin 0 = timed drop for default music kit)
+    if (resolved?.category === 'music_kit' && item.origin === 0) return false;
+
+    // Unresolved items with no paint are base/stock weapons
+    if (!resolved && !item.paint_index) return false;
+
+    return true;
   }
 
   #getStorageUnits() {
@@ -379,6 +409,7 @@ class SteamConnection implements AppModule {
       paint_wear: item.paint_wear ?? null,
       custom_name: item.custom_name || null,
       stickers: item.stickers || [],
+      _resolved: resolved,  // Used internally for movability check, stripped before sending
     };
   }
 
