@@ -20,7 +20,6 @@ function registerListeners() {
   onSteamEvent('steam:storage-units-updated', (_event: unknown, data: StorageUnit[]) => {
     storageUnits.value = data;
   });
-
 }
 
 export function useInventory() {
@@ -57,6 +56,17 @@ export function useInventory() {
     selectedItemIds.value = next;
   }
 
+  function toggleBatch(itemIds: string[]) {
+    const next = new Set(selectedItemIds.value);
+    const allSelected = itemIds.every(id => next.has(id));
+    if (allSelected) {
+      for (const id of itemIds) next.delete(id);
+    } else {
+      for (const id of itemIds) next.add(id);
+    }
+    selectedItemIds.value = next;
+  }
+
   function selectAll() {
     selectedItemIds.value = new Set(items.value.filter(i => i.movable !== false).map(i => i.id));
   }
@@ -75,6 +85,7 @@ export function useInventory() {
     fetchInventory,
     fetchStorageUnits,
     toggleSelection,
+    toggleBatch,
     selectAll,
     clearSelection,
   };

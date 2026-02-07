@@ -2,7 +2,7 @@
 import {onMounted, ref, computed} from 'vue';
 import {useRoute, useRouter} from 'vue-router';
 import AppLayout from '@/components/AppLayout.vue';
-import ItemGrid from '@/components/ItemGrid.vue';
+import ItemTable from '@/components/ItemTable.vue';
 import MoveItemsDialog from '@/components/MoveItemsDialog.vue';
 import RenameDialog from '@/components/RenameDialog.vue';
 import OperationProgress from '@/components/OperationProgress.vue';
@@ -52,6 +52,17 @@ function toggleSelection(id: string) {
     next.delete(id);
   } else {
     next.add(id);
+  }
+  selectedIds.value = next;
+}
+
+function handleToggleGroup(ids: string[]) {
+  const next = new Set(selectedIds.value);
+  const allSelected = ids.every(id => next.has(id));
+  if (allSelected) {
+    for (const id of ids) next.delete(id);
+  } else {
+    for (const id of ids) next.add(id);
   }
   selectedIds.value = next;
 }
@@ -111,11 +122,12 @@ async function refresh() {
         <Loader2 class="h-8 w-8 animate-spin text-(--ui-text-muted)" />
       </div>
 
-      <ItemGrid
+      <ItemTable
         v-else
         :items="contents"
         :selected-ids="selectedIds"
         @toggle-item="toggleSelection"
+        @toggle-group="handleToggleGroup"
       />
 
       <!-- Retrieve bar -->

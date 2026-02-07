@@ -2,7 +2,7 @@
 import {onMounted} from 'vue';
 import {useRouter} from 'vue-router';
 import AppLayout from '@/components/AppLayout.vue';
-import ItemGrid from '@/components/ItemGrid.vue';
+import ItemTable from '@/components/ItemTable.vue';
 import StorageUnitCard from '@/components/StorageUnitCard.vue';
 import BulkActions from '@/components/BulkActions.vue';
 import OperationProgress from '@/components/OperationProgress.vue';
@@ -21,6 +21,7 @@ const {
   fetchInventory,
   fetchStorageUnits,
   toggleSelection,
+  toggleBatch,
   clearSelection,
 } = useInventory();
 const {operationProgress, operationInProgress, depositToStorage} = useStorageUnits();
@@ -75,11 +76,12 @@ function openStorage(id: string) {
         <Loader2 class="h-8 w-8 animate-spin text-(--ui-text-muted)" />
       </div>
 
-      <ItemGrid
+      <ItemTable
         v-else
         :items="items"
         :selected-ids="selectedItemIds"
         @toggle-item="toggleSelection"
+        @toggle-group="toggleBatch"
       />
 
       <BulkActions

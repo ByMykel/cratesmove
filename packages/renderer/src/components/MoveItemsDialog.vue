@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {ref, computed} from 'vue';
-import ItemCard from './ItemCard.vue';
+import ItemTable from './ItemTable.vue';
 import type {InventoryItem} from '@/types/steam';
 
 const props = defineProps<{
@@ -36,6 +36,17 @@ function toggle(id: string) {
   selectedIds.value = next;
 }
 
+function handleToggleGroup(ids: string[]) {
+  const next = new Set(selectedIds.value);
+  const allSelected = ids.every(id => next.has(id));
+  if (allSelected) {
+    for (const id of ids) next.delete(id);
+  } else {
+    for (const id of ids) next.add(id);
+  }
+  selectedIds.value = next;
+}
+
 function handleConfirm() {
   emits('confirm', [...selectedIds.value]);
   selectedIds.value = new Set();
@@ -59,18 +70,15 @@ function handleOpenChange(val: boolean) {
     @update:open="handleOpenChange"
   >
     <template #body>
-      <UInput v-model="search" placeholder="Search items..." class="mb-2" />
+      <UInput v-model="search" placeholder="Search items..." class="mb-2 w-full" />
 
-      <div class="h-80 overflow-y-auto">
-        <div class="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-2 p-1">
-          <ItemCard
-            v-for="item in filteredItems"
-            :key="item.id"
-            :item="item"
-            :selected="selectedIds.has(item.id)"
-            @click="toggle(item.id)"
-          />
-        </div>
+      <div class="h-80">
+        <ItemTable
+          :items="filteredItems"
+          :selected-ids="selectedIds"
+          @toggle-item="toggle"
+          @toggle-group="handleToggleGroup"
+        />
       </div>
     </template>
 
