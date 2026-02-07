@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type {InventoryItem} from '@/types/steam';
 import {computed} from 'vue';
-import {useInventory} from '@/composables/useInventory';
 
 const props = defineProps<{
   item: InventoryItem;
@@ -12,15 +11,7 @@ const emit = defineEmits<{
   click: [];
 }>();
 
-const {getRawItem} = useInventory();
-
 function handleClick() {
-  const raw = getRawItem(props.item.id);
-  if (!raw) {
-    console.warn('[ItemCard] Raw GC data not found for item:', props.item.id);
-  } else {
-    console.log('[ItemCard] Raw GC data:', raw);
-  }
   emit('click');
 }
 

@@ -102,10 +102,6 @@ class SteamConnection implements AppModule {
     });
 
     this.#csgo.on('connectedToGC', () => {
-      console.log(
-        '[SteamConnection] Connected to GC, inventory length:',
-        this.#csgo.inventory?.length ?? 0,
-      );
       this.#sendInventoryUpdate();
     });
 
@@ -241,16 +237,6 @@ class SteamConnection implements AppModule {
     const inventory = this.#csgo.inventory;
     if (!inventory || inventory.length === 0) return [];
 
-    // Send raw GC items to renderer for debugging (visible in DevTools console)
-    const rawDump = inventory.map((item: any) =>
-      JSON.parse(
-        JSON.stringify(item, (_key, value) =>
-          typeof value === 'bigint' ? value.toString() : value,
-        ),
-      ),
-    );
-    this.#sendToRenderer('steam:debug-raw-inventory', rawDump);
-
     const result = [];
     for (const item of inventory) {
       if (item.def_index === 1201) continue; // Storage units
@@ -376,12 +362,6 @@ class SteamConnection implements AppModule {
     const paintIndex = item.paint_index ?? 0;
 
     const resolved = resolveItem(item);
-
-    if (!resolved) {
-      console.warn(
-        `[SteamConnection] Could not resolve item: id=${item.id}, def_index=${defIndex}, paint_index=${paintIndex}`,
-      );
-    }
 
     return {
       id: String(item.id),
