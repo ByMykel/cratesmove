@@ -12,7 +12,7 @@ const {error, restoringSession} = useSteam();
       <template #header>
         <div class="flex flex-col items-center text-center">
           <Package class="mb-2 h-10 w-10 text-(--ui-primary)" />
-          <h2 class="text-2xl font-semibold">CratesMove</h2>
+          <h2 class="text-2xl font-semibold">cratesmove</h2>
           <p class="text-sm text-(--ui-text-muted)">Sign in with your Steam account</p>
         </div>
       </template>

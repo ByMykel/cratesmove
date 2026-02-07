@@ -391,7 +391,7 @@ class SteamConnection implements AppModule {
       instanceid: String(item.instanceid ?? ''),
       name: resolved?.name || item.market_hash_name || item.custom_name || `Item #${defIndex}`,
       market_hash_name: item.market_hash_name || resolved?.name || '',
-      icon_url: resolved?.image || item.icon_url || '',
+      image: resolved?.image || item.icon_url || '',
       tradable: item.tradable ?? false,
       def_index: defIndex,
       paint_index: paintIndex,

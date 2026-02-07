@@ -4,7 +4,7 @@ export interface InventoryItem {
   instanceid: string;
   name: string;
   market_hash_name: string;
-  icon_url: string;
+  image: string;
   tradable: boolean;
   movable: boolean;
   def_index: number;

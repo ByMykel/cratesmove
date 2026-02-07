@@ -34,20 +34,8 @@ const wearLabel = computed(() => {
   return 'BS';
 });
 
-const imageUrl = computed(() => {
-  if (!props.item.icon_url) return '';
-  if (props.item.icon_url.startsWith('http')) return props.item.icon_url;
-  return `https://community.akamai.steamstatic.com/economy/image/${props.item.icon_url}/330x192`;
-});
-
-const borderStyle = computed(() => {
-  const color = props.item.rarity_color;
-  if (color) return {borderLeftColor: color};
-  return {borderLeftColor: '#4b5563'};
-});
-
 const cardClasses = computed(() => {
-  const base = 'group relative rounded-md border-l-2 bg-(--ui-bg-elevated)/50 p-2 transition-colors';
+  const base = 'group relative rounded-md bg-(--ui-bg-elevated)/50 p-2 transition-colors';
   const interactive = props.item.movable !== false ? 'cursor-pointer hover:bg-(--ui-bg-elevated)' : 'opacity-40 cursor-default';
   const selection = props.selected ? 'ring-2 ring-(--ui-primary) bg-(--ui-bg-elevated)' : '';
   return `${base} ${interactive} ${selection}`;
@@ -57,20 +45,15 @@ const cardClasses = computed(() => {
 <template>
   <div
     :class="cardClasses"
-    :style="borderStyle"
     @click="handleClick"
   >
     <div class="flex flex-col items-center gap-1">
       <img
-        v-if="imageUrl"
-        :src="imageUrl"
+        :src="item.image"
         :alt="item.name"
         class="h-16 w-auto object-contain"
         loading="lazy"
       />
-      <div v-else class="flex h-16 w-full items-center justify-center text-(--ui-text-muted)">
-        <span class="text-2xl">?</span>
-      </div>
       <div class="w-full text-center">
         <p class="truncate text-xs font-medium">
           {{ item.custom_name || item.name }}
