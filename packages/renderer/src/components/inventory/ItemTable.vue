@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, toRef } from 'vue';
+import { useClipboard } from '@vueuse/core';
 import type { InventoryItem } from '@/types/steam';
 import { useItemGroups, type ItemGroup } from '@/composables/useItemGroups';
-import { ChevronRight } from 'lucide-vue-next';
+import { ChevronRight, ClipboardCopy, Check, TriangleAlert } from 'lucide-vue-next';
 
 const props = defineProps<{
   items: readonly InventoryItem[];
@@ -48,6 +49,18 @@ function handleItemCheckbox(item: InventoryItem) {
 }
 
 const hasItems = computed(() => props.items.length > 0);
+
+const { copy } = useClipboard();
+const copiedId = ref<string | null>(null);
+
+async function copyRawData(item: InventoryItem) {
+  if (!item._rawData) return;
+  await copy(item._rawData);
+  copiedId.value = item.id;
+  setTimeout(() => {
+    copiedId.value = null;
+  }, 2000);
+}
 </script>
 
 <template>
@@ -78,7 +91,32 @@ const hasItems = computed(() => props.items.length > 0);
       </thead>
       <tbody class="divide-y divide-(--ui-border)/50">
         <template v-for="group in groups" :key="group.market_hash_name">
+          <!-- Parse error row -->
+          <tr v-if="group._parseError" class="transition-colors hover:bg-(--ui-bg-elevated)/50">
+            <td class="px-2 py-0 align-middle"></td>
+            <td class="px-2 py-0 align-middle">
+              <TriangleAlert class="h-3.5 w-3.5 text-amber-500" />
+            </td>
+            <td colspan="2" class="px-2 py-2 align-middle">
+              <p class="text-xs text-(--ui-text-muted)">
+                Failed to load this item. Copy the raw data and share it so we can fix this.
+              </p>
+            </td>
+            <td class="px-2 py-0 align-middle">
+              <button
+                class="inline-flex items-center justify-center rounded p-1 transition-colors hover:bg-(--ui-bg-elevated)"
+                title="Copy raw data"
+                @click="copyRawData(group.items[0])"
+              >
+                <Check v-if="copiedId === group.items[0].id" class="h-3.5 w-3.5 text-green-500" />
+                <ClipboardCopy v-else class="h-3.5 w-3.5 text-(--ui-text-muted)" />
+              </button>
+            </td>
+          </tr>
+
+          <!-- Normal group row -->
           <tr
+            v-else
             class="transition-colors hover:bg-(--ui-bg-elevated)/50"
             :class="{ 'opacity-40': !group.movable, 'cursor-pointer': group.items.length > 1 }"
             :tabindex="group.items.length > 1 ? 0 : -1"
@@ -117,7 +155,13 @@ const hasItems = computed(() => props.items.length > 0);
             </td>
           </tr>
 
-          <template v-if="group.items.length > 1 && expandedGroups.has(group.market_hash_name)">
+          <template
+            v-if="
+              !group._parseError &&
+              group.items.length > 1 &&
+              expandedGroups.has(group.market_hash_name)
+            "
+          >
             <tr
               v-for="item in group.items"
               :key="item.id"

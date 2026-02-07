@@ -559,8 +559,18 @@ class SteamConnection implements AppModule {
       if (SteamConnection.#EXCLUDED_IDS.has(String(item.id))) continue; // Known system items
       if (getAttributeUint32(item, 277) === 1) continue; // Free reward items
 
-      const { _resolved, ...formatted } = this.#formatItem(item);
-      result.push({ ...formatted, movable: this.#isItemMovable(item, _resolved) });
+      try {
+        const { _resolved, ...formatted } = this.#formatItem(item);
+
+        if (!formatted.market_hash_name) {
+          result.push(SteamConnection.#createErrorItem(item));
+          continue;
+        }
+
+        result.push({ ...formatted, movable: this.#isItemMovable(item, _resolved) });
+      } catch {
+        result.push(SteamConnection.#createErrorItem(item));
+      }
     }
     return result;
   }
@@ -605,7 +615,19 @@ class SteamConnection implements AppModule {
           reject(err);
           return;
         }
-        resolve((items || []).map((item: RawInventoryItem) => this.#formatItem(item)));
+        resolve(
+          (items || []).map((item: RawInventoryItem) => {
+            try {
+              const formatted = this.#formatItem(item);
+              if (!formatted.market_hash_name) {
+                return SteamConnection.#createErrorItem(item);
+              }
+              return formatted;
+            } catch {
+              return SteamConnection.#createErrorItem(item);
+            }
+          }),
+        );
       });
     });
   }
@@ -707,6 +729,40 @@ class SteamConnection implements AppModule {
         resolve();
       });
     });
+  }
+
+  static #safeStringify(item: RawInventoryItem): string {
+    try {
+      return JSON.stringify(item, (_key, value) =>
+        typeof value === 'bigint' ? value.toString() : value,
+      );
+    } catch {
+      return String(item);
+    }
+  }
+
+  static #createErrorItem(item: RawInventoryItem) {
+    const id = String(item.id ?? `unknown_${Date.now()}`);
+    return {
+      id,
+      classid: '',
+      instanceid: '',
+      name: '',
+      market_hash_name: '',
+      image: '',
+      tradable: false,
+      def_index: item.def_index ?? 0,
+      paint_index: 0,
+      rarity: '',
+      rarity_color: '',
+      quality: '',
+      paint_wear: null,
+      custom_name: null,
+      stickers: [],
+      movable: false,
+      _parseError: true,
+      _rawData: SteamConnection.#safeStringify(item),
+    };
   }
 
   #formatItem(item: RawInventoryItem) {

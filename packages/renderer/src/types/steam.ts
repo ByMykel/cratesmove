@@ -15,6 +15,8 @@ export interface InventoryItem {
   paint_wear?: number;
   custom_name?: string;
   stickers?: ReadonlyArray<{ name: string; icon_url: string }>;
+  _parseError?: boolean;
+  _rawData?: string;
 }
 
 export interface StorageUnit {
