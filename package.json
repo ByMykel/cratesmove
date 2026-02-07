@@ -31,7 +31,7 @@
     "@types/node": "25.2.1",
     "electron": "40.2.1",
     "electron-builder": "26.7.0",
-    "eslint": "^9.39.2",
+    "eslint": "^10.0.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-vue": "^10.7.0",
     "prettier": "^3.8.1",
