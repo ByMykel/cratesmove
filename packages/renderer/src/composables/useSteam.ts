@@ -5,8 +5,11 @@ import {
   steamSubmitSteamGuard,
   steamLogout,
   steamTrySavedSession,
+  steamGetSavedAccounts,
+  steamSwitchAccount,
+  steamRemoveAccount,
 } from '@app/preload';
-import type {AuthState, UserInfo} from '@/types/steam';
+import type {AuthState, UserInfo, SavedAccountMeta} from '@/types/steam';
 
 const authState = ref<AuthState>('disconnected');
 const userInfo = ref<UserInfo | null>(null);
@@ -14,6 +17,8 @@ const error = ref<string | null>(null);
 const steamGuardType = ref<'email' | 'mobile' | null>(null);
 const isConnected = ref(false);
 const restoringSession = ref(false);
+const savedAccounts = ref<SavedAccountMeta[]>([]);
+const switchingAccount = ref(false);
 
 let listenersRegistered = false;
 
@@ -30,9 +35,16 @@ function registerListeners() {
       isConnected.value = true;
       error.value = null;
       restoringSession.value = false;
-    } else if (data.state === 'disconnected' || data.state === 'error') {
+      // Don't reset switchingAccount here — wait for inventory-updated so the
+      // overlay stays until the new user's inventory is actually loaded
+    } else if (data.state === 'error') {
       isConnected.value = false;
       restoringSession.value = false;
+      switchingAccount.value = false;
+    } else if (data.state === 'disconnected') {
+      isConnected.value = false;
+      restoringSession.value = false;
+      // Don't reset switchingAccount on disconnect — it's expected during a switch
     }
   });
 
@@ -50,6 +62,16 @@ function registerListeners() {
 
   onSteamEvent('steam:error', (_event: unknown, data: {message: string}) => {
     error.value = data.message;
+  });
+
+  onSteamEvent('steam:saved-accounts-updated', (_event: unknown, data: SavedAccountMeta[]) => {
+    savedAccounts.value = data;
+  });
+
+  onSteamEvent('steam:inventory-updated', () => {
+    if (switchingAccount.value) {
+      switchingAccount.value = false;
+    }
   });
 }
 
@@ -84,6 +106,20 @@ export function useSteam() {
     error.value = null;
   }
 
+  async function getSavedAccounts() {
+    savedAccounts.value = await steamGetSavedAccounts();
+  }
+
+  async function switchAccount(steamId: string) {
+    switchingAccount.value = true;
+    error.value = null;
+    await steamSwitchAccount(steamId);
+  }
+
+  async function removeAccount(steamId: string) {
+    await steamRemoveAccount(steamId);
+  }
+
   return {
     authState: readonly(authState),
     userInfo: readonly(userInfo),
@@ -91,9 +127,14 @@ export function useSteam() {
     steamGuardType: readonly(steamGuardType),
     isConnected: readonly(isConnected),
     restoringSession: readonly(restoringSession),
+    savedAccounts: readonly(savedAccounts),
+    switchingAccount: readonly(switchingAccount),
     trySavedSession,
     credentialLogin,
     submitSteamGuard,
     logout,
+    getSavedAccounts,
+    switchAccount,
+    removeAccount,
   };
 }

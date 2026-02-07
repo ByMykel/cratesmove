@@ -1,9 +1,51 @@
 <script setup lang="ts">
+import {computed} from 'vue';
+import {useRouter} from 'vue-router';
 import {useSteam} from '@/composables/useSteam';
-import {LogOut, Package} from 'lucide-vue-next';
+import {Package, ChevronDown} from 'lucide-vue-next';
 import ThemeToggle from '@/components/ThemeToggle.vue';
 
-const {userInfo, logout} = useSteam();
+const {userInfo, savedAccounts, logout, switchAccount} = useSteam();
+const router = useRouter();
+
+const otherAccounts = computed(() =>
+  savedAccounts.value.filter(a => a.steamId !== userInfo.value?.steamId),
+);
+
+const iconUi = {itemLeadingIcon: 'size-4'};
+
+const dropdownItems = computed(() => {
+  const items: any[][] = [];
+
+  // Accounts group
+  items.push([
+    {type: 'label', label: 'Accounts'},
+    ...otherAccounts.value.map(account => ({
+      label: account.personaName,
+      avatar: account.avatarUrl ? {src: account.avatarUrl, alt: account.personaName} : undefined,
+      onSelect: () => switchAccount(account.steamId),
+    })),
+    {
+      label: 'Add account',
+      icon: 'i-lucide-user-plus',
+      ui: iconUi,
+      onSelect: () => router.push('/login?addAccount=true'),
+    },
+  ]);
+
+  // Sign out group
+  items.push([
+    {
+      label: 'Sign out',
+      icon: 'i-lucide-log-out',
+      color: 'error' as const,
+      ui: iconUi,
+      onSelect: () => logout(),
+    },
+  ]);
+
+  return items;
+});
 </script>
 
 <template>
@@ -16,26 +58,23 @@ const {userInfo, logout} = useSteam();
     <div class="flex items-center gap-3">
       <ThemeToggle />
 
-      <template v-if="userInfo">
-        <img
-          v-if="userInfo.avatarUrl"
-          :src="userInfo.avatarUrl"
-          class="h-7 w-7 rounded-full ring-1 ring-(--ui-border)"
-          alt="avatar"
-        />
-        <span class="text-sm text-(--ui-text-muted)">{{ userInfo.personaName }}</span>
-
+      <UDropdownMenu v-if="userInfo" :items="dropdownItems">
         <UButton
           variant="ghost"
           color="neutral"
-          square
-          size="xs"
-          class="text-(--ui-text-muted) hover:text-(--ui-text)"
-          @click="logout"
+          size="sm"
+          class="gap-2 text-(--ui-text-muted) hover:text-(--ui-text)"
         >
-          <LogOut class="h-3.5 w-3.5" />
+          <img
+            v-if="userInfo.avatarUrl"
+            :src="userInfo.avatarUrl"
+            class="h-6 w-6 rounded-full ring-1 ring-(--ui-border)"
+            alt="avatar"
+          />
+          <span class="text-sm">{{ userInfo.personaName }}</span>
+          <ChevronDown class="h-3.5 w-3.5" />
         </UButton>
-      </template>
+      </UDropdownMenu>
     </div>
   </header>
 </template>

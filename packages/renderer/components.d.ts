@@ -23,6 +23,7 @@ declare module 'vue' {
     RenameDialog: typeof import('./src/components/RenameDialog.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    SavedAccountList: typeof import('./src/components/SavedAccountList.vue')['default']
     StorageUnitCard: typeof import('./src/components/StorageUnitCard.vue')['default']
     ThemeToggle: typeof import('./src/components/ThemeToggle.vue')['default']
     ToastContainer: typeof import('./src/components/ToastContainer.vue')['default']

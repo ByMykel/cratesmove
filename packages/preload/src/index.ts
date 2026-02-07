@@ -48,6 +48,19 @@ function steamRenameStorage(args: {storageId: string; name: string}) {
   return ipcRenderer.invoke('steam:rename-storage', args);
 }
 
+// Multi-account
+function steamGetSavedAccounts() {
+  return ipcRenderer.invoke('steam:get-saved-accounts');
+}
+
+function steamSwitchAccount(steamId: string) {
+  return ipcRenderer.invoke('steam:switch-account', steamId);
+}
+
+function steamRemoveAccount(steamId: string) {
+  return ipcRenderer.invoke('steam:remove-account', steamId);
+}
+
 // Steam Event Listener
 function onSteamEvent(channel: string, callback: (...args: any[]) => void) {
   ipcRenderer.on(channel, callback);
@@ -70,5 +83,8 @@ export {
   steamDepositToStorage,
   steamRetrieveFromStorage,
   steamRenameStorage,
+  steamGetSavedAccounts,
+  steamSwitchAccount,
+  steamRemoveAccount,
   onSteamEvent,
 };

@@ -1,9 +1,18 @@
 <script setup lang="ts">
+import {ref, onMounted, computed} from 'vue';
 import CredentialLogin from '@/components/CredentialLogin.vue';
+import SavedAccountList from '@/components/SavedAccountList.vue';
 import {Package, Loader2} from 'lucide-vue-next';
 import {useSteam} from '@/composables/useSteam';
 
-const {error, restoringSession} = useSteam();
+const {error, restoringSession, savedAccounts, getSavedAccounts} = useSteam();
+
+const showCredentialForm = ref(false);
+const hasSavedAccounts = computed(() => savedAccounts.value.length > 0);
+
+onMounted(async () => {
+  await getSavedAccounts();
+});
 </script>
 
 <template>
@@ -23,8 +32,36 @@ const {error, restoringSession} = useSteam();
         <p class="text-sm text-(--ui-text-muted)">Restoring session...</p>
       </div>
 
+      <!-- Saved accounts list -->
+      <template v-else-if="hasSavedAccounts && !showCredentialForm">
+        <SavedAccountList />
+
+        <UButton
+          variant="ghost"
+          color="neutral"
+          block
+          class="mt-3"
+          @click="showCredentialForm = true"
+        >
+          Sign in with a different account
+        </UButton>
+      </template>
+
       <!-- Credential login form -->
-      <CredentialLogin v-else />
+      <template v-else>
+        <CredentialLogin />
+
+        <UButton
+          v-if="hasSavedAccounts"
+          variant="ghost"
+          color="neutral"
+          block
+          class="mt-3"
+          @click="showCredentialForm = false"
+        >
+          Back to saved accounts
+        </UButton>
+      </template>
 
       <p v-if="error && !restoringSession" class="mt-4 text-center text-sm text-red-500">
         {{ error }}

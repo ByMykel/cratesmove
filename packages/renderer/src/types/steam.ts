@@ -30,6 +30,13 @@ export interface UserInfo {
   avatarUrl: string;
 }
 
+export interface SavedAccountMeta {
+  steamId: string;
+  personaName: string;
+  avatarUrl: string;
+  addedAt: number;
+}
+
 export type AuthState =
   | 'disconnected'
   | 'connecting'
