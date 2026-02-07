@@ -100,7 +100,8 @@ async function getListOfFilesFromEachWorkspace() {
     const pkgPath = join(path, 'package.json');
     const {default: workspacePkg} = await import(pathToFileURL(pkgPath), {with: {type: 'json'}});
 
-    let patterns = workspacePkg.files || ['dist/**', 'package.json'];
+    let patterns = workspacePkg.files || ['dist/**'];
+    patterns = [...new Set([...patterns, 'package.json'])];
 
     patterns = patterns.map(p => join('node_modules', name, p));
     allFilesToInclude.push(...patterns);
