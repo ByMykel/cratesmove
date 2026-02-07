@@ -30,7 +30,7 @@ jobs:
 
       - run: npm run build && npx electron-builder build --config electron-builder.mjs --publish never
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: dist-${{ matrix.platform }}
           path: |
