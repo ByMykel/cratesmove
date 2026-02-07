@@ -48,6 +48,19 @@ function steamRenameStorage(args: {storageId: string; name: string}) {
   return ipcRenderer.invoke('steam:rename-storage', args);
 }
 
+// App / Updates
+function getAppVersion(): Promise<string> {
+  return ipcRenderer.invoke('app:get-version');
+}
+
+function checkForUpdates() {
+  return ipcRenderer.invoke('app:check-for-updates');
+}
+
+function installUpdate() {
+  return ipcRenderer.invoke('app:install-update');
+}
+
 // Multi-account
 function steamGetSavedAccounts() {
   return ipcRenderer.invoke('steam:get-saved-accounts');
@@ -87,4 +100,7 @@ export {
   steamSwitchAccount,
   steamRemoveAccount,
   onSteamEvent,
+  getAppVersion,
+  checkForUpdates,
+  installUpdate,
 };

@@ -6,7 +6,8 @@ import {watch, onMounted} from 'vue';
 import {useRouter} from 'vue-router';
 import {onSteamEvent} from '@app/preload';
 
-const {isConnected, switchingAccount, savedAccounts, trySavedSession, getSavedAccounts} = useSteam();
+const {isConnected, switchingAccount, savedAccounts, trySavedSession, getSavedAccounts} =
+  useSteam();
 const {error: showError} = useToast();
 const router = useRouter();
 

@@ -2,10 +2,19 @@
 import {computed} from 'vue';
 import {useRouter} from 'vue-router';
 import {useSteam} from '@/composables/useSteam';
+import {useUpdater} from '@/composables/useUpdater';
 import {Package, ChevronDown} from 'lucide-vue-next';
 import ThemeToggle from '@/components/ThemeToggle.vue';
 
 const {userInfo, savedAccounts, logout, switchAccount} = useSteam();
+const {
+  appVersion,
+  updateDownloaded,
+  updateVersion,
+  downloadProgress,
+  updateAvailable,
+  installUpdate,
+} = useUpdater();
 const router = useRouter();
 
 const otherAccounts = computed(() =>
@@ -13,6 +22,10 @@ const otherAccounts = computed(() =>
 );
 
 const iconUi = {itemLeadingIcon: 'size-4'};
+
+const isDownloading = computed(
+  () => updateAvailable.value && !updateDownloaded.value && downloadProgress.value > 0,
+);
 
 const dropdownItems = computed(() => {
   const items: any[][] = [];
@@ -32,6 +45,32 @@ const dropdownItems = computed(() => {
       onSelect: () => router.push('/login?addAccount=true'),
     },
   ]);
+
+  // Update group
+  const updateItems: any[] = [];
+  if (updateDownloaded.value) {
+    updateItems.push({
+      label: `Update to v${updateVersion.value}`,
+      icon: 'i-lucide-download',
+      ui: iconUi,
+      onSelect: () => installUpdate(),
+    });
+  } else if (isDownloading.value) {
+    updateItems.push({
+      label: `Downloading update... ${downloadProgress.value}%`,
+      icon: 'i-lucide-loader-2',
+      ui: iconUi,
+      disabled: true,
+    });
+  } else {
+    updateItems.push({
+      label: `Version ${appVersion.value}`,
+      icon: 'i-lucide-check',
+      ui: iconUi,
+      disabled: true,
+    });
+  }
+  items.push(updateItems);
 
   // Sign out group
   items.push([
@@ -63,7 +102,7 @@ const dropdownItems = computed(() => {
           variant="ghost"
           color="neutral"
           size="sm"
-          class="gap-2 text-(--ui-text-muted) hover:text-(--ui-text)"
+          class="relative gap-2 text-(--ui-text-muted) hover:text-(--ui-text)"
         >
           <img
             v-if="userInfo.avatarUrl"
@@ -72,6 +111,10 @@ const dropdownItems = computed(() => {
             alt="avatar"
           />
           <span class="text-sm">{{ userInfo.personaName }}</span>
+          <span
+            v-if="updateDownloaded"
+            class="absolute top-0.5 right-0.5 h-2 w-2 rounded-full bg-(--ui-primary)"
+          />
           <ChevronDown class="h-3.5 w-3.5" />
         </UButton>
       </UDropdownMenu>

@@ -1,53 +1,93 @@
 import {AppModule} from '../AppModule.js';
+import {BrowserWindow, ipcMain, app} from 'electron';
 import electronUpdater, {type AppUpdater, type Logger} from 'electron-updater';
-
-type DownloadNotification = Parameters<AppUpdater['checkForUpdatesAndNotify']>[0];
 
 export class AutoUpdater implements AppModule {
   readonly #logger: Logger | null;
-  readonly #notification: DownloadNotification;
 
-  constructor({
-    logger = null,
-    downloadNotification = undefined,
-  }: {
-    logger?: Logger | null | undefined;
-    downloadNotification?: DownloadNotification;
-  } = {}) {
+  constructor({logger = null}: {logger?: Logger | null | undefined} = {}) {
     this.#logger = logger;
-    this.#notification = downloadNotification;
   }
 
-  async enable(): Promise<void> {
-    await this.runAutoUpdater();
+  enable(): void {
+    this.#registerIpcHandlers();
+    this.#registerUpdaterEvents();
+    this.#checkOnStartup();
   }
 
-  getAutoUpdater(): AppUpdater {
+  #getAutoUpdater(): AppUpdater {
     // Using destructuring to access autoUpdater due to the CommonJS module of 'electron-updater'.
     // It is a workaround for ESM compatibility issues, see https://github.com/electron-userland/electron-builder/issues/7976.
     const {autoUpdater} = electronUpdater;
     return autoUpdater;
   }
 
-  async runAutoUpdater() {
-    const updater = this.getAutoUpdater();
-    try {
-      updater.logger = this.#logger || null;
-      updater.fullChangelog = true;
+  #registerIpcHandlers() {
+    ipcMain.handle('app:get-version', () => app.getVersion());
 
-      if (import.meta.env.VITE_DISTRIBUTION_CHANNEL) {
-        updater.channel = import.meta.env.VITE_DISTRIBUTION_CHANNEL;
-      }
-
-      return await updater.checkForUpdatesAndNotify(this.#notification);
-    } catch (error) {
-      if (error instanceof Error) {
-        if (error.message.includes('No published versions')) {
+    ipcMain.handle('app:check-for-updates', async () => {
+      try {
+        await this.#getAutoUpdater().checkForUpdates();
+      } catch (error) {
+        if (error instanceof Error && error.message.includes('No published versions')) {
           return null;
         }
+        throw error;
       }
+    });
 
-      throw error;
+    ipcMain.handle('app:install-update', () => {
+      this.#getAutoUpdater().quitAndInstall();
+    });
+  }
+
+  #registerUpdaterEvents() {
+    const updater = this.#getAutoUpdater();
+    updater.logger = this.#logger || null;
+    updater.fullChangelog = true;
+    updater.autoDownload = true;
+    updater.autoInstallOnAppQuit = true;
+
+    if (import.meta.env.VITE_DISTRIBUTION_CHANNEL) {
+      updater.channel = import.meta.env.VITE_DISTRIBUTION_CHANNEL;
+    }
+
+    updater.on('update-available', info => {
+      this.#sendToRenderer('app:update-available', {version: info.version});
+    });
+
+    updater.on('update-not-available', () => {
+      this.#sendToRenderer('app:update-not-available', {});
+    });
+
+    updater.on('download-progress', progress => {
+      this.#sendToRenderer('app:update-progress', {percent: progress.percent});
+    });
+
+    updater.on('update-downloaded', info => {
+      this.#sendToRenderer('app:update-downloaded', {version: info.version});
+    });
+
+    updater.on('error', error => {
+      this.#sendToRenderer('app:update-error', {message: error.message});
+    });
+  }
+
+  async #checkOnStartup() {
+    try {
+      await this.#getAutoUpdater().checkForUpdates();
+    } catch (error) {
+      if (error instanceof Error && !error.message.includes('No published versions')) {
+        this.#sendToRenderer('app:update-error', {message: error.message});
+      }
+    }
+  }
+
+  #sendToRenderer(channel: string, data: unknown) {
+    for (const window of BrowserWindow.getAllWindows()) {
+      if (!window.isDestroyed()) {
+        window.webContents.send(channel, data);
+      }
     }
   }
 }
