@@ -1,14 +1,46 @@
 version: 2
 updates:
-  # Maintain dependencies for GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
 
-  # Maintain dependencies for npm
   - package-ecosystem: "npm"
     versioning-strategy: increase
     directory: "/"
     schedule:
       interval: "daily"
+    groups:
+      steam:
+        patterns:
+          - "steam-user"
+          - "steam-session"
+          - "globaloffensive"
+          - "cs2-inventory-resolver"
+      vue:
+        patterns:
+          - "vue"
+          - "vue-router"
+          - "vue-tsc"
+          - "@vueuse/*"
+          - "@nuxt/*"
+          - "eslint-plugin-vue"
+          - "@vitejs/plugin-vue"
+      electron:
+        patterns:
+          - "electron"
+          - "electron-builder"
+          - "electron-updater"
+          - "electron-devtools-installer"
+          - "@app/electron-versions"
+      linting:
+        patterns:
+          - "eslint"
+          - "eslint-*"
+          - "@eslint/*"
+          - "prettier"
+          - "typescript-eslint"
+      build-tools:
+        patterns:
+          - "vite"
+          - "typescript"
