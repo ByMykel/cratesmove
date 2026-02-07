@@ -7,7 +7,7 @@ import SteamUser from 'steam-user';
 import GlobalOffensive from 'globaloffensive';
 import {LoginSession, EAuthTokenPlatformType, EAuthSessionGuardType} from 'steam-session';
 
-import {loadItemData, resolveItem, type ResolvedItemData} from './ItemDataService.js';
+import {resolveItem, getAttributeUint32, type ResolvedItemData} from 'cs2-inventory-resolver';
 
 interface CredentialLoginArgs {
   username: string;
@@ -101,14 +101,9 @@ class SteamConnection implements AppModule {
       this.#sendToRenderer('steam:auth-state', {state: 'disconnected'});
     });
 
-    this.#csgo.on('connectedToGC', async () => {
+    this.#csgo.on('connectedToGC', () => {
       console.log(
         '[SteamConnection] Connected to GC, inventory length:',
-        this.#csgo.inventory?.length ?? 0,
-      );
-      await loadItemData();
-      console.log(
-        '[SteamConnection] Item data loaded, inventory length:',
         this.#csgo.inventory?.length ?? 0,
       );
       this.#sendInventoryUpdate();
@@ -261,7 +256,7 @@ class SteamConnection implements AppModule {
       if (item.def_index === 1201) continue; // Storage units
       if (item.casket_id) continue; // Items inside a storage unit
       if (SteamConnection.#EXCLUDED_IDS.has(String(item.id))) continue; // Known system items
-      if (this.#getAttributeUint32(item, 277) === 1) continue; // Free reward items
+      if (getAttributeUint32(item, 277) === 1) continue; // Free reward items
 
       const formatted = this.#formatItem(item);
       formatted.movable = this.#isItemMovable(item, formatted._resolved);
@@ -378,34 +373,11 @@ class SteamConnection implements AppModule {
     this.#csgo.nameItem(0, storageId, name);
   }
 
-  #getAttributeUint32(item: any, attrDefIndex: number): number | undefined {
-    const attrib = (item.attribute || []).find((a: any) => a.def_index === attrDefIndex);
-    if (!attrib?.value_bytes) return undefined;
-    // value_bytes is a Buffer at runtime, but serializes as {type: "Buffer", data: [...]}
-    const buf = Buffer.isBuffer(attrib.value_bytes)
-      ? attrib.value_bytes
-      : Buffer.from(attrib.value_bytes.data || []);
-    if (buf.length < 4) return undefined;
-    return buf.readUInt32LE(0);
-  }
-
   #formatItem(item: any) {
     const defIndex = item.def_index ?? 0;
     const paintIndex = item.paint_index ?? 0;
 
-    // Extract attributes from raw attribute[] array
-    const musicIndex = this.#getAttributeUint32(item, 166);
-    const graffitiTint = this.#getAttributeUint32(item, 233);
-    const keychainIndex = this.#getAttributeUint32(item, 299);
-
-    const resolved = resolveItem({
-      def_index: defIndex,
-      paint_index: paintIndex,
-      music_index: musicIndex,
-      graffiti_tint: graffitiTint,
-      keychain_index: keychainIndex,
-      stickers: item.stickers,
-    });
+    const resolved = resolveItem(item);
 
     if (!resolved) {
       console.warn(
