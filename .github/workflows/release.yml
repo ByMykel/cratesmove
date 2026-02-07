@@ -28,7 +28,7 @@ jobs:
 
       - run: npm ci
 
-      - run: npm run compile
+      - run: npm run build && electron-builder build --config electron-builder.mjs --publish never
 
       - uses: actions/upload-artifact@v4
         with:

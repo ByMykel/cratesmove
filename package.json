@@ -2,6 +2,10 @@
   "name": "cratesmove",
   "description": "CS2 Storage Unit Manager",
   "version": "0.1.0",
+  "author": {
+    "name": "ByMykel",
+    "email": "bymykel5@gmail.com"
+  },
   "private": true,
   "type": "module",
   "main": "packages/entry-point.mjs",
