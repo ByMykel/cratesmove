@@ -40,6 +40,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <router-view />
-  <ToastContainer />
+  <UApp>
+    <router-view />
+    <ToastContainer />
+  </UApp>
 </template>

@@ -6,8 +6,6 @@ import ItemGrid from '@/components/ItemGrid.vue';
 import MoveItemsDialog from '@/components/MoveItemsDialog.vue';
 import RenameDialog from '@/components/RenameDialog.vue';
 import OperationProgress from '@/components/OperationProgress.vue';
-import {Button} from '@/components/ui/button';
-import {Badge} from '@/components/ui/badge';
 import {useInventory} from '@/composables/useInventory';
 import {useStorageUnits} from '@/composables/useStorageUnits';
 import {ArrowLeft, Plus, Pencil, ArrowUpFromLine, Loader2} from 'lucide-vue-next';
@@ -85,32 +83,32 @@ async function refresh() {
   <AppLayout>
     <div class="flex flex-1 flex-col overflow-hidden">
       <!-- Header -->
-      <div class="flex items-center gap-3 border-b border-border px-4 py-2">
-        <Button variant="ghost" size="icon" @click="router.push('/inventory')">
+      <div class="flex items-center gap-3 border-b border-(--ui-border) px-4 py-2">
+        <UButton variant="ghost" color="neutral" square @click="router.push('/inventory')">
           <ArrowLeft class="h-4 w-4" />
-        </Button>
+        </UButton>
 
         <div class="flex-1">
           <h2 class="text-sm font-semibold">{{ unitName }}</h2>
-          <p class="text-xs text-muted-foreground">{{ contents.length }} items</p>
+          <p class="text-xs text-(--ui-text-muted)">{{ contents.length }} items</p>
         </div>
 
-        <Badge variant="secondary"> {{ contents.length }}/1000 </Badge>
+        <UBadge variant="subtle" color="neutral"> {{ contents.length }}/1000 </UBadge>
 
-        <Button variant="outline" size="sm" @click="showRenameDialog = true">
+        <UButton variant="outline" color="neutral" size="sm" @click="showRenameDialog = true">
           <Pencil class="h-3.5 w-3.5" />
           <span>Rename</span>
-        </Button>
+        </UButton>
 
-        <Button variant="outline" size="sm" @click="showAddDialog = true">
+        <UButton variant="outline" color="neutral" size="sm" @click="showAddDialog = true">
           <Plus class="h-3.5 w-3.5" />
           <span>Add Items</span>
-        </Button>
+        </UButton>
       </div>
 
       <!-- Contents -->
       <div v-if="loading" class="flex flex-1 items-center justify-center">
-        <Loader2 class="h-8 w-8 animate-spin text-muted-foreground" />
+        <Loader2 class="h-8 w-8 animate-spin text-(--ui-text-muted)" />
       </div>
 
       <ItemGrid
@@ -123,13 +121,13 @@ async function refresh() {
       <!-- Retrieve bar -->
       <div
         v-if="selectedIds.size > 0"
-        class="sticky bottom-0 flex items-center justify-between border-t border-border bg-background px-4 py-3"
+        class="sticky bottom-0 flex items-center justify-between border-t border-(--ui-border) bg-(--ui-bg) px-4 py-3"
       >
         <span class="text-sm font-medium"> {{ selectedIds.size }} items selected </span>
-        <Button @click="handleRetrieve">
+        <UButton @click="handleRetrieve">
           <ArrowUpFromLine class="h-4 w-4" />
           <span>Retrieve from Storage</span>
-        </Button>
+        </UButton>
       </div>
     </div>
 

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type {InventoryItem} from '@/types/steam';
 import ItemCard from './ItemCard.vue';
-import {ScrollArea} from '@/components/ui/scroll-area';
 
 defineProps<{
   items: InventoryItem[];
@@ -19,10 +18,10 @@ function handleClick(item: InventoryItem) {
 </script>
 
 <template>
-  <ScrollArea class="h-full">
+  <div class="h-full overflow-y-auto">
     <div
-      v-if="items.length === 0"
-      class="flex h-64 items-center justify-center text-muted-foreground"
+      v-if="!items || items.length === 0"
+      class="flex h-64 items-center justify-center text-(--ui-text-muted)"
     >
       No items found
     </div>
@@ -35,5 +34,5 @@ function handleClick(item: InventoryItem) {
         @click="handleClick(item)"
       />
     </div>
-  </ScrollArea>
+  </div>
 </template>

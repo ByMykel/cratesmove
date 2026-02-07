@@ -1,17 +1,6 @@
 <script setup lang="ts">
 import {ref, computed} from 'vue';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import {Button} from '@/components/ui/button';
-import {Input} from '@/components/ui/input';
 import ItemCard from './ItemCard.vue';
-import {ScrollArea} from '@/components/ui/scroll-area';
 import type {InventoryItem} from '@/types/steam';
 
 const props = defineProps<{
@@ -63,18 +52,16 @@ function handleOpenChange(val: boolean) {
 </script>
 
 <template>
-  <Dialog :open="open" @update:open="handleOpenChange">
-    <DialogContent class="max-w-2xl">
-      <DialogHeader>
-        <DialogTitle>Add Items to {{ storageName }}</DialogTitle>
-        <DialogDescription>
-          Select items from your inventory to deposit into this storage unit.
-        </DialogDescription>
-      </DialogHeader>
+  <UModal
+    :open="open"
+    @update:open="handleOpenChange"
+    :title="`Add Items to ${storageName}`"
+    description="Select items from your inventory to deposit into this storage unit."
+  >
+    <template #body>
+      <UInput v-model="search" placeholder="Search items..." class="mb-2" />
 
-      <Input v-model="search" placeholder="Search items..." class="mb-2" />
-
-      <ScrollArea class="h-80">
+      <div class="h-80 overflow-y-auto">
         <div class="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-2 p-1">
           <ItemCard
             v-for="item in filteredItems"
@@ -84,14 +71,16 @@ function handleOpenChange(val: boolean) {
             @click="toggle(item.id)"
           />
         </div>
-      </ScrollArea>
+      </div>
+    </template>
 
-      <DialogFooter>
-        <Button variant="outline" @click="handleOpenChange(false)"> Cancel </Button>
-        <Button :disabled="selectedIds.size === 0" @click="handleConfirm">
+    <template #footer>
+      <div class="flex justify-end gap-2">
+        <UButton variant="outline" color="neutral" @click="handleOpenChange(false)"> Cancel </UButton>
+        <UButton :disabled="selectedIds.size === 0" @click="handleConfirm">
           Add {{ selectedIds.size }} items
-        </Button>
-      </DialogFooter>
-    </DialogContent>
-  </Dialog>
+        </UButton>
+      </div>
+    </template>
+  </UModal>
 </template>

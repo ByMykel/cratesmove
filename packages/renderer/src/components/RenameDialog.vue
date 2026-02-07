@@ -1,15 +1,5 @@
 <script setup lang="ts">
 import {ref, watch} from 'vue';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import {Button} from '@/components/ui/button';
-import {Input} from '@/components/ui/input';
 
 const props = defineProps<{
   open: boolean;
@@ -38,24 +28,26 @@ function handleConfirm() {
 </script>
 
 <template>
-  <Dialog :open="open" @update:open="emits('update:open', $event)">
-    <DialogContent class="max-w-sm">
-      <DialogHeader>
-        <DialogTitle>Rename Storage Unit</DialogTitle>
-        <DialogDescription> Enter a new name for this storage unit. </DialogDescription>
-      </DialogHeader>
-
-      <Input
+  <UModal
+    :open="open"
+    @update:open="emits('update:open', $event)"
+    title="Rename Storage Unit"
+    description="Enter a new name for this storage unit."
+  >
+    <template #body>
+      <UInput
         v-model="name"
         placeholder="Storage unit name"
-        maxlength="36"
+        :maxlength="36"
         @keydown.enter="handleConfirm"
       />
+    </template>
 
-      <DialogFooter>
-        <Button variant="outline" @click="emits('update:open', false)"> Cancel </Button>
-        <Button :disabled="!name.trim()" @click="handleConfirm"> Rename </Button>
-      </DialogFooter>
-    </DialogContent>
-  </Dialog>
+    <template #footer>
+      <div class="flex justify-end gap-2">
+        <UButton variant="outline" color="neutral" @click="emits('update:open', false)"> Cancel </UButton>
+        <UButton :disabled="!name.trim()" @click="handleConfirm"> Rename </UButton>
+      </div>
+    </template>
+  </UModal>
 </template>

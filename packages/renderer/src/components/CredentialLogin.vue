@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import {ref} from 'vue';
-import {Button} from '@/components/ui/button';
-import {Input} from '@/components/ui/input';
 import {useSteam} from '@/composables/useSteam';
 import {Loader2} from 'lucide-vue-next';
 
@@ -29,27 +27,27 @@ async function handleSteamGuard() {
     class="flex flex-col gap-4"
     @submit.prevent="handleSteamGuard"
   >
-    <p class="text-sm text-muted-foreground">
+    <p class="text-sm text-(--ui-text-muted)">
       Enter the Steam Guard code sent to your
       {{ steamGuardType === 'email' ? 'email' : 'authenticator' }}
     </p>
 
-    <Input
+    <UInput
       v-model="steamGuardCode"
       placeholder="Steam Guard code"
       class="text-center text-lg tracking-widest"
-      maxlength="5"
+      :maxlength="5"
       autofocus
     />
 
-    <Button type="submit" :disabled="!steamGuardCode"> Verify </Button>
+    <UButton type="submit" :disabled="!steamGuardCode" block> Verify </UButton>
   </form>
 
   <!-- Login Form -->
   <form v-else class="flex flex-col gap-4" @submit.prevent="handleLogin">
     <div class="flex flex-col gap-2">
-      <Input v-model="username" placeholder="Username" autocomplete="username" />
-      <Input
+      <UInput v-model="username" placeholder="Username" autocomplete="username" />
+      <UInput
         v-model="password"
         type="password"
         placeholder="Password"
@@ -57,13 +55,13 @@ async function handleSteamGuard() {
       />
     </div>
 
-    <p v-if="error" class="text-sm text-destructive-foreground">
+    <p v-if="error" class="text-sm text-red-500">
       {{ error }}
     </p>
 
-    <Button type="submit" :disabled="!username || !password || authState === 'connecting'">
+    <UButton type="submit" :disabled="!username || !password || authState === 'connecting'" block>
       <Loader2 v-if="authState === 'connecting'" class="h-4 w-4 animate-spin" />
       <span v-else>Sign In</span>
-    </Button>
+    </UButton>
   </form>
 </template>

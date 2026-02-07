@@ -17,6 +17,12 @@
     },
     "types": ["vite/client"]
   },
-  "include": ["src/**/*.ts", "src/**/*.vue", "../../types/**/*.d.ts"],
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.vue",
+    "../../types/**/*.d.ts",
+    ".nuxt/nuxt-ui.d.ts",
+    ".nuxt/nuxt-ui-imports.d.ts"
+  ],
   "exclude": ["node_modules", "dist"]
 }
