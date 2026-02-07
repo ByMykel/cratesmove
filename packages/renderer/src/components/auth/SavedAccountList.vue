@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import {useSteam} from '@/composables/useSteam';
-import {Loader2, X} from 'lucide-vue-next';
+import { useSteam } from '@/composables/useSteam';
+import { Loader2, X } from 'lucide-vue-next';
 
-const {savedAccounts, switchingAccount, switchAccount, removeAccount} = useSteam();
+const { savedAccounts, switchingAccount, switchAccount, removeAccount } = useSteam();
 </script>
 
 <template>

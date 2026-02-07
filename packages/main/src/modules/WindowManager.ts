@@ -1,11 +1,11 @@
-import type {AppModule} from '../AppModule.js';
-import {ModuleContext} from '../ModuleContext.js';
-import {BrowserWindow} from 'electron';
-import type {AppInitConfig} from '../AppInitConfig.js';
+import type { AppModule } from '../AppModule.js';
+import { ModuleContext } from '../ModuleContext.js';
+import { BrowserWindow } from 'electron';
+import type { AppInitConfig } from '../AppInitConfig.js';
 
 class WindowManager implements AppModule {
-  readonly #preload: {path: string};
-  readonly #renderer: {path: string} | URL;
+  readonly #preload: { path: string };
+  readonly #renderer: { path: string } | URL;
   readonly #openDevTools;
 
   constructor({
@@ -20,7 +20,7 @@ class WindowManager implements AppModule {
     this.#openDevTools = openDevTools;
   }
 
-  async enable({app}: ModuleContext): Promise<void> {
+  async enable({ app }: ModuleContext): Promise<void> {
     await app.whenReady();
     await this.restoreOrCreateWindow(true);
     app.on('second-instance', () => this.restoreOrCreateWindow(true));
@@ -33,7 +33,7 @@ class WindowManager implements AppModule {
       webPreferences: {
         nodeIntegration: false,
         contextIsolation: true,
-        sandbox: false, // Sandbox disabled because the demo of preload script depend on the Node.js api
+        sandbox: false, // Sandbox disabled because preload needs Node.js crypto and fs access
         webviewTag: false, // The webview tag is not recommended. Consider alternatives like an iframe or Electron's BrowserView. @see https://www.electronjs.org/docs/latest/api/webview-tag#warning
         preload: this.#preload.path,
       },

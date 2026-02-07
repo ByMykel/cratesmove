@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import {useTheme} from '@/composables/useTheme';
-import {Sun, Moon} from 'lucide-vue-next';
+import { useTheme } from '@/composables/useTheme';
+import { Sun, Moon } from 'lucide-vue-next';
 
-const {preference, resolvedTheme} = useTheme();
+const { preference, resolvedTheme } = useTheme();
 
-const iconUi = {itemLeadingIcon: 'size-4'};
+const iconUi = { itemLeadingIcon: 'size-4' };
 
 const options = [
-  {label: 'Light', value: 'light' as const, icon: 'i-lucide-sun'},
-  {label: 'Dark', value: 'dark' as const, icon: 'i-lucide-moon'},
-  {label: 'System', value: 'system' as const, icon: 'i-lucide-monitor'},
+  { label: 'Light', value: 'light' as const, icon: 'i-lucide-sun' },
+  { label: 'Dark', value: 'dark' as const, icon: 'i-lucide-moon' },
+  { label: 'System', value: 'system' as const, icon: 'i-lucide-monitor' },
 ];
 </script>
 

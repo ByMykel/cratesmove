@@ -1,4 +1,4 @@
-import {ref, readonly} from 'vue';
+import { ref, readonly } from 'vue';
 import {
   onSteamEvent,
   steamCredentialLogin,
@@ -9,7 +9,7 @@ import {
   steamSwitchAccount,
   steamRemoveAccount,
 } from '@app/preload';
-import type {AuthState, UserInfo, SavedAccountMeta} from '@/types/steam';
+import type { AuthState, UserInfo, SavedAccountMeta } from '@/types/steam';
 
 const authState = ref<AuthState>('disconnected');
 const userInfo = ref<UserInfo | null>(null);
@@ -26,31 +26,34 @@ function registerListeners() {
   if (listenersRegistered) return;
   listenersRegistered = true;
 
-  onSteamEvent('steam:auth-state', (_event: unknown, data: {state: AuthState; error?: string}) => {
-    authState.value = data.state;
-    if (data.error) {
-      error.value = data.error;
-    }
-    if (data.state === 'connected') {
-      isConnected.value = true;
-      error.value = null;
-      restoringSession.value = false;
-      // Don't reset switchingAccount here — wait for inventory-updated so the
-      // overlay stays until the new user's inventory is actually loaded
-    } else if (data.state === 'error') {
-      isConnected.value = false;
-      restoringSession.value = false;
-      switchingAccount.value = false;
-    } else if (data.state === 'disconnected') {
-      isConnected.value = false;
-      restoringSession.value = false;
-      // Don't reset switchingAccount on disconnect — it's expected during a switch
-    }
-  });
+  onSteamEvent(
+    'steam:auth-state',
+    (_event: unknown, data: { state: AuthState; error?: string }) => {
+      authState.value = data.state;
+      if (data.error) {
+        error.value = data.error;
+      }
+      if (data.state === 'connected') {
+        isConnected.value = true;
+        error.value = null;
+        restoringSession.value = false;
+        // Don't reset switchingAccount here — wait for inventory-updated so the
+        // overlay stays until the new user's inventory is actually loaded
+      } else if (data.state === 'error') {
+        isConnected.value = false;
+        restoringSession.value = false;
+        switchingAccount.value = false;
+      } else if (data.state === 'disconnected') {
+        isConnected.value = false;
+        restoringSession.value = false;
+        // Don't reset switchingAccount on disconnect — it's expected during a switch
+      }
+    },
+  );
 
   onSteamEvent(
     'steam:steam-guard-required',
-    (_event: unknown, data: {type: 'email' | 'mobile'}) => {
+    (_event: unknown, data: { type: 'email' | 'mobile' }) => {
       steamGuardType.value = data.type;
       authState.value = 'waiting-for-steam-guard';
     },
@@ -60,7 +63,7 @@ function registerListeners() {
     userInfo.value = data;
   });
 
-  onSteamEvent('steam:error', (_event: unknown, data: {message: string}) => {
+  onSteamEvent('steam:error', (_event: unknown, data: { message: string }) => {
     error.value = data.message;
   });
 
@@ -91,7 +94,12 @@ export function useSteam() {
   async function credentialLogin(username: string, password: string) {
     authState.value = 'connecting';
     error.value = null;
-    await steamCredentialLogin({username, password});
+    try {
+      await steamCredentialLogin({ username, password });
+    } catch (err: unknown) {
+      error.value = err instanceof Error ? err.message : String(err);
+      authState.value = 'error';
+    }
   }
 
   async function submitSteamGuard(code: string) {
@@ -113,7 +121,12 @@ export function useSteam() {
   async function switchAccount(steamId: string) {
     switchingAccount.value = true;
     error.value = null;
-    await steamSwitchAccount(steamId);
+    try {
+      await steamSwitchAccount(steamId);
+    } catch (err: unknown) {
+      error.value = err instanceof Error ? err.message : String(err);
+      switchingAccount.value = false;
+    }
   }
 
   async function removeAccount(steamId: string) {

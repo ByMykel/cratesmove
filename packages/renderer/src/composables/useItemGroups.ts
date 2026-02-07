@@ -1,5 +1,5 @@
-import {computed, type Ref} from 'vue';
-import type {InventoryItem} from '@/types/steam';
+import { computed, type Ref } from 'vue';
+import type { InventoryItem } from '@/types/steam';
 
 export interface ItemGroup {
   market_hash_name: string;
@@ -35,5 +35,5 @@ export function useItemGroups(items: Ref<readonly InventoryItem[]>) {
       });
   });
 
-  return {groups};
+  return { groups };
 }

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type {StorageUnit} from '@/types/steam';
-import {ArrowRight, X, Archive} from 'lucide-vue-next';
-import {ref} from 'vue';
+import type { StorageUnit } from '@/types/steam';
+import { ArrowRight, X, Archive } from 'lucide-vue-next';
+import { ref } from 'vue';
 
 defineProps<{
   selectionCount: number;

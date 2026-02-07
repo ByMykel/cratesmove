@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import {computed} from 'vue';
-import {useRouter} from 'vue-router';
-import {useSteam} from '@/composables/useSteam';
-import {useUpdater} from '@/composables/useUpdater';
-import {Package, ChevronDown} from 'lucide-vue-next';
-import ThemeToggle from '@/components/ThemeToggle.vue';
+import { computed } from 'vue';
+import { useRouter } from 'vue-router';
+import { useSteam } from '@/composables/useSteam';
+import { useUpdater } from '@/composables/useUpdater';
+import { Package, ChevronDown } from 'lucide-vue-next';
+import ThemeToggle from '@/components/common/ThemeToggle.vue';
 
-const {userInfo, savedAccounts, logout, switchAccount} = useSteam();
+const { userInfo, savedAccounts, logout, switchAccount } = useSteam();
 const {
   appVersion,
   updateDownloaded,
@@ -21,21 +21,32 @@ const otherAccounts = computed(() =>
   savedAccounts.value.filter(a => a.steamId !== userInfo.value?.steamId),
 );
 
-const iconUi = {itemLeadingIcon: 'size-4'};
+interface DropdownItem {
+  type?: 'label';
+  label: string;
+  icon?: string;
+  avatar?: { src: string; alt: string };
+  ui?: Record<string, string>;
+  color?: 'error';
+  disabled?: boolean;
+  onSelect?: () => void;
+}
+
+const iconUi = { itemLeadingIcon: 'size-4' };
 
 const isDownloading = computed(
   () => updateAvailable.value && !updateDownloaded.value && downloadProgress.value > 0,
 );
 
 const dropdownItems = computed(() => {
-  const items: any[][] = [];
+  const items: DropdownItem[][] = [];
 
   // Accounts group
   items.push([
-    {type: 'label', label: 'Accounts'},
+    { type: 'label', label: 'Accounts' },
     ...otherAccounts.value.map(account => ({
       label: account.personaName,
-      avatar: account.avatarUrl ? {src: account.avatarUrl, alt: account.personaName} : undefined,
+      avatar: account.avatarUrl ? { src: account.avatarUrl, alt: account.personaName } : undefined,
       onSelect: () => switchAccount(account.steamId),
     })),
     {
@@ -47,7 +58,7 @@ const dropdownItems = computed(() => {
   ]);
 
   // Update group
-  const updateItems: any[] = [];
+  const updateItems: DropdownItem[] = [];
   if (updateDownloaded.value) {
     updateItems.push({
       label: `Update to v${updateVersion.value}`,

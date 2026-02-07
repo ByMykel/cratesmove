@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import {ref, computed} from 'vue';
-import ItemTable from './ItemTable.vue';
-import type {InventoryItem} from '@/types/steam';
+import { ref, computed } from 'vue';
+import ItemTable from '@/components/inventory/ItemTable.vue';
+import type { InventoryItem } from '@/types/steam';
+import { useSelection } from '@/composables/useSelection';
 
 const props = defineProps<{
   open: boolean;
@@ -15,7 +16,7 @@ const emits = defineEmits<{
 }>();
 
 const search = ref('');
-const selectedIds = ref<Set<string>>(new Set());
+const { selectedIds, toggle, toggleBatch: handleToggleGroup, clear } = useSelection();
 
 const filteredItems = computed(() => {
   const movable = props.items.filter(i => i.movable !== false);
@@ -26,37 +27,16 @@ const filteredItems = computed(() => {
   );
 });
 
-function toggle(id: string) {
-  const next = new Set(selectedIds.value);
-  if (next.has(id)) {
-    next.delete(id);
-  } else {
-    next.add(id);
-  }
-  selectedIds.value = next;
-}
-
-function handleToggleGroup(ids: string[]) {
-  const next = new Set(selectedIds.value);
-  const allSelected = ids.every(id => next.has(id));
-  if (allSelected) {
-    for (const id of ids) next.delete(id);
-  } else {
-    for (const id of ids) next.add(id);
-  }
-  selectedIds.value = next;
-}
-
 function handleConfirm() {
   emits('confirm', [...selectedIds.value]);
-  selectedIds.value = new Set();
+  clear();
   search.value = '';
 }
 
 function handleOpenChange(val: boolean) {
   emits('update:open', val);
   if (!val) {
-    selectedIds.value = new Set();
+    clear();
     search.value = '';
   }
 }

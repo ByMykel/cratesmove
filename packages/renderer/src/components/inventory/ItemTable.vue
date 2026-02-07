@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import {ref, computed, toRef} from 'vue';
-import type {InventoryItem} from '@/types/steam';
-import {useItemGroups, type ItemGroup} from '@/composables/useItemGroups';
-import {ChevronRight} from 'lucide-vue-next';
+import { ref, computed, toRef } from 'vue';
+import type { InventoryItem } from '@/types/steam';
+import { useItemGroups, type ItemGroup } from '@/composables/useItemGroups';
+import { ChevronRight } from 'lucide-vue-next';
 
 const props = defineProps<{
   items: readonly InventoryItem[];
@@ -14,7 +14,7 @@ const emit = defineEmits<{
   toggleGroup: [ids: string[]];
 }>();
 
-const {groups} = useItemGroups(toRef(props, 'items'));
+const { groups } = useItemGroups(toRef(() => props.items));
 
 const expandedGroups = ref<Set<string>>(new Set());
 
@@ -80,8 +80,11 @@ const hasItems = computed(() => props.items.length > 0);
         <template v-for="group in groups" :key="group.market_hash_name">
           <tr
             class="transition-colors hover:bg-(--ui-bg-elevated)/50"
-            :class="{'opacity-40': !group.movable, 'cursor-pointer': group.items.length > 1}"
+            :class="{ 'opacity-40': !group.movable, 'cursor-pointer': group.items.length > 1 }"
+            :tabindex="group.items.length > 1 ? 0 : -1"
             @click="group.items.length > 1 && toggleExpand(group.market_hash_name)"
+            @keydown.enter="group.items.length > 1 && toggleExpand(group.market_hash_name)"
+            @keydown.space.prevent="group.items.length > 1 && toggleExpand(group.market_hash_name)"
           >
             <td class="px-2 py-0 align-middle" @click.stop>
               <UCheckbox
@@ -95,7 +98,7 @@ const hasItems = computed(() => props.items.length > 0);
               <ChevronRight
                 v-if="group.items.length > 1"
                 class="h-3.5 w-3.5 transition-transform"
-                :class="{'rotate-90': expandedGroups.has(group.market_hash_name)}"
+                :class="{ 'rotate-90': expandedGroups.has(group.market_hash_name) }"
               />
             </td>
             <td class="py-1 align-middle">
@@ -119,7 +122,7 @@ const hasItems = computed(() => props.items.length > 0);
               v-for="item in group.items"
               :key="item.id"
               class="transition-colors hover:bg-(--ui-bg-elevated)/30"
-              :class="{'opacity-40': item.movable === false}"
+              :class="{ 'opacity-40': item.movable === false }"
             >
               <td class="px-2 py-0 align-middle" @click.stop>
                 <UCheckbox

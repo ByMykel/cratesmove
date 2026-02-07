@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import AppHeader from './AppHeader.vue';
-import {useSteam} from '@/composables/useSteam';
-import {Loader2} from 'lucide-vue-next';
+import { useSteam } from '@/composables/useSteam';
+import { Loader2 } from 'lucide-vue-next';
 
-const {switchingAccount} = useSteam();
+const { switchingAccount } = useSteam();
 </script>
 
 <template>

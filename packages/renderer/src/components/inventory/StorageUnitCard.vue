@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type {StorageUnit} from '@/types/steam';
-import {Archive} from 'lucide-vue-next';
+import type { StorageUnit } from '@/types/steam';
+import { Archive } from 'lucide-vue-next';
 
 defineProps<{
   unit: StorageUnit;

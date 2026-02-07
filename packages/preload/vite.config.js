@@ -68,8 +68,8 @@ function mockExposed() {
           return (
             s +
             (key === 'default'
-              ? `export default globalThis['${btoa(key)}'];\n`
-              : `export const ${key} = globalThis['${btoa(key)}'];\n`)
+              ? `export default globalThis['${key}'];\n`
+              : `export const ${key} = globalThis['${key}'];\n`)
           );
         }, '');
       }

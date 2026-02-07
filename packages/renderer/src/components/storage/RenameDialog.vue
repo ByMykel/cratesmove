@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {ref, watch} from 'vue';
+import { ref, watch } from 'vue';
 
 const props = defineProps<{
   open: boolean;
@@ -11,12 +11,12 @@ const emits = defineEmits<{
   confirm: [name: string];
 }>();
 
-const name = ref(props.currentName);
+const name = ref('');
 
 watch(
-  () => props.currentName,
-  val => {
-    name.value = val;
+  () => props.open,
+  isOpen => {
+    if (isOpen) name.value = props.currentName;
   },
 );
 

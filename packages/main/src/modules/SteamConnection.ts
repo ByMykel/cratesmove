@@ -1,13 +1,14 @@
-import type {AppModule} from '../AppModule.js';
-import type {ModuleContext} from '../ModuleContext.js';
-import {BrowserWindow, ipcMain, safeStorage, app} from 'electron';
-import {join} from 'node:path';
-import {readFile, writeFile, unlink, mkdir, access} from 'node:fs/promises';
+import type { AppModule } from '../AppModule.js';
+import type { ModuleContext } from '../ModuleContext.js';
+import { ipcMain, safeStorage, app } from 'electron';
+import { broadcastToRenderers } from '../broadcastToRenderers.js';
+import { join } from 'node:path';
+import { readFile, writeFile, unlink, mkdir, access } from 'node:fs/promises';
 import SteamUser from 'steam-user';
 import GlobalOffensive from 'globaloffensive';
-import {LoginSession, EAuthTokenPlatformType, EAuthSessionGuardType} from 'steam-session';
+import { LoginSession, EAuthTokenPlatformType, EAuthSessionGuardType } from 'steam-session';
 
-import {resolveItem, getAttributeUint32, type ResolvedItemData} from 'cs2-inventory-resolver';
+import { resolveItem, getAttributeUint32, type ResolvedItemData } from 'cs2-inventory-resolver';
 
 interface CredentialLoginArgs {
   username: string;
@@ -36,7 +37,29 @@ interface SavedAccountMeta {
   addedAt: number;
 }
 
+interface RawInventoryItem {
+  id: string | number;
+  classid?: string | number;
+  instanceid?: string | number;
+  def_index: number;
+  paint_index?: number;
+  quality?: number;
+  origin?: number;
+  rarity?: number;
+  custom_name?: string;
+  market_hash_name?: string;
+  icon_url?: string;
+  casket_id?: string;
+  casket_contained_item_count?: number;
+  stickers?: { sticker_id?: number }[];
+  paint_wear?: number;
+  tradable?: boolean;
+  attribute?: { def_index: number; value_bytes?: Buffer }[];
+  [key: string]: unknown;
+}
+
 const OPERATION_DELAY_MS = 500;
+const OPERATION_TIMEOUT_MS = 5000;
 const INVALID_TOKEN_ERESULTS = new Set([5, 15, 35]);
 
 class SteamConnection implements AppModule {
@@ -44,13 +67,14 @@ class SteamConnection implements AppModule {
   #csgo: GlobalOffensive;
   #loginSession: LoginSession | null = null;
   #activeSteamId: string | null = null;
+  #operationCancelled = false;
 
   constructor() {
     this.#steamUser = new SteamUser();
     this.#csgo = new GlobalOffensive(this.#steamUser);
   }
 
-  enable({app: electronApp}: ModuleContext): void {
+  enable({ app: electronApp }: ModuleContext): void {
     this.#registerIpcHandlers();
     this.#registerSteamEvents();
 
@@ -81,11 +105,14 @@ class SteamConnection implements AppModule {
       this.#retrieveFromStorage(args),
     );
     ipcMain.handle('steam:rename-storage', (_e, args: RenameArgs) => this.#renameStorage(args));
+    ipcMain.handle('steam:cancel-operation', () => {
+      this.#operationCancelled = true;
+    });
   }
 
   #registerSteamEvents() {
     this.#steamUser.on('loggedOn', () => {
-      this.#sendToRenderer('steam:auth-state', {state: 'connected'});
+      broadcastToRenderers('steam:auth-state', { state: 'connected' });
       this.#steamUser.gamesPlayed([730], true);
 
       // Explicitly request our own persona data so the 'user' event fires
@@ -95,29 +122,32 @@ class SteamConnection implements AppModule {
       }
     });
 
-    this.#steamUser.on('user', async (sid: {toString(): string}, user: Record<string, unknown>) => {
-      if (sid.toString() === this.#steamUser.steamID?.toString()) {
-        const info = {
-          steamId: sid.toString(),
-          personaName: user.player_name as string,
-          avatarUrl: (user.avatar_url_full as string) ?? '',
-        };
-        this.#sendToRenderer('steam:user-info', info);
+    this.#steamUser.on(
+      'user',
+      async (sid: { toString(): string }, user: Record<string, unknown>) => {
+        if (sid.toString() === this.#steamUser.steamID?.toString()) {
+          const info = {
+            steamId: sid.toString(),
+            personaName: user.player_name as string,
+            avatarUrl: (user.avatar_url_full as string) ?? '',
+          };
+          broadcastToRenderers('steam:user-info', info);
 
-        // Update saved account meta with fresh persona info
-        await this.#upsertAccountMeta({
-          steamId: info.steamId,
-          personaName: info.personaName,
-          avatarUrl: info.avatarUrl,
-          addedAt: Date.now(),
-        });
-        this.#sendToRenderer('steam:saved-accounts-updated', await this.#loadAccountsMeta());
-      }
-    });
+          // Update saved account meta with fresh persona info
+          await this.#upsertAccountMeta({
+            steamId: info.steamId,
+            personaName: info.personaName,
+            avatarUrl: info.avatarUrl,
+            addedAt: Date.now(),
+          });
+          broadcastToRenderers('steam:saved-accounts-updated', await this.#loadAccountsMeta());
+        }
+      },
+    );
 
-    this.#steamUser.on('error', async (err: Error & {eresult?: number}) => {
-      this.#sendToRenderer('steam:error', {message: err.message, code: err.eresult});
-      this.#sendToRenderer('steam:auth-state', {state: 'error', error: err.message});
+    this.#steamUser.on('error', async (err: Error & { eresult?: number }) => {
+      broadcastToRenderers('steam:error', { message: err.message, code: err.eresult });
+      broadcastToRenderers('steam:auth-state', { state: 'error', error: err.message });
 
       // Auto-clean stale tokens on invalid token errors
       if (err.eresult && INVALID_TOKEN_ERESULTS.has(err.eresult) && this.#activeSteamId) {
@@ -125,12 +155,18 @@ class SteamConnection implements AppModule {
         await this.#removeAccountMeta(this.#activeSteamId);
         await this.#clearLastAccount();
         this.#activeSteamId = null;
-        this.#sendToRenderer('steam:saved-accounts-updated', await this.#loadAccountsMeta());
+        broadcastToRenderers('steam:saved-accounts-updated', await this.#loadAccountsMeta());
       }
     });
 
-    this.#steamUser.on('disconnected', () => {
-      this.#sendToRenderer('steam:auth-state', {state: 'disconnected'});
+    this.#steamUser.on('disconnected', (_eresult: number, msg?: string) => {
+      broadcastToRenderers('steam:auth-state', { state: 'disconnected' });
+
+      // Attempt automatic reconnection if we have a saved token
+      if (this.#activeSteamId) {
+        console.log(`Disconnected (${msg ?? 'unknown'}), attempting reconnection...`);
+        this.#attemptReconnect(this.#activeSteamId);
+      }
     });
 
     this.#csgo.on('connectedToGC', () => {
@@ -186,8 +222,8 @@ class SteamConnection implements AppModule {
   async #saveAccountsMeta(accounts: SavedAccountMeta[]): Promise<void> {
     try {
       await writeFile(this.#getAccountsPath(), JSON.stringify(accounts, null, 2), 'utf-8');
-    } catch {
-      // Non-fatal
+    } catch (err: unknown) {
+      console.error('Failed to save accounts metadata:', err instanceof Error ? err.message : err);
     }
   }
 
@@ -196,7 +232,7 @@ class SteamConnection implements AppModule {
     const idx = accounts.findIndex(a => a.steamId === meta.steamId);
     if (idx >= 0) {
       // Preserve original addedAt
-      accounts[idx] = {...meta, addedAt: accounts[idx].addedAt};
+      accounts[idx] = { ...meta, addedAt: accounts[idx].addedAt };
     } else {
       accounts.push(meta);
     }
@@ -215,10 +251,11 @@ class SteamConnection implements AppModule {
     try {
       if (!safeStorage.isEncryptionAvailable()) return;
       const encrypted = safeStorage.encryptString(token);
-      await mkdir(this.#getTokenDir(), {recursive: true});
+      await mkdir(this.#getTokenDir(), { recursive: true });
       await writeFile(this.#getTokenPathForAccount(steamId), encrypted);
-    } catch {
-      // Non-fatal
+    } catch (err: unknown) {
+      console.error('Failed to save refresh token:', err instanceof Error ? err.message : err);
+      broadcastToRenderers('steam:error', { message: 'Failed to save login token' });
     }
   }
 
@@ -329,6 +366,20 @@ class SteamConnection implements AppModule {
     });
   }
 
+  // --- Reconnect ---
+
+  async #attemptReconnect(steamId: string) {
+    const token = await this.#loadRefreshTokenForAccount(steamId);
+    if (!token) return;
+
+    try {
+      broadcastToRenderers('steam:auth-state', { state: 'connecting' });
+      this.#steamUser.logOn({ refreshToken: token });
+    } catch {
+      broadcastToRenderers('steam:auth-state', { state: 'disconnected' });
+    }
+  }
+
   // --- Session ---
 
   async #trySavedSession(): Promise<boolean> {
@@ -343,23 +394,23 @@ class SteamConnection implements AppModule {
 
     try {
       this.#activeSteamId = lastSteamId;
-      this.#sendToRenderer('steam:auth-state', {state: 'connecting'});
-      this.#steamUser.logOn({refreshToken: token});
+      broadcastToRenderers('steam:auth-state', { state: 'connecting' });
+      this.#steamUser.logOn({ refreshToken: token });
       return true;
     } catch {
       await this.#clearRefreshTokenForAccount(lastSteamId);
       await this.#removeAccountMeta(lastSteamId);
       await this.#clearLastAccount();
       this.#activeSteamId = null;
-      this.#sendToRenderer('steam:auth-state', {state: 'disconnected'});
-      this.#sendToRenderer('steam:saved-accounts-updated', await this.#loadAccountsMeta());
+      broadcastToRenderers('steam:auth-state', { state: 'disconnected' });
+      broadcastToRenderers('steam:saved-accounts-updated', await this.#loadAccountsMeta());
       return false;
     }
   }
 
   // --- Auth ---
 
-  async #credentialLogin({username, password}: CredentialLoginArgs) {
+  async #credentialLogin({ username, password }: CredentialLoginArgs) {
     try {
       // Log off current user without deleting their token
       await this.#logOffCurrent();
@@ -380,14 +431,14 @@ class SteamConnection implements AppModule {
           });
           await this.#saveLastAccount(steamId);
           this.#activeSteamId = steamId;
-          this.#sendToRenderer('steam:saved-accounts-updated', await this.#loadAccountsMeta());
+          broadcastToRenderers('steam:saved-accounts-updated', await this.#loadAccountsMeta());
         }
 
-        this.#steamUser.logOn({refreshToken});
+        this.#steamUser.logOn({ refreshToken });
       });
 
       this.#loginSession.on('error', (err: Error) => {
-        this.#sendToRenderer('steam:error', {message: err.message});
+        broadcastToRenderers('steam:error', { message: err.message });
       });
 
       const startResult = await this.#loginSession.startWithCredentials({
@@ -404,12 +455,13 @@ class SteamConnection implements AppModule {
 
         if (guard) {
           const guardType = guard.type === EAuthSessionGuardType.EmailCode ? 'email' : 'mobile';
-          this.#sendToRenderer('steam:steam-guard-required', {type: guardType});
+          broadcastToRenderers('steam:steam-guard-required', { type: guardType });
         }
       }
-    } catch (err: any) {
-      this.#sendToRenderer('steam:error', {message: err.message});
-      this.#sendToRenderer('steam:auth-state', {state: 'error', error: err.message});
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      broadcastToRenderers('steam:error', { message });
+      broadcastToRenderers('steam:auth-state', { state: 'error', error: message });
     }
   }
 
@@ -417,8 +469,10 @@ class SteamConnection implements AppModule {
     if (this.#loginSession) {
       try {
         await this.#loginSession.submitSteamGuardCode(code);
-      } catch (err: any) {
-        this.#sendToRenderer('steam:error', {message: err.message});
+      } catch (err: unknown) {
+        broadcastToRenderers('steam:error', {
+          message: err instanceof Error ? err.message : String(err),
+        });
       }
     }
   }
@@ -431,9 +485,9 @@ class SteamConnection implements AppModule {
       await this.#removeAccountMeta(steamId);
       await this.#clearLastAccount();
       this.#activeSteamId = null;
-      this.#sendToRenderer('steam:saved-accounts-updated', await this.#loadAccountsMeta());
+      broadcastToRenderers('steam:saved-accounts-updated', await this.#loadAccountsMeta());
     }
-    this.#sendToRenderer('steam:auth-state', {state: 'disconnected'});
+    broadcastToRenderers('steam:auth-state', { state: 'disconnected' });
   }
 
   // --- Multi-account IPC handlers ---
@@ -446,8 +500,8 @@ class SteamConnection implements AppModule {
     const token = await this.#loadRefreshTokenForAccount(steamId);
     if (!token) {
       await this.#removeAccountMeta(steamId);
-      this.#sendToRenderer('steam:saved-accounts-updated', await this.#loadAccountsMeta());
-      this.#sendToRenderer('steam:error', {message: 'No saved token for this account'});
+      broadcastToRenderers('steam:saved-accounts-updated', await this.#loadAccountsMeta());
+      broadcastToRenderers('steam:error', { message: 'No saved token for this account' });
       return false;
     }
 
@@ -457,11 +511,14 @@ class SteamConnection implements AppModule {
 
     try {
       await this.#logOffCurrent();
-      this.#sendToRenderer('steam:auth-state', {state: 'connecting'});
-      this.#steamUser.logOn({refreshToken: token});
+      broadcastToRenderers('steam:auth-state', { state: 'connecting' });
+      this.#steamUser.logOn({ refreshToken: token });
       return true;
     } catch {
-      this.#sendToRenderer('steam:auth-state', {state: 'error', error: 'Failed to switch account'});
+      broadcastToRenderers('steam:auth-state', {
+        state: 'error',
+        error: 'Failed to switch account',
+      });
       return false;
     }
   }
@@ -472,12 +529,12 @@ class SteamConnection implements AppModule {
       this.#steamUser.logOff();
       this.#activeSteamId = null;
       await this.#clearLastAccount();
-      this.#sendToRenderer('steam:auth-state', {state: 'disconnected'});
+      broadcastToRenderers('steam:auth-state', { state: 'disconnected' });
     }
 
     await this.#clearRefreshTokenForAccount(steamId);
     await this.#removeAccountMeta(steamId);
-    this.#sendToRenderer('steam:saved-accounts-updated', await this.#loadAccountsMeta());
+    broadcastToRenderers('steam:saved-accounts-updated', await this.#loadAccountsMeta());
   }
 
   // --- Inventory ---
@@ -496,8 +553,8 @@ class SteamConnection implements AppModule {
       if (SteamConnection.#EXCLUDED_IDS.has(String(item.id))) continue; // Known system items
       if (getAttributeUint32(item, 277) === 1) continue; // Free reward items
 
-      const {_resolved, ...formatted} = this.#formatItem(item);
-      result.push({...formatted, movable: this.#isItemMovable(item, _resolved)});
+      const { _resolved, ...formatted } = this.#formatItem(item);
+      result.push({ ...formatted, movable: this.#isItemMovable(item, _resolved) });
     }
     return result;
   }
@@ -506,7 +563,7 @@ class SteamConnection implements AppModule {
    * Determines if an item can be moved to/from a storage unit.
    * Based on casemove's itemProcessorCanBeMoved logic.
    */
-  #isItemMovable(item: any, resolved: ResolvedItemData | null): boolean {
+  #isItemMovable(item: RawInventoryItem, resolved: ResolvedItemData | null): boolean {
     // ★ items (quality 3, e.g. knives/gloves) are always movable
     if (item.quality === 3) return true;
 
@@ -526,8 +583,8 @@ class SteamConnection implements AppModule {
     const inventory = this.#csgo.inventory;
     if (!inventory || inventory.length === 0) return [];
     return inventory
-      .filter((item: any) => item.def_index === 1201)
-      .map((item: any) => ({
+      .filter((item: RawInventoryItem) => item.def_index === 1201)
+      .map((item: RawInventoryItem) => ({
         id: String(item.id),
         name: item.custom_name || 'Storage Unit',
         item_count: item.casket_contained_item_count ?? 0,
@@ -535,81 +592,118 @@ class SteamConnection implements AppModule {
       }));
   }
 
-  #inspectStorage(id: string): Promise<any[]> {
+  #inspectStorage(id: string) {
     return new Promise((resolve, reject) => {
-      this.#csgo.getCasketContents(id, (err: Error | null, items: any[]) => {
+      this.#csgo.getCasketContents(id, (err: Error | null, items: RawInventoryItem[]) => {
         if (err) {
           reject(err);
           return;
         }
-        resolve((items || []).map((item: any) => this.#formatItem(item)));
+        resolve((items || []).map((item: RawInventoryItem) => this.#formatItem(item)));
       });
     });
   }
 
-  async #depositToStorage({storageId, itemIds}: DepositArgs) {
-    for (let i = 0; i < itemIds.length; i++) {
-      const itemId = itemIds[i];
-      this.#sendToRenderer('steam:operation-progress', {
-        current: i + 1,
-        total: itemIds.length,
-        itemId,
-      });
+  async #depositToStorage({ storageId, itemIds }: DepositArgs) {
+    this.#operationCancelled = false;
+    try {
+      for (let i = 0; i < itemIds.length; i++) {
+        if (this.#operationCancelled) {
+          broadcastToRenderers('steam:operation-complete', {
+            success: false,
+            error: 'Operation cancelled',
+          });
+          return;
+        }
 
-      await new Promise<void>(resolve => {
-        this.#csgo.addToCasket(storageId, itemId);
-        const timeout = setTimeout(() => resolve(), OPERATION_DELAY_MS + 1000);
-        const handler = () => {
-          clearTimeout(timeout);
-          resolve();
-        };
-        this.#csgo.once('itemRemoved', handler);
-        this.#csgo.once('itemCustomizationNotification', handler);
-      });
+        const itemId = itemIds[i];
+        broadcastToRenderers('steam:operation-progress', {
+          current: i + 1,
+          total: itemIds.length,
+          itemId,
+        });
 
-      if (i < itemIds.length - 1) {
-        await this.#delay(OPERATION_DELAY_MS);
+        await new Promise<void>(resolve => {
+          this.#csgo.addToCasket(storageId, itemId);
+          const timeout = setTimeout(() => resolve(), OPERATION_TIMEOUT_MS);
+          const handler = () => {
+            clearTimeout(timeout);
+            resolve();
+          };
+          this.#csgo.once('itemRemoved', handler);
+          this.#csgo.once('itemCustomizationNotification', handler);
+        });
+
+        if (i < itemIds.length - 1) {
+          await this.#delay(OPERATION_DELAY_MS);
+        }
       }
-    }
 
-    this.#sendToRenderer('steam:operation-complete', {success: true});
+      broadcastToRenderers('steam:operation-complete', { success: true });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error('Deposit operation failed:', message);
+      broadcastToRenderers('steam:operation-complete', { success: false, error: message });
+    }
     this.#sendInventoryUpdate();
   }
 
-  async #retrieveFromStorage({storageId, itemIds}: RetrieveArgs) {
-    for (let i = 0; i < itemIds.length; i++) {
-      const itemId = itemIds[i];
-      this.#sendToRenderer('steam:operation-progress', {
-        current: i + 1,
-        total: itemIds.length,
-        itemId,
-      });
+  async #retrieveFromStorage({ storageId, itemIds }: RetrieveArgs) {
+    this.#operationCancelled = false;
+    try {
+      for (let i = 0; i < itemIds.length; i++) {
+        if (this.#operationCancelled) {
+          broadcastToRenderers('steam:operation-complete', {
+            success: false,
+            error: 'Operation cancelled',
+          });
+          return;
+        }
 
-      await new Promise<void>(resolve => {
-        this.#csgo.removeFromCasket(storageId, itemId);
-        const timeout = setTimeout(() => resolve(), OPERATION_DELAY_MS + 1000);
-        const handler = () => {
-          clearTimeout(timeout);
-          resolve();
-        };
-        this.#csgo.once('itemAcquired', handler);
-        this.#csgo.once('itemCustomizationNotification', handler);
-      });
+        const itemId = itemIds[i];
+        broadcastToRenderers('steam:operation-progress', {
+          current: i + 1,
+          total: itemIds.length,
+          itemId,
+        });
 
-      if (i < itemIds.length - 1) {
-        await this.#delay(OPERATION_DELAY_MS);
+        await new Promise<void>(resolve => {
+          this.#csgo.removeFromCasket(storageId, itemId);
+          const timeout = setTimeout(() => resolve(), OPERATION_TIMEOUT_MS);
+          const handler = () => {
+            clearTimeout(timeout);
+            resolve();
+          };
+          this.#csgo.once('itemAcquired', handler);
+          this.#csgo.once('itemCustomizationNotification', handler);
+        });
+
+        if (i < itemIds.length - 1) {
+          await this.#delay(OPERATION_DELAY_MS);
+        }
       }
-    }
 
-    this.#sendToRenderer('steam:operation-complete', {success: true});
+      broadcastToRenderers('steam:operation-complete', { success: true });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error('Retrieve operation failed:', message);
+      broadcastToRenderers('steam:operation-complete', { success: false, error: message });
+    }
     this.#sendInventoryUpdate();
   }
 
-  async #renameStorage({storageId, name}: RenameArgs) {
-    this.#csgo.nameItem(0, storageId, name);
+  async #renameStorage({ storageId, name }: RenameArgs) {
+    return new Promise<void>(resolve => {
+      this.#csgo.nameItem(0, storageId, name);
+      const timeout = setTimeout(() => resolve(), 2000);
+      this.#csgo.once('itemChanged', () => {
+        clearTimeout(timeout);
+        resolve();
+      });
+    });
   }
 
-  #formatItem(item: any) {
+  #formatItem(item: RawInventoryItem) {
     const defIndex = item.def_index ?? 0;
     const paintIndex = item.paint_index ?? 0;
 
@@ -637,17 +731,9 @@ class SteamConnection implements AppModule {
 
   #sendInventoryUpdate() {
     const items = this.#getInventory();
-    this.#sendToRenderer('steam:inventory-updated', items);
+    broadcastToRenderers('steam:inventory-updated', items);
     const units = this.#getStorageUnits();
-    this.#sendToRenderer('steam:storage-units-updated', units);
-  }
-
-  #sendToRenderer(channel: string, data: unknown) {
-    for (const window of BrowserWindow.getAllWindows()) {
-      if (!window.isDestroyed()) {
-        window.webContents.send(channel, data);
-      }
-    }
+    broadcastToRenderers('steam:storage-units-updated', units);
   }
 
   #delay(ms: number): Promise<void> {
