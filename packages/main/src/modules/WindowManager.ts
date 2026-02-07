@@ -8,7 +8,13 @@ class WindowManager implements AppModule {
   readonly #renderer: {path: string} | URL;
   readonly #openDevTools;
 
-  constructor({initConfig, openDevTools = false}: {initConfig: AppInitConfig, openDevTools?: boolean}) {
+  constructor({
+    initConfig,
+    openDevTools = false,
+  }: {
+    initConfig: AppInitConfig;
+    openDevTools?: boolean;
+  }) {
     this.#preload = initConfig.preload;
     this.#renderer = initConfig.renderer;
     this.#openDevTools = openDevTools;
@@ -67,7 +73,6 @@ class WindowManager implements AppModule {
 
     return window;
   }
-
 }
 
 export function createWindowManagerModule(...args: ConstructorParameters<typeof WindowManager>) {

@@ -1,14 +1,9 @@
 {
-  "name": "root",
-  "description": "Secure boilerplate for Electron app based on Vite",
-  "version": "3.1.0",
+  "name": "cratesmove",
+  "description": "CS2 Storage Unit Manager",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
-  "author": {
-    "email": "kozackunisoft@gmail.com",
-    "name": "Alex Kozack",
-    "url": "https://kozack.me"
-  },
   "main": "packages/entry-point.mjs",
   "workspaces": [
     "packages/*"
@@ -19,22 +14,24 @@
   "scripts": {
     "build": "npm run build -ws --if-present",
     "compile": "npm run build && electron-builder build --config electron-builder.mjs",
-    "test": "npx playwright test ./tests/e2e.spec.ts",
     "start": "node packages/dev-mode.js",
     "typecheck": "npm run typecheck -ws --if-present",
-    "create-renderer": "cd packages && node ./integrate-renderer/create-renderer.js",
-    "integrate-renderer": "npm start --workspace @app/integrate-renderer",
-    "init": "npm run create-renderer && npm run integrate-renderer && npm install"
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"packages/*/src/**/*.{ts,vue}\"",
+    "format:check": "prettier --check \"packages/*/src/**/*.{ts,vue}\""
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.2",
     "@npmcli/map-workspaces": "5.0.3",
-    "@playwright/test": "1.58.1",
     "@types/node": "25.2.1",
-    "create-vite": "8.2.0",
     "electron": "40.2.1",
     "electron-builder": "26.7.0",
-    "glob": "13.0.1",
-    "playwright": "^1.58.1"
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-vue": "^10.7.0",
+    "prettier": "^3.8.1",
+    "typescript-eslint": "^8.54.0"
   },
   "dependencies": {
     "@app/main": "*"

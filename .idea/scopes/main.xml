@@ -1,3 +1,0 @@
-<component name="DependencyValidationManager">
-  <scope name="main" pattern="file[vite-electron-builder]:packages/main//*" />
-</component>

@@ -1,12 +1,14 @@
 import {getNodeMajorVersion} from '@app/electron-versions';
 import {spawn} from 'child_process';
 import electronPath from 'electron';
-
 export default /**
  * @type {import('vite').UserConfig}
  * @see https://vitejs.dev/config/
  */
 ({
+  ssr: {
+    external: ['cs2-inventory-resolver'],
+  },
   build: {
     ssr: true,
     sourcemap: 'inline',

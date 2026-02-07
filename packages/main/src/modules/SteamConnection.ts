@@ -1,0 +1,408 @@
+import type {AppModule} from '../AppModule.js';
+import type {ModuleContext} from '../ModuleContext.js';
+import {BrowserWindow, ipcMain, safeStorage, app} from 'electron';
+import {join} from 'node:path';
+import {readFile, writeFile, unlink, mkdir} from 'node:fs/promises';
+import SteamUser from 'steam-user';
+import GlobalOffensive from 'globaloffensive';
+import {LoginSession, EAuthTokenPlatformType, EAuthSessionGuardType} from 'steam-session';
+
+import {resolveItem, getAttributeUint32, type ResolvedItemData} from 'cs2-inventory-resolver';
+
+interface CredentialLoginArgs {
+  username: string;
+  password: string;
+}
+
+interface DepositArgs {
+  storageId: string;
+  itemIds: string[];
+}
+
+interface RetrieveArgs {
+  storageId: string;
+  itemIds: string[];
+}
+
+interface RenameArgs {
+  storageId: string;
+  name: string;
+}
+
+const OPERATION_DELAY_MS = 500;
+
+class SteamConnection implements AppModule {
+  #steamUser: SteamUser;
+  #csgo: GlobalOffensive;
+  #loginSession: LoginSession | null = null;
+
+  constructor() {
+    this.#steamUser = new SteamUser();
+    this.#csgo = new GlobalOffensive(this.#steamUser);
+  }
+
+  enable({app: electronApp}: ModuleContext): void {
+    this.#registerIpcHandlers();
+    this.#registerSteamEvents();
+
+    electronApp.on('before-quit', () => {
+      if (this.#steamUser.steamID) {
+        this.#steamUser.logOff();
+      }
+    });
+  }
+
+  #registerIpcHandlers() {
+    ipcMain.handle('steam:credential-login', (_e, creds: CredentialLoginArgs) =>
+      this.#credentialLogin(creds),
+    );
+    ipcMain.handle('steam:submit-steam-guard', (_e, code: string) => this.#submitSteamGuard(code));
+    ipcMain.handle('steam:logout', () => this.#logout());
+    ipcMain.handle('steam:try-saved-session', () => this.#trySavedSession());
+    ipcMain.handle('steam:get-inventory', () => this.#getInventory());
+    ipcMain.handle('steam:get-storage-units', () => this.#getStorageUnits());
+    ipcMain.handle('steam:inspect-storage', (_e, id: string) => this.#inspectStorage(id));
+    ipcMain.handle('steam:deposit-to-storage', (_e, args: DepositArgs) =>
+      this.#depositToStorage(args),
+    );
+    ipcMain.handle('steam:retrieve-from-storage', (_e, args: RetrieveArgs) =>
+      this.#retrieveFromStorage(args),
+    );
+    ipcMain.handle('steam:rename-storage', (_e, args: RenameArgs) => this.#renameStorage(args));
+  }
+
+  #registerSteamEvents() {
+    this.#steamUser.on('loggedOn', () => {
+      this.#sendToRenderer('steam:auth-state', {state: 'connected'});
+      this.#steamUser.gamesPlayed([730], true);
+
+      // Explicitly request our own persona data so the 'user' event fires
+      if (this.#steamUser.steamID) {
+        this.#steamUser.getPersonas([this.#steamUser.steamID]);
+      }
+    });
+
+    this.#steamUser.on('user', (sid: {toString(): string}, user: Record<string, unknown>) => {
+      if (sid.toString() === this.#steamUser.steamID?.toString()) {
+        this.#sendToRenderer('steam:user-info', {
+          steamId: sid.toString(),
+          personaName: user.player_name,
+          avatarUrl: (user.avatar_url_full as string) ?? '',
+        });
+      }
+    });
+
+    this.#steamUser.on('error', (err: Error & {eresult?: number}) => {
+      this.#sendToRenderer('steam:error', {message: err.message, code: err.eresult});
+      this.#sendToRenderer('steam:auth-state', {state: 'error', error: err.message});
+    });
+
+    this.#steamUser.on('disconnected', () => {
+      this.#sendToRenderer('steam:auth-state', {state: 'disconnected'});
+    });
+
+    this.#csgo.on('connectedToGC', () => {
+      this.#sendInventoryUpdate();
+    });
+
+    this.#csgo.on('itemAcquired', () => {
+      this.#sendInventoryUpdate();
+    });
+
+    this.#csgo.on('itemRemoved', () => {
+      this.#sendInventoryUpdate();
+    });
+
+    this.#csgo.on('itemChanged', () => {
+      this.#sendInventoryUpdate();
+    });
+  }
+
+  // --- Session persistence ---
+
+  #getTokenPath(): string {
+    return join(app.getPath('userData'), 'session.enc');
+  }
+
+  async #saveRefreshToken(token: string): Promise<void> {
+    try {
+      if (!safeStorage.isEncryptionAvailable()) {
+        return;
+      }
+      const encrypted = safeStorage.encryptString(token);
+      const dir = app.getPath('userData');
+      await mkdir(dir, {recursive: true});
+      await writeFile(this.#getTokenPath(), encrypted);
+    } catch {
+      // Non-fatal — user will just have to log in again next time
+    }
+  }
+
+  async #loadRefreshToken(): Promise<string | null> {
+    try {
+      if (!safeStorage.isEncryptionAvailable()) {
+        return null;
+      }
+      const encrypted = await readFile(this.#getTokenPath());
+      return safeStorage.decryptString(encrypted);
+    } catch {
+      return null;
+    }
+  }
+
+  async #clearRefreshToken(): Promise<void> {
+    try {
+      await unlink(this.#getTokenPath());
+    } catch {
+      // Already gone or never existed
+    }
+  }
+
+  async #trySavedSession(): Promise<boolean> {
+    const token = await this.#loadRefreshToken();
+    if (!token) return false;
+
+    try {
+      this.#sendToRenderer('steam:auth-state', {state: 'connecting'});
+      this.#steamUser.logOn({refreshToken: token});
+      return true;
+    } catch {
+      await this.#clearRefreshToken();
+      this.#sendToRenderer('steam:auth-state', {state: 'disconnected'});
+      return false;
+    }
+  }
+
+  // --- Auth ---
+
+  async #credentialLogin({username, password}: CredentialLoginArgs) {
+    try {
+      this.#loginSession = new LoginSession(EAuthTokenPlatformType.SteamClient);
+
+      this.#loginSession.on('authenticated', async () => {
+        const refreshToken = this.#loginSession!.refreshToken;
+        await this.#saveRefreshToken(refreshToken);
+        this.#steamUser.logOn({refreshToken});
+      });
+
+      this.#loginSession.on('error', (err: Error) => {
+        this.#sendToRenderer('steam:error', {message: err.message});
+      });
+
+      const startResult = await this.#loginSession.startWithCredentials({
+        accountName: username,
+        password,
+      });
+
+      if (startResult.actionRequired) {
+        const guard = startResult.validActions?.find(
+          a =>
+            a.type === EAuthSessionGuardType.EmailCode ||
+            a.type === EAuthSessionGuardType.DeviceCode,
+        );
+
+        if (guard) {
+          const guardType = guard.type === EAuthSessionGuardType.EmailCode ? 'email' : 'mobile';
+          this.#sendToRenderer('steam:steam-guard-required', {type: guardType});
+        }
+      }
+    } catch (err: any) {
+      this.#sendToRenderer('steam:error', {message: err.message});
+      this.#sendToRenderer('steam:auth-state', {state: 'error', error: err.message});
+    }
+  }
+
+  async #submitSteamGuard(code: string) {
+    if (this.#loginSession) {
+      try {
+        await this.#loginSession.submitSteamGuardCode(code);
+      } catch (err: any) {
+        this.#sendToRenderer('steam:error', {message: err.message});
+      }
+    }
+  }
+
+  async #logout() {
+    this.#steamUser.logOff();
+    await this.#clearRefreshToken();
+    this.#sendToRenderer('steam:auth-state', {state: 'disconnected'});
+  }
+
+  // --- Inventory ---
+
+  // IDs known to be non-movable system items (from casemove)
+  static #EXCLUDED_IDS = new Set(['17293822569110896676', '17293822569102708641']);
+
+  #getInventory() {
+    const inventory = this.#csgo.inventory;
+    if (!inventory || inventory.length === 0) return [];
+
+    const result = [];
+    for (const item of inventory) {
+      if (item.def_index === 1201) continue; // Storage units
+      if (item.casket_id) continue; // Items inside a storage unit
+      if (SteamConnection.#EXCLUDED_IDS.has(String(item.id))) continue; // Known system items
+      if (getAttributeUint32(item, 277) === 1) continue; // Free reward items
+
+      const {_resolved, ...formatted} = this.#formatItem(item);
+      result.push({...formatted, movable: this.#isItemMovable(item, _resolved)});
+    }
+    return result;
+  }
+
+  /**
+   * Determines if an item can be moved to/from a storage unit.
+   * Based on casemove's itemProcessorCanBeMoved logic.
+   */
+  #isItemMovable(item: any, resolved: ResolvedItemData | null): boolean {
+    // ★ items (quality 3, e.g. knives/gloves) are always movable
+    if (item.quality === 3) return true;
+
+    // Collectibles (coins, service medals, pins) are generally non-movable
+    if (resolved?.category === 'collectible') return false;
+
+    // Promotional music kits (origin 0 = timed drop for default music kit)
+    if (resolved?.category === 'music_kit' && item.origin === 0) return false;
+
+    // Unresolved items with no paint are base/stock weapons
+    if (!resolved && !item.paint_index) return false;
+
+    return true;
+  }
+
+  #getStorageUnits() {
+    const inventory = this.#csgo.inventory;
+    if (!inventory || inventory.length === 0) return [];
+    return inventory
+      .filter((item: any) => item.def_index === 1201)
+      .map((item: any) => ({
+        id: String(item.id),
+        name: item.custom_name || 'Storage Unit',
+        item_count: item.casket_contained_item_count ?? 0,
+        custom_name: item.custom_name || null,
+      }));
+  }
+
+  #inspectStorage(id: string): Promise<any[]> {
+    return new Promise((resolve, reject) => {
+      this.#csgo.getCasketContents(id, (err: Error | null, items: any[]) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        resolve((items || []).map((item: any) => this.#formatItem(item)));
+      });
+    });
+  }
+
+  async #depositToStorage({storageId, itemIds}: DepositArgs) {
+    for (let i = 0; i < itemIds.length; i++) {
+      const itemId = itemIds[i];
+      this.#sendToRenderer('steam:operation-progress', {
+        current: i + 1,
+        total: itemIds.length,
+        itemId,
+      });
+
+      await new Promise<void>(resolve => {
+        this.#csgo.addToCasket(storageId, itemId);
+        const timeout = setTimeout(() => resolve(), OPERATION_DELAY_MS + 1000);
+        const handler = () => {
+          clearTimeout(timeout);
+          resolve();
+        };
+        this.#csgo.once('itemRemoved', handler);
+        this.#csgo.once('itemCustomizationNotification', handler);
+      });
+
+      if (i < itemIds.length - 1) {
+        await this.#delay(OPERATION_DELAY_MS);
+      }
+    }
+
+    this.#sendToRenderer('steam:operation-complete', {success: true});
+    this.#sendInventoryUpdate();
+  }
+
+  async #retrieveFromStorage({storageId, itemIds}: RetrieveArgs) {
+    for (let i = 0; i < itemIds.length; i++) {
+      const itemId = itemIds[i];
+      this.#sendToRenderer('steam:operation-progress', {
+        current: i + 1,
+        total: itemIds.length,
+        itemId,
+      });
+
+      await new Promise<void>(resolve => {
+        this.#csgo.removeFromCasket(storageId, itemId);
+        const timeout = setTimeout(() => resolve(), OPERATION_DELAY_MS + 1000);
+        const handler = () => {
+          clearTimeout(timeout);
+          resolve();
+        };
+        this.#csgo.once('itemAcquired', handler);
+        this.#csgo.once('itemCustomizationNotification', handler);
+      });
+
+      if (i < itemIds.length - 1) {
+        await this.#delay(OPERATION_DELAY_MS);
+      }
+    }
+
+    this.#sendToRenderer('steam:operation-complete', {success: true});
+    this.#sendInventoryUpdate();
+  }
+
+  async #renameStorage({storageId, name}: RenameArgs) {
+    this.#csgo.nameItem(0, storageId, name);
+  }
+
+  #formatItem(item: any) {
+    const defIndex = item.def_index ?? 0;
+    const paintIndex = item.paint_index ?? 0;
+
+    const resolved = resolveItem(item);
+
+    return {
+      id: String(item.id),
+      classid: String(item.classid ?? ''),
+      instanceid: String(item.instanceid ?? ''),
+      name: resolved?.name || item.market_hash_name || item.custom_name || `Item #${defIndex}`,
+      market_hash_name: item.market_hash_name || resolved?.name || '',
+      image: resolved?.image || item.icon_url || '',
+      tradable: item.tradable ?? false,
+      def_index: defIndex,
+      paint_index: paintIndex,
+      rarity: item.rarity?.toString() ?? '',
+      rarity_color: '',
+      quality: item.quality?.toString() ?? '',
+      paint_wear: item.paint_wear ?? null,
+      custom_name: item.custom_name || null,
+      stickers: item.stickers || [],
+      _resolved: resolved, // Used internally for movability check, stripped before sending
+    };
+  }
+
+  #sendInventoryUpdate() {
+    const items = this.#getInventory();
+    this.#sendToRenderer('steam:inventory-updated', items);
+    const units = this.#getStorageUnits();
+    this.#sendToRenderer('steam:storage-units-updated', units);
+  }
+
+  #sendToRenderer(channel: string, data: unknown) {
+    for (const window of BrowserWindow.getAllWindows()) {
+      if (!window.isDestroyed()) {
+        window.webContents.send(channel, data);
+      }
+    }
+  }
+
+  #delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+}
+
+export function createSteamConnection() {
+  return new SteamConnection();
+}

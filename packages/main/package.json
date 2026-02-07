@@ -14,7 +14,11 @@
   "dependencies": {
     "@app/preload": "*",
     "@app/renderer": "*",
-    "electron-updater": "6.7.3"
+    "cs2-inventory-resolver": "^0.1.0",
+    "electron-updater": "6.7.3",
+    "globaloffensive": "^3.1.0",
+    "steam-session": "^1.8.0",
+    "steam-user": "^5.2.0"
   },
   "devDependencies": {
     "@app/electron-versions": "*",

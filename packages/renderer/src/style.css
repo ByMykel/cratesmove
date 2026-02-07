@@ -1,0 +1,6 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+}
