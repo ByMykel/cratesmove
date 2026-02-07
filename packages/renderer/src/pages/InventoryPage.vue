@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {onMounted} from 'vue';
+import {onMounted, computed} from 'vue';
 import {useRouter} from 'vue-router';
 import AppLayout from '@/components/AppLayout.vue';
 import ItemTable from '@/components/ItemTable.vue';
@@ -9,6 +9,7 @@ import OperationProgress from '@/components/OperationProgress.vue';
 
 import {useInventory} from '@/composables/useInventory';
 import {useStorageUnits} from '@/composables/useStorageUnits';
+import {usePrices} from '@/composables/usePrices';
 import {Loader2, RefreshCw, Archive} from 'lucide-vue-next';
 
 const router = useRouter();
@@ -25,6 +26,9 @@ const {
   clearSelection,
 } = useInventory();
 const {operationProgress, operationInProgress, depositToStorage} = useStorageUnits();
+const {getTotalValue, formatPrice} = usePrices();
+
+const inventoryValue = computed(() => getTotalValue(items.value));
 
 onMounted(async () => {
   await Promise.all([fetchInventory(), fetchStorageUnits()]);
@@ -56,6 +60,9 @@ function openStorage(id: string) {
         <h2 class="text-sm font-semibold">
           Inventory
           <span class="text-(--ui-text-muted)">({{ items.length }})</span>
+          <span v-if="inventoryValue > 0" class="ml-2 text-xs font-normal text-(--ui-text-muted)">
+            {{ formatPrice(inventoryValue) }}
+          </span>
         </h2>
         <div class="flex items-center gap-2">
           <UButton

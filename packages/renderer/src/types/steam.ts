@@ -49,3 +49,12 @@ export interface OperationProgress {
   total: number;
   itemId: string;
 }
+
+export interface PriceData {
+  metadata: {
+    updated_at: string;
+    currency: string;
+    item_count: number;
+  };
+  prices: Record<string, number>; // market_hash_name -> price in USD cents
+}

@@ -8,6 +8,7 @@ import RenameDialog from '@/components/RenameDialog.vue';
 import OperationProgress from '@/components/OperationProgress.vue';
 import {useInventory} from '@/composables/useInventory';
 import {useStorageUnits} from '@/composables/useStorageUnits';
+import {usePrices} from '@/composables/usePrices';
 import {ArrowLeft, Plus, Pencil, ArrowUpFromLine, Loader2} from 'lucide-vue-next';
 
 const route = useRoute();
@@ -31,8 +32,11 @@ const selectedIds = ref<Set<string>>(new Set());
 const showAddDialog = ref(false);
 const showRenameDialog = ref(false);
 
+const {getTotalValue, formatPrice} = usePrices();
+
 const contents = computed(() => getContents(storageId.value));
 const currentUnit = computed(() => storageUnits.value.find(u => u.id === storageId.value));
+const storageValue = computed(() => getTotalValue(contents.value));
 const unitName = computed(
   () => currentUnit.value?.custom_name || currentUnit.value?.name || 'Storage Unit',
 );
@@ -101,7 +105,10 @@ async function refresh() {
 
         <div class="flex-1">
           <h2 class="text-sm font-semibold">{{ unitName }}</h2>
-          <p class="text-xs text-(--ui-text-muted)">{{ contents.length }} items</p>
+          <p class="text-xs text-(--ui-text-muted)">
+            {{ contents.length }} items
+            <span v-if="storageValue > 0">&middot; {{ formatPrice(storageValue) }}</span>
+          </p>
         </div>
 
         <UBadge variant="subtle" color="neutral"> {{ contents.length }}/1000 </UBadge>

@@ -2,7 +2,10 @@
 import {ref, computed, toRef} from 'vue';
 import type {InventoryItem} from '@/types/steam';
 import {useItemGroups, type ItemGroup} from '@/composables/useItemGroups';
+import {usePrices} from '@/composables/usePrices';
 import {ChevronRight} from 'lucide-vue-next';
+
+const {getPrice, formatPrice} = usePrices();
 
 const props = defineProps<{
   items: readonly InventoryItem[];
@@ -63,6 +66,7 @@ const hasItems = computed(() => props.items.length > 0);
         <col class="w-16" />
         <col />
         <col class="w-10" />
+        <col class="w-24" />
       </colgroup>
       <thead class="sticky top-0 z-10 backdrop-blur-xl bg-(--ui-bg)/60">
         <tr class="text-left text-xs text-(--ui-text-muted)">
@@ -71,9 +75,10 @@ const hasItems = computed(() => props.items.length > 0);
           <th class="py-3"></th>
           <th class="px-2 py-3 font-semibold">Name</th>
           <th class="px-2 py-3 font-semibold">Qty</th>
+          <th class="px-2 py-3 font-semibold text-right">Price</th>
         </tr>
         <tr>
-          <td colspan="5" class="h-px bg-(--ui-border)"></td>
+          <td colspan="6" class="h-px bg-(--ui-border)"></td>
         </tr>
       </thead>
       <tbody class="divide-y divide-(--ui-border)/50">
@@ -112,6 +117,11 @@ const hasItems = computed(() => props.items.length > 0);
             <td class="px-2 py-0 align-middle tabular-nums text-(--ui-text-muted)">
               {{ group.items.length }}
             </td>
+            <td class="px-2 py-0 align-middle text-right tabular-nums text-(--ui-text-muted)">
+              {{ getPrice(group.market_hash_name) != null
+                ? formatPrice(getPrice(group.market_hash_name)! * group.items.length)
+                : '--' }}
+            </td>
           </tr>
 
           <template v-if="group.items.length > 1 && expandedGroups.has(group.market_hash_name)">
@@ -146,7 +156,9 @@ const hasItems = computed(() => props.items.length > 0);
                   ({{ item.paint_wear.toFixed(4) }})
                 </span>
               </td>
-              <td class="px-2 py-0"></td>
+              <td class="px-2 py-0 align-middle text-right tabular-nums text-(--ui-text-muted) text-xs">
+                {{ formatPrice(getPrice(item.market_hash_name)) }}
+              </td>
             </tr>
           </template>
         </template>
