@@ -36,24 +36,19 @@ const wearLabel = computed(() => {
 
 const cardClasses = computed(() => {
   const base = 'group relative rounded-md bg-(--ui-bg-elevated)/50 p-2 transition-colors';
-  const interactive = props.item.movable !== false ? 'cursor-pointer hover:bg-(--ui-bg-elevated)' : 'opacity-40 cursor-default';
+  const interactive =
+    props.item.movable !== false
+      ? 'cursor-pointer hover:bg-(--ui-bg-elevated)'
+      : 'opacity-40 cursor-default';
   const selection = props.selected ? 'ring-2 ring-(--ui-primary) bg-(--ui-bg-elevated)' : '';
   return `${base} ${interactive} ${selection}`;
 });
 </script>
 
 <template>
-  <div
-    :class="cardClasses"
-    @click="handleClick"
-  >
+  <div :class="cardClasses" @click="handleClick">
     <div class="flex flex-col items-center gap-1">
-      <img
-        :src="item.image"
-        :alt="item.name"
-        class="h-16 w-auto object-contain"
-        loading="lazy"
-      />
+      <img :src="item.image" :alt="item.name" class="h-16 w-auto object-contain" loading="lazy" />
       <div class="w-full text-center">
         <p class="truncate text-xs font-medium">
           {{ item.custom_name || item.name }}

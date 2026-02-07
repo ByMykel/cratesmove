@@ -7,7 +7,8 @@ const colorMode = useColorMode({emitAuto: true});
 
 export function useTheme() {
   const preference = computed<ThemePreference>({
-    get: () => (colorMode.store.value === 'auto' ? 'system' : (colorMode.store.value as 'light' | 'dark')),
+    get: () =>
+      colorMode.store.value === 'auto' ? 'system' : (colorMode.store.value as 'light' | 'dark'),
     set: (v: ThemePreference) => {
       colorMode.store.value = v === 'system' ? 'auto' : v;
     },

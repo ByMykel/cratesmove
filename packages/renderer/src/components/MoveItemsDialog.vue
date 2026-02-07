@@ -5,7 +5,7 @@ import type {InventoryItem} from '@/types/steam';
 
 const props = defineProps<{
   open: boolean;
-  items: InventoryItem[];
+  items: readonly InventoryItem[];
   storageName: string;
 }>();
 
@@ -54,9 +54,9 @@ function handleOpenChange(val: boolean) {
 <template>
   <UModal
     :open="open"
-    @update:open="handleOpenChange"
     :title="`Add Items to ${storageName}`"
     description="Select items from your inventory to deposit into this storage unit."
+    @update:open="handleOpenChange"
   >
     <template #body>
       <UInput v-model="search" placeholder="Search items..." class="mb-2" />
@@ -76,7 +76,9 @@ function handleOpenChange(val: boolean) {
 
     <template #footer>
       <div class="flex justify-end gap-2">
-        <UButton variant="outline" color="neutral" @click="handleOpenChange(false)"> Cancel </UButton>
+        <UButton variant="outline" color="neutral" @click="handleOpenChange(false)">
+          Cancel
+        </UButton>
         <UButton :disabled="selectedIds.size === 0" @click="handleConfirm">
           Add {{ selectedIds.size }} items
         </UButton>

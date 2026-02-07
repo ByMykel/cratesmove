@@ -30,9 +30,9 @@ function handleConfirm() {
 <template>
   <UModal
     :open="open"
-    @update:open="emits('update:open', $event)"
     title="Rename Storage Unit"
     description="Enter a new name for this storage unit."
+    @update:open="emits('update:open', $event)"
   >
     <template #body>
       <UInput
@@ -45,7 +45,9 @@ function handleConfirm() {
 
     <template #footer>
       <div class="flex justify-end gap-2">
-        <UButton variant="outline" color="neutral" @click="emits('update:open', false)"> Cancel </UButton>
+        <UButton variant="outline" color="neutral" @click="emits('update:open', false)">
+          Cancel
+        </UButton>
         <UButton :disabled="!name.trim()" @click="handleConfirm"> Rename </UButton>
       </div>
     </template>

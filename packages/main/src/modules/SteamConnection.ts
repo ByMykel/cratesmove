@@ -82,18 +82,18 @@ class SteamConnection implements AppModule {
       }
     });
 
-    this.#steamUser.on('user', (sid, user) => {
+    this.#steamUser.on('user', (sid: {toString(): string}, user: Record<string, unknown>) => {
       if (sid.toString() === this.#steamUser.steamID?.toString()) {
         this.#sendToRenderer('steam:user-info', {
           steamId: sid.toString(),
           personaName: user.player_name,
-          avatarUrl: user.avatar_url_full ?? '',
+          avatarUrl: (user.avatar_url_full as string) ?? '',
         });
       }
     });
 
-    this.#steamUser.on('error', err => {
-      this.#sendToRenderer('steam:error', {message: err.message, code: (err as any).eresult});
+    this.#steamUser.on('error', (err: Error & {eresult?: number}) => {
+      this.#sendToRenderer('steam:error', {message: err.message, code: err.eresult});
       this.#sendToRenderer('steam:auth-state', {state: 'error', error: err.message});
     });
 
@@ -258,10 +258,8 @@ class SteamConnection implements AppModule {
       if (SteamConnection.#EXCLUDED_IDS.has(String(item.id))) continue; // Known system items
       if (getAttributeUint32(item, 277) === 1) continue; // Free reward items
 
-      const formatted = this.#formatItem(item);
-      formatted.movable = this.#isItemMovable(item, formatted._resolved);
-      delete formatted._resolved;
-      result.push(formatted);
+      const {_resolved, ...formatted} = this.#formatItem(item);
+      result.push({...formatted, movable: this.#isItemMovable(item, _resolved)});
     }
     return result;
   }

@@ -5,7 +5,7 @@ import {ref} from 'vue';
 
 defineProps<{
   selectionCount: number;
-  storageUnits: StorageUnit[];
+  storageUnits: readonly StorageUnit[];
 }>();
 
 const emits = defineEmits<{
@@ -38,9 +38,16 @@ function handleDeposit(storageId: string) {
       <ArrowRight class="h-4 w-4" />
     </UButton>
 
-    <UModal v-model:open="showDialog" title="Move to Storage" :description="`Select a storage unit to deposit ${selectionCount} items into.`">
+    <UModal
+      v-model:open="showDialog"
+      title="Move to Storage"
+      :description="`Select a storage unit to deposit ${selectionCount} items into.`"
+    >
       <template #body>
-        <div v-if="storageUnits.length === 0" class="py-4 text-center text-sm text-(--ui-text-muted)">
+        <div
+          v-if="storageUnits.length === 0"
+          class="py-4 text-center text-sm text-(--ui-text-muted)"
+        >
           No storage units found
         </div>
 

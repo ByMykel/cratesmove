@@ -49,7 +49,9 @@ function openStorage(id: string) {
   <AppLayout>
     <!-- Main inventory panel -->
     <div class="flex flex-1 flex-col overflow-hidden">
-      <div class="flex h-10 shrink-0 items-center justify-between border-b border-(--ui-border) px-4">
+      <div
+        class="flex h-10 shrink-0 items-center justify-between border-b border-(--ui-border) px-4"
+      >
         <h2 class="text-sm font-semibold">
           Inventory
           <span class="text-(--ui-text-muted)">({{ items.length }})</span>

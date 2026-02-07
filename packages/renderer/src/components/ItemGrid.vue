@@ -3,8 +3,8 @@ import type {InventoryItem} from '@/types/steam';
 import ItemCard from './ItemCard.vue';
 
 defineProps<{
-  items: InventoryItem[];
-  selectedIds: Set<string>;
+  items: readonly InventoryItem[];
+  selectedIds: ReadonlySet<string>;
 }>();
 
 const emit = defineEmits<{

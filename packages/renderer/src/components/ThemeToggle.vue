@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {useTheme} from '@/composables/useTheme';
-import {Sun, Moon, Monitor} from 'lucide-vue-next';
+import {Sun, Moon} from 'lucide-vue-next';
 
 const {preference, resolvedTheme} = useTheme();
 
@@ -13,12 +13,16 @@ const options = [
 
 <template>
   <UDropdownMenu
-    :items="options.map(o => ({
-      label: o.label,
-      icon: o.icon,
-      active: preference === o.value,
-      onSelect: () => { preference = o.value },
-    }))"
+    :items="
+      options.map(o => ({
+        label: o.label,
+        icon: o.icon,
+        active: preference === o.value,
+        onSelect: () => {
+          preference = o.value;
+        },
+      }))
+    "
   >
     <UButton
       variant="ghost"
