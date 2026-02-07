@@ -68,6 +68,7 @@ class SteamConnection implements AppModule {
   #loginSession: LoginSession | null = null;
   #activeSteamId: string | null = null;
   #operationCancelled = false;
+  #suppressReconnect = false;
 
   constructor() {
     this.#steamUser = new SteamUser();
@@ -163,7 +164,7 @@ class SteamConnection implements AppModule {
       broadcastToRenderers('steam:auth-state', { state: 'disconnected' });
 
       // Attempt automatic reconnection if we have a saved token
-      if (this.#activeSteamId) {
+      if (this.#activeSteamId && !this.#suppressReconnect) {
         console.log(`Disconnected (${msg ?? 'unknown'}), attempting reconnection...`);
         this.#attemptReconnect(this.#activeSteamId);
       }
@@ -413,7 +414,9 @@ class SteamConnection implements AppModule {
   async #credentialLogin({ username, password }: CredentialLoginArgs) {
     try {
       // Log off current user without deleting their token
+      this.#suppressReconnect = true;
       await this.#logOffCurrent();
+      this.#suppressReconnect = false;
 
       this.#loginSession = new LoginSession(EAuthTokenPlatformType.SteamClient);
 
@@ -510,6 +513,7 @@ class SteamConnection implements AppModule {
     await this.#saveLastAccount(steamId);
 
     try {
+      this.#suppressReconnect = true;
       await this.#logOffCurrent();
       broadcastToRenderers('steam:auth-state', { state: 'connecting' });
       this.#steamUser.logOn({ refreshToken: token });
@@ -520,6 +524,8 @@ class SteamConnection implements AppModule {
         error: 'Failed to switch account',
       });
       return false;
+    } finally {
+      this.#suppressReconnect = false;
     }
   }
 
