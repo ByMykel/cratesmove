@@ -1,7 +1,7 @@
 > [!WARNING]
 > This project is in early development. Use at your own risk.
 
-> [!IMPORTANT]
+> [!NOTE]
 > Inspired by [casemove](https://github.com/nombersDev/casemove), which is no longer maintained.
 
 # cratesmove
