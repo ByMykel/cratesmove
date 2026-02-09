@@ -4,6 +4,7 @@ import { Archive } from 'lucide-vue-next';
 
 defineProps<{
   unit: StorageUnit;
+  price?: string;
 }>();
 
 defineEmits<{
@@ -20,6 +21,9 @@ defineEmits<{
     <div class="flex-1 truncate">
       <p class="truncate text-sm font-medium">{{ unit.custom_name || unit.name }}</p>
     </div>
-    <UBadge variant="subtle" color="neutral"> {{ unit.item_count }}/1000 </UBadge>
+    <div class="flex shrink-0 items-center gap-2">
+      <span v-if="price" class="text-xs tabular-nums text-(--ui-text-muted)">{{ price }}</span>
+      <UBadge variant="subtle" color="neutral"> {{ unit.item_count }}/1000 </UBadge>
+    </div>
   </div>
 </template>

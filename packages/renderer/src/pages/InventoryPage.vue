@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import AppLayout from '@/components/layout/AppLayout.vue';
 import ItemTable from '@/components/inventory/ItemTable.vue';
@@ -8,8 +8,9 @@ import BulkActions from '@/components/inventory/BulkActions.vue';
 import OperationProgress from '@/components/inventory/OperationProgress.vue';
 
 import { useInventory } from '@/composables/useInventory';
-import { useStorageUnits } from '@/composables/useStorageUnits';
 import { useSelection } from '@/composables/useSelection';
+import { useStorageUnits } from '@/composables/useStorageUnits';
+import { usePrices } from '@/composables/usePrices';
 import { Loader2, RefreshCw, Archive } from 'lucide-vue-next';
 
 const router = useRouter();
@@ -21,9 +22,23 @@ const {
   toggleBatch,
   clear: clearSelection,
 } = useSelection();
-const { operationProgress, operationInProgress, depositToStorage } = useStorageUnits();
+const { operationProgress, operationInProgress, depositToStorage, inspectStorage, getContents } =
+  useStorageUnits();
+const { getTotalValue, formatPrice } = usePrices();
 
-onMounted(() => refreshAll());
+const inventoryValue = computed(() => getTotalValue(items.value));
+
+function storageValue(unitId: string): number {
+  return getTotalValue(getContents(unitId));
+}
+
+onMounted(async () => {
+  await refreshAll();
+  // Inspect all storage units in background to get their contents for price display
+  for (const unit of storageUnits.value) {
+    inspectStorage(unit.id);
+  }
+});
 
 async function handleDeposit(storageId: string) {
   const itemIds = [...selectedIds.value];
@@ -47,6 +62,9 @@ function openStorage(id: string) {
         <h2 class="text-sm font-semibold">
           Inventory
           <span class="text-(--ui-text-muted)">({{ items.length }})</span>
+          <span v-if="inventoryValue > 0" class="ml-2 text-xs font-normal text-(--ui-text-muted)">
+            {{ formatPrice(inventoryValue) }}
+          </span>
         </h2>
         <div class="flex items-center gap-2">
           <UButton
@@ -105,6 +123,7 @@ function openStorage(id: string) {
             v-for="unit in storageUnits"
             :key="unit.id"
             :unit="unit"
+            :price="storageValue(unit.id) > 0 ? formatPrice(storageValue(unit.id)) : undefined"
             @click="openStorage(unit.id)"
           />
         </div>

@@ -62,6 +62,14 @@ const OPERATION_DELAY_MS = 500;
 const OPERATION_TIMEOUT_MS = 5000;
 const INVALID_TOKEN_ERESULTS = new Set([5, 15, 35]);
 
+function getWearCondition(paintWear: number): string {
+  if (paintWear < 0.07) return 'Factory New';
+  if (paintWear < 0.15) return 'Minimal Wear';
+  if (paintWear < 0.38) return 'Field-Tested';
+  if (paintWear < 0.45) return 'Well-Worn';
+  return 'Battle-Scarred';
+}
+
 class SteamConnection implements AppModule {
   #steamUser: SteamUser;
   #csgo: GlobalOffensive;
@@ -771,12 +779,16 @@ class SteamConnection implements AppModule {
 
     const resolved = resolveItem(item);
 
+    const baseName = item.market_hash_name || resolved?.name || '';
+    const wearCondition = item.paint_wear != null ? getWearCondition(item.paint_wear) : null;
+    const marketHashName = wearCondition ? `${baseName} (${wearCondition})` : baseName;
+
     return {
       id: String(item.id),
       classid: String(item.classid ?? ''),
       instanceid: String(item.instanceid ?? ''),
       name: resolved?.name || item.market_hash_name || item.custom_name || `Item #${defIndex}`,
-      market_hash_name: item.market_hash_name || resolved?.name || '',
+      market_hash_name: marketHashName,
       image: resolved?.image || item.icon_url || '',
       tradable: item.tradable ?? false,
       def_index: defIndex,

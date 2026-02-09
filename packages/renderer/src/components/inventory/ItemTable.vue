@@ -4,6 +4,9 @@ import { useClipboard } from '@vueuse/core';
 import type { InventoryItem } from '@/types/steam';
 import { useItemGroups, type ItemGroup } from '@/composables/useItemGroups';
 import { ChevronRight, ClipboardCopy, Check, TriangleAlert } from 'lucide-vue-next';
+import { usePrices } from '@/composables/usePrices';
+
+const { getPrice, formatPrice } = usePrices();
 
 const props = defineProps<{
   items: readonly InventoryItem[];
@@ -76,6 +79,7 @@ async function copyRawData(item: InventoryItem) {
         <col class="w-16" />
         <col />
         <col class="w-10" />
+        <col class="w-24" />
       </colgroup>
       <thead class="sticky top-0 z-10 backdrop-blur-xl bg-(--ui-bg)/60">
         <tr class="text-left text-xs text-(--ui-text-muted)">
@@ -84,9 +88,10 @@ async function copyRawData(item: InventoryItem) {
           <th class="py-3"></th>
           <th class="px-2 py-3 font-semibold">Name</th>
           <th class="px-2 py-3 font-semibold">Qty</th>
+          <th class="px-2 py-3 font-semibold text-right">Price</th>
         </tr>
         <tr>
-          <td colspan="5" class="h-px bg-(--ui-border)"></td>
+          <td colspan="6" class="h-px bg-(--ui-border)"></td>
         </tr>
       </thead>
       <tbody class="divide-y divide-(--ui-border)/50">
@@ -153,6 +158,13 @@ async function copyRawData(item: InventoryItem) {
             <td class="px-2 py-0 align-middle tabular-nums text-(--ui-text-muted)">
               {{ group.items.length }}
             </td>
+            <td class="px-2 py-0 align-middle text-right tabular-nums text-(--ui-text-muted)">
+              {{
+                getPrice(group.market_hash_name) != null
+                  ? formatPrice(getPrice(group.market_hash_name)! * group.items.length)
+                  : '--'
+              }}
+            </td>
           </tr>
 
           <template
@@ -193,7 +205,12 @@ async function copyRawData(item: InventoryItem) {
                   ({{ item.paint_wear.toFixed(4) }})
                 </span>
               </td>
-              <td class="px-2 py-0"></td>
+              <td></td>
+              <td
+                class="px-2 py-0 align-middle text-right tabular-nums text-(--ui-text-muted) text-xs"
+              >
+                {{ formatPrice(getPrice(item.market_hash_name)) }}
+              </td>
             </tr>
           </template>
         </template>
