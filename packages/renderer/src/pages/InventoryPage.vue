@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, computed } from 'vue';
+import { onMounted, computed, watch, ref, watchEffect } from 'vue';
 import { useRouter } from 'vue-router';
 import AppLayout from '@/components/layout/AppLayout.vue';
 import ItemTable from '@/components/inventory/ItemTable.vue';
@@ -28,23 +28,65 @@ const { getTotalValue, formatPrice } = usePrices();
 
 const inventoryValue = computed(() => getTotalValue(items.value));
 
+const liveTotalValue = computed(() => {
+  let total = inventoryValue.value;
+  for (const unit of storageUnits.value) {
+    total += getTotalValue(getContents(unit.id));
+  }
+  return total;
+});
+
+// Use a ref so we have full control over when the displayed total updates.
+// During any operation (deposit or retrieve), items move between inventory and
+// storageContents cache, but the cache is only refreshed after inspectStorage.
+// This causes the live total to temporarily double-count or under-count items.
+// We suppress updates while any operation is in progress (operationInProgress is
+// shared across pages) and also during handleDeposit's post-operation refresh.
+const totalAccountValue = ref(0);
+let suppressTotal = false;
+
+watchEffect(() => {
+  const live = liveTotalValue.value;
+  if (!operationInProgress.value && !suppressTotal) {
+    totalAccountValue.value = live;
+  }
+});
+
 function storageValue(unitId: string): number {
   return getTotalValue(getContents(unitId));
 }
 
+const inspectedIds = new Set<string>();
+
+async function inspectAllUnits() {
+  for (const unit of storageUnits.value) {
+    if (inspectedIds.has(unit.id)) continue;
+    inspectedIds.add(unit.id);
+    try {
+      await inspectStorage(unit.id);
+    } catch {
+      // Individual failure shouldn't block other units
+    }
+  }
+}
+
 onMounted(async () => {
   await refreshAll();
-  // Inspect all storage units in background to get their contents for price display
-  for (const unit of storageUnits.value) {
-    inspectStorage(unit.id);
-  }
 });
+
+// Inspect storage units whenever they become available.
+// Handles the case where the GC connects after the page mounts.
+watch(storageUnits, () => inspectAllUnits());
 
 async function handleDeposit(storageId: string) {
   const itemIds = [...selectedIds.value];
   clearSelection();
+  suppressTotal = true;
   await depositToStorage(storageId, itemIds);
   await refreshAll();
+  await inspectStorage(storageId);
+  suppressTotal = false;
+  totalAccountValue.value = liveTotalValue.value;
 }
 
 function openStorage(id: string) {
@@ -64,6 +106,12 @@ function openStorage(id: string) {
           <span class="text-(--ui-text-muted)">({{ items.length }})</span>
           <span v-if="inventoryValue > 0" class="ml-2 text-xs font-normal text-(--ui-text-muted)">
             {{ formatPrice(inventoryValue) }}
+          </span>
+          <span
+            v-if="totalAccountValue > inventoryValue"
+            class="ml-1 text-xs font-normal text-(--ui-text-muted)"
+          >
+            ({{ formatPrice(totalAccountValue) }} total)
           </span>
         </h2>
         <div class="flex items-center gap-2">

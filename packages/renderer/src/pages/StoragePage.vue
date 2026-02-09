@@ -57,16 +57,18 @@ onMounted(async () => {
 });
 
 async function handleRetrieve() {
+  const id = storageId.value;
   const itemIds = [...selectedIds.value];
   clearSelection();
-  await retrieveFromStorage(storageId.value, itemIds);
-  await refresh();
+  await retrieveFromStorage(id, itemIds);
+  await refresh(id);
 }
 
 async function handleDeposit(itemIds: string[]) {
+  const id = storageId.value;
   showAddDialog.value = false;
-  await depositToStorage(storageId.value, itemIds);
-  await refresh();
+  await depositToStorage(id, itemIds);
+  await refresh(id);
 }
 
 async function handleRename(name: string) {
@@ -74,8 +76,8 @@ async function handleRename(name: string) {
   await fetchStorageUnits();
 }
 
-async function refresh() {
-  await Promise.all([inspectStorage(storageId.value), fetchInventory(), fetchStorageUnits()]);
+async function refresh(id: string) {
+  await Promise.all([inspectStorage(id), fetchInventory(), fetchStorageUnits()]);
 }
 </script>
 

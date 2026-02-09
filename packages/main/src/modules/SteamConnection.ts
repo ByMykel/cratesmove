@@ -618,7 +618,12 @@ class SteamConnection implements AppModule {
 
   #inspectStorage(id: string) {
     return new Promise((resolve, reject) => {
+      const timeout = setTimeout(
+        () => reject(new Error('Inspect storage timed out')),
+        OPERATION_TIMEOUT_MS,
+      );
       this.#csgo.getCasketContents(id, (err: Error | null, items: RawInventoryItem[]) => {
+        clearTimeout(timeout);
         if (err) {
           reject(err);
           return;

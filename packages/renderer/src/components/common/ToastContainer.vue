@@ -20,10 +20,9 @@ const { toasts, remove } = useToast();
         :key="toast.id"
         :class="[
           'flex items-center gap-2 rounded-md border px-4 py-3 text-sm shadow-lg max-w-sm',
-          toast.type === 'error' &&
-            'border-destructive/50 bg-destructive/10 text-destructive-foreground',
-          toast.type === 'success' && 'border-green-500/50 bg-green-500/10 text-foreground',
-          toast.type === 'info' && 'border-border bg-background text-foreground',
+          toast.type === 'error' && 'border-red-500/20 bg-red-500/10 text-(--ui-text)',
+          toast.type === 'success' && 'border-green-500/20 bg-green-500/10 text-(--ui-text)',
+          toast.type === 'info' && 'border-(--ui-border) bg-(--ui-bg-elevated) text-(--ui-text)',
         ]"
       >
         <span class="flex-1">{{ toast.message }}</span>
