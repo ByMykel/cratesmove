@@ -36,9 +36,9 @@ packages/
 
 ## Release Process
 
-1. Bump version in `package.json`
-2. Run `npm install --package-lock-only` to update `package-lock.json`
-3. Make sure remote is up to date (`git pull`)
+1. Make sure remote is up to date (`git pull`)
+2. Bump version in `package.json`
+3. Run `npm install --package-lock-only` to update `package-lock.json`
 4. Create a single commit named after the version (e.g. `v0.3.0`)
 5. Push to remote
 6. Create a tag with `git tag v0.X.0` and push it with `git push --tags`
