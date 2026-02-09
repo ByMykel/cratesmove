@@ -64,7 +64,11 @@ async function refreshPrices() {
 }
 
 function getPrice(marketHashName: string): number | null {
-  return priceMap.value[marketHashName] ?? null;
+  const price = priceMap.value[marketHashName] ?? null;
+  if (price == null) {
+    console.log(`Price not found for: "${marketHashName}"`);
+  }
+  return price;
 }
 
 function formatPrice(cents: number | null): string {

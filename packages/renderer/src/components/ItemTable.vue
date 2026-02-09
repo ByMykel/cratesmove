@@ -156,6 +156,7 @@ const hasItems = computed(() => props.items.length > 0);
                   ({{ item.paint_wear.toFixed(4) }})
                 </span>
               </td>
+              <td></td>
               <td class="px-2 py-0 align-middle text-right tabular-nums text-(--ui-text-muted) text-xs">
                 {{ formatPrice(getPrice(item.market_hash_name)) }}
               </td>

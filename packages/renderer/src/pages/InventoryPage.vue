@@ -25,13 +25,22 @@ const {
   toggleBatch,
   clearSelection,
 } = useInventory();
-const {operationProgress, operationInProgress, depositToStorage} = useStorageUnits();
+const {operationProgress, operationInProgress, depositToStorage, inspectStorage, getContents} =
+  useStorageUnits();
 const {getTotalValue, formatPrice} = usePrices();
 
 const inventoryValue = computed(() => getTotalValue(items.value));
 
+function storageValue(unitId: string): number {
+  return getTotalValue(getContents(unitId));
+}
+
 onMounted(async () => {
   await Promise.all([fetchInventory(), fetchStorageUnits()]);
+  // Inspect all storage units in background to get their contents for price display
+  for (const unit of storageUnits.value) {
+    inspectStorage(unit.id);
+  }
 });
 
 async function handleRefresh() {
@@ -121,6 +130,7 @@ function openStorage(id: string) {
             v-for="unit in storageUnits"
             :key="unit.id"
             :unit="unit"
+            :price="storageValue(unit.id) > 0 ? formatPrice(storageValue(unit.id)) : undefined"
             @click="openStorage(unit.id)"
           />
         </div>
