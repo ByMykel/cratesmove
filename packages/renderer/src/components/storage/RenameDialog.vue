@@ -39,6 +39,7 @@ function handleConfirm() {
         v-model="name"
         placeholder="Storage unit name"
         :maxlength="36"
+        :ui="{ root: 'w-full' }"
         @keydown.enter="handleConfirm"
       />
     </template>

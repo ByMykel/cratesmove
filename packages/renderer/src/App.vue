@@ -1,18 +1,16 @@
 <script setup lang="ts">
 import { useSteam } from '@/composables/useSteam';
-import { useToast } from '@/composables/useToast';
-import ToastContainer from '@/components/common/ToastContainer.vue';
 import { watch, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { onSteamEvent } from '@app/preload';
 
 const { isConnected, switchingAccount, savedAccounts, trySavedSession, getSavedAccounts } =
   useSteam();
-const { error: showError } = useToast();
+const toast = useToast();
 const router = useRouter();
 
 onSteamEvent('steam:error', (_event: unknown, data: { message: string }) => {
-  showError(data.message);
+  toast.add({ title: data.message, color: 'error' });
 });
 
 // Auth guard
@@ -46,8 +44,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <UApp>
+  <UApp :toaster="{ position: 'bottom-left' }">
     <router-view />
-    <ToastContainer />
   </UApp>
 </template>

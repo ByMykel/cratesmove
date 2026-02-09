@@ -50,7 +50,12 @@ function handleOpenChange(val: boolean) {
     @update:open="handleOpenChange"
   >
     <template #body>
-      <UInput v-model="search" placeholder="Search items..." class="mb-2 w-full" />
+      <UInput
+        v-model="search"
+        placeholder="Search items..."
+        class="mb-2"
+        :ui="{ root: 'w-full' }"
+      />
 
       <div class="h-80">
         <ItemTable

@@ -22,7 +22,8 @@
     "src/**/*.vue",
     "../../types/**/*.d.ts",
     ".nuxt/nuxt-ui.d.ts",
-    ".nuxt/nuxt-ui-imports.d.ts"
+    ".nuxt/nuxt-ui-imports.d.ts",
+    "auto-imports.d.ts"
   ],
   "exclude": ["node_modules", "dist"]
 }

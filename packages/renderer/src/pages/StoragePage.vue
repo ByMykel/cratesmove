@@ -71,9 +71,12 @@ async function handleDeposit(itemIds: string[]) {
   await refresh(id);
 }
 
+const toast = useToast();
+
 async function handleRename(name: string) {
   await renameStorage(storageId.value, name);
   await fetchStorageUnits();
+  toast.add({ title: `Renamed to "${name}"`, color: 'success' });
 }
 
 async function refresh(id: string) {

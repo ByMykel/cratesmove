@@ -7,13 +7,12 @@ import {
   onSteamEvent,
 } from '@app/preload';
 import type { InventoryItem, OperationProgress } from '@/types/steam';
-import { useToast } from '@/composables/useToast';
 
 const storageContents = ref<Map<string, InventoryItem[]>>(new Map());
 const operationProgress = ref<OperationProgress | null>(null);
 const operationInProgress = ref(false);
 const operationError = ref<string | null>(null);
-const { error: showError } = useToast();
+const toast = useToast();
 
 let listenersRegistered = false;
 
@@ -31,7 +30,7 @@ function registerListeners() {
       operationInProgress.value = false;
       if (!data.success && data.error) {
         operationError.value = data.error;
-        showError(data.error);
+        toast.add({ title: data.error, color: 'error' });
       }
       operationProgress.value = null;
     },
