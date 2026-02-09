@@ -10,6 +10,13 @@ export default /** @type import('electron-builder').Configuration */
     buildResources: 'buildResources',
   },
   generateUpdatesFilesForAllChannels: true,
+  publish: [
+    {
+      provider: 'github',
+      owner: 'ByMykel',
+      repo: 'cratesmove',
+    },
+  ],
   linux: {
     target: ['deb'],
   },

@@ -6,6 +6,10 @@
     "name": "ByMykel",
     "email": "bymykel5@gmail.com"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ByMykel/cratesmove"
+  },
   "private": true,
   "type": "module",
   "main": "packages/entry-point.mjs",
