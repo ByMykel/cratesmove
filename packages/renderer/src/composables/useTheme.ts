@@ -1,9 +1,9 @@
-import {computed} from 'vue';
-import {useColorMode} from '@vueuse/core';
+import { computed } from 'vue';
+import { useColorMode } from '@vueuse/core';
 
 type ThemePreference = 'light' | 'dark' | 'system';
 
-const colorMode = useColorMode({emitAuto: true});
+const colorMode = useColorMode({ emitAuto: true });
 
 export function useTheme() {
   const preference = computed<ThemePreference>({
@@ -18,5 +18,5 @@ export function useTheme() {
     colorMode.state.value === 'dark' ? 'dark' : 'light',
   );
 
-  return {preference, resolvedTheme};
+  return { preference, resolvedTheme };
 }

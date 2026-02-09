@@ -1,5 +1,5 @@
-import {AppModule} from '../AppModule.js';
-import {ModuleContext} from '../ModuleContext.js';
+import { AppModule } from '../AppModule.js';
+import { ModuleContext } from '../ModuleContext.js';
 import installer from 'electron-devtools-installer';
 
 const {
@@ -26,11 +26,11 @@ const extensionsDictionary = {
 export class ChromeDevToolsExtension implements AppModule {
   readonly #extension: keyof typeof extensionsDictionary;
 
-  constructor({extension}: {readonly extension: keyof typeof extensionsDictionary}) {
+  constructor({ extension }: { readonly extension: keyof typeof extensionsDictionary }) {
     this.#extension = extension;
   }
 
-  async enable({app}: ModuleContext): Promise<void> {
+  async enable({ app }: ModuleContext): Promise<void> {
     await app.whenReady();
     await installExtension(extensionsDictionary[this.#extension]);
   }

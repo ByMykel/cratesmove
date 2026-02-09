@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import {useToast} from '@/composables/useToast';
-import {X} from 'lucide-vue-next';
+import { useToast } from '@/composables/useToast';
+import { X } from 'lucide-vue-next';
 
-const {toasts, remove} = useToast();
+const { toasts, remove } = useToast();
 </script>
 
 <template>

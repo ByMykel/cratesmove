@@ -1,4 +1,4 @@
-import {ref, readonly} from 'vue';
+import { ref, readonly } from 'vue';
 import {
   getAppVersion,
   checkForUpdates as ipcCheckForUpdates,
@@ -22,7 +22,7 @@ function registerListeners() {
     appVersion.value = version;
   });
 
-  onSteamEvent('app:update-available', (_event: unknown, data: {version: string}) => {
+  onSteamEvent('app:update-available', (_event: unknown, data: { version: string }) => {
     updateAvailable.value = true;
     updateVersion.value = data.version;
   });
@@ -31,11 +31,11 @@ function registerListeners() {
     updateAvailable.value = false;
   });
 
-  onSteamEvent('app:update-progress', (_event: unknown, data: {percent: number}) => {
+  onSteamEvent('app:update-progress', (_event: unknown, data: { percent: number }) => {
     downloadProgress.value = Math.round(data.percent);
   });
 
-  onSteamEvent('app:update-downloaded', (_event: unknown, data: {version: string}) => {
+  onSteamEvent('app:update-downloaded', (_event: unknown, data: { version: string }) => {
     updateDownloaded.value = true;
     updateVersion.value = data.version;
     downloadProgress.value = 100;

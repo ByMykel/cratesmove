@@ -1,13 +1,13 @@
-import {sha256sum} from './nodeCrypto.js';
-import {versions} from './versions.js';
-import {ipcRenderer} from 'electron';
+import { sha256sum } from './nodeCrypto.js';
+import { versions } from './versions.js';
+import { ipcRenderer } from 'electron';
 
 function send(channel: string, message: string) {
   return ipcRenderer.invoke(channel, message);
 }
 
 // Steam Auth
-function steamCredentialLogin(creds: {username: string; password: string}) {
+function steamCredentialLogin(creds: { username: string; password: string }) {
   return ipcRenderer.invoke('steam:credential-login', creds);
 }
 
@@ -36,16 +36,20 @@ function steamInspectStorage(id: string) {
   return ipcRenderer.invoke('steam:inspect-storage', id);
 }
 
-function steamDepositToStorage(args: {storageId: string; itemIds: string[]}) {
+function steamDepositToStorage(args: { storageId: string; itemIds: string[] }) {
   return ipcRenderer.invoke('steam:deposit-to-storage', args);
 }
 
-function steamRetrieveFromStorage(args: {storageId: string; itemIds: string[]}) {
+function steamRetrieveFromStorage(args: { storageId: string; itemIds: string[] }) {
   return ipcRenderer.invoke('steam:retrieve-from-storage', args);
 }
 
-function steamRenameStorage(args: {storageId: string; name: string}) {
+function steamRenameStorage(args: { storageId: string; name: string }) {
   return ipcRenderer.invoke('steam:rename-storage', args);
+}
+
+function steamCancelOperation() {
+  return ipcRenderer.invoke('steam:cancel-operation');
 }
 
 // App / Updates
@@ -75,6 +79,7 @@ function steamRemoveAccount(steamId: string) {
 }
 
 // Steam Event Listener
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Electron IPC callback signature
 function onSteamEvent(channel: string, callback: (...args: any[]) => void) {
   ipcRenderer.on(channel, callback);
   return () => {
@@ -96,6 +101,7 @@ export {
   steamDepositToStorage,
   steamRetrieveFromStorage,
   steamRenameStorage,
+  steamCancelOperation,
   steamGetSavedAccounts,
   steamSwitchAccount,
   steamRemoveAccount,

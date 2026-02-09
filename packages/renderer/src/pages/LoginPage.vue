@@ -1,18 +1,14 @@
 <script setup lang="ts">
-import {ref, onMounted, computed} from 'vue';
-import CredentialLogin from '@/components/CredentialLogin.vue';
-import SavedAccountList from '@/components/SavedAccountList.vue';
-import {Package, Loader2} from 'lucide-vue-next';
-import {useSteam} from '@/composables/useSteam';
+import { ref, computed } from 'vue';
+import CredentialLogin from '@/components/auth/CredentialLogin.vue';
+import SavedAccountList from '@/components/auth/SavedAccountList.vue';
+import { Package, Loader2 } from 'lucide-vue-next';
+import { useSteam } from '@/composables/useSteam';
 
-const {error, restoringSession, savedAccounts, getSavedAccounts} = useSteam();
+const { error, restoringSession, savedAccounts } = useSteam();
 
 const showCredentialForm = ref(false);
 const hasSavedAccounts = computed(() => savedAccounts.value.length > 0);
-
-onMounted(async () => {
-  await getSavedAccounts();
-});
 </script>
 
 <template>

@@ -1,17 +1,17 @@
 <script setup lang="ts">
-import {useSteam} from '@/composables/useSteam';
-import {useToast} from '@/composables/useToast';
-import ToastContainer from '@/components/ToastContainer.vue';
-import {watch, onMounted} from 'vue';
-import {useRouter} from 'vue-router';
-import {onSteamEvent} from '@app/preload';
+import { useSteam } from '@/composables/useSteam';
+import { useToast } from '@/composables/useToast';
+import ToastContainer from '@/components/common/ToastContainer.vue';
+import { watch, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { onSteamEvent } from '@app/preload';
 
-const {isConnected, switchingAccount, savedAccounts, trySavedSession, getSavedAccounts} =
+const { isConnected, switchingAccount, savedAccounts, trySavedSession, getSavedAccounts } =
   useSteam();
-const {error: showError} = useToast();
+const { error: showError } = useToast();
 const router = useRouter();
 
-onSteamEvent('steam:error', (_event: unknown, data: {message: string}) => {
+onSteamEvent('steam:error', (_event: unknown, data: { message: string }) => {
   showError(data.message);
 });
 

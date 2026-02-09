@@ -1,11 +1,12 @@
-import {AppModule} from '../AppModule.js';
-import {BrowserWindow, ipcMain, app} from 'electron';
-import electronUpdater, {type AppUpdater, type Logger} from 'electron-updater';
+import { AppModule } from '../AppModule.js';
+import { ipcMain, app } from 'electron';
+import electronUpdater, { type AppUpdater, type Logger } from 'electron-updater';
+import { broadcastToRenderers } from '../broadcastToRenderers.js';
 
 export class AutoUpdater implements AppModule {
   readonly #logger: Logger | null;
 
-  constructor({logger = null}: {logger?: Logger | null | undefined} = {}) {
+  constructor({ logger = null }: { logger?: Logger | null | undefined } = {}) {
     this.#logger = logger;
   }
 
@@ -18,7 +19,7 @@ export class AutoUpdater implements AppModule {
   #getAutoUpdater(): AppUpdater {
     // Using destructuring to access autoUpdater due to the CommonJS module of 'electron-updater'.
     // It is a workaround for ESM compatibility issues, see https://github.com/electron-userland/electron-builder/issues/7976.
-    const {autoUpdater} = electronUpdater;
+    const { autoUpdater } = electronUpdater;
     return autoUpdater;
   }
 
@@ -53,23 +54,23 @@ export class AutoUpdater implements AppModule {
     }
 
     updater.on('update-available', info => {
-      this.#sendToRenderer('app:update-available', {version: info.version});
+      broadcastToRenderers('app:update-available', { version: info.version });
     });
 
     updater.on('update-not-available', () => {
-      this.#sendToRenderer('app:update-not-available', {});
+      broadcastToRenderers('app:update-not-available', {});
     });
 
     updater.on('download-progress', progress => {
-      this.#sendToRenderer('app:update-progress', {percent: progress.percent});
+      broadcastToRenderers('app:update-progress', { percent: progress.percent });
     });
 
     updater.on('update-downloaded', info => {
-      this.#sendToRenderer('app:update-downloaded', {version: info.version});
+      broadcastToRenderers('app:update-downloaded', { version: info.version });
     });
 
     updater.on('error', error => {
-      this.#sendToRenderer('app:update-error', {message: error.message});
+      broadcastToRenderers('app:update-error', { message: error.message });
     });
   }
 
@@ -78,15 +79,7 @@ export class AutoUpdater implements AppModule {
       await this.#getAutoUpdater().checkForUpdates();
     } catch (error) {
       if (error instanceof Error && !error.message.includes('No published versions')) {
-        this.#sendToRenderer('app:update-error', {message: error.message});
-      }
-    }
-  }
-
-  #sendToRenderer(channel: string, data: unknown) {
-    for (const window of BrowserWindow.getAllWindows()) {
-      if (!window.isDestroyed()) {
-        window.webContents.send(channel, data);
+        broadcastToRenderers('app:update-error', { message: error.message });
       }
     }
   }

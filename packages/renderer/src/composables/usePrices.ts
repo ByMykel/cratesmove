@@ -1,7 +1,8 @@
-import {ref, readonly} from 'vue';
-import type {PriceData, InventoryItem} from '@/types/steam';
+import { ref, readonly } from 'vue';
+import type { PriceData, InventoryItem } from '@/types/steam';
 
-const CDN_URL = 'https://cdn.jsdelivr.net/gh/bymykel/counter-strike-price-tracker@main/static/latest.json';
+const CDN_URL =
+  'https://cdn.jsdelivr.net/gh/bymykel/counter-strike-price-tracker@main/static/latest.json';
 const CACHE_KEY = 'cs2-prices-cache';
 const CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours
 
@@ -31,7 +32,7 @@ function loadFromCache(): PriceData | null {
 
 function saveToCache(data: PriceData) {
   try {
-    const entry: CacheEntry = {data, cachedAt: Date.now()};
+    const entry: CacheEntry = { data, cachedAt: Date.now() };
     localStorage.setItem(CACHE_KEY, JSON.stringify(entry));
   } catch {
     // Storage full or unavailable — ignore

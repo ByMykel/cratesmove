@@ -1,4 +1,4 @@
-import {ref, readonly} from 'vue';
+import { ref, readonly } from 'vue';
 
 export interface Toast {
   id: number;
@@ -11,7 +11,7 @@ let nextId = 0;
 
 function addToast(message: string, type: Toast['type'] = 'info', duration = 5000) {
   const id = nextId++;
-  toasts.value = [...toasts.value, {id, message, type}];
+  toasts.value = [...toasts.value, { id, message, type }];
   setTimeout(() => removeToast(id), duration);
 }
 

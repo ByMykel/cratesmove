@@ -1,10 +1,9 @@
-import {ref, computed, readonly} from 'vue';
-import {steamGetInventory, steamGetStorageUnits, onSteamEvent} from '@app/preload';
-import type {InventoryItem, StorageUnit} from '@/types/steam';
+import { ref, readonly } from 'vue';
+import { steamGetInventory, steamGetStorageUnits, onSteamEvent } from '@app/preload';
+import type { InventoryItem, StorageUnit } from '@/types/steam';
 
 const items = ref<InventoryItem[]>([]);
 const storageUnits = ref<StorageUnit[]>([]);
-const selectedItemIds = ref<Set<string>>(new Set());
 const loading = ref(false);
 
 let listenersRegistered = false;
@@ -25,12 +24,6 @@ function registerListeners() {
 export function useInventory() {
   registerListeners();
 
-  const selectedItems = computed(() =>
-    items.value.filter(item => selectedItemIds.value.has(item.id)),
-  );
-
-  const selectionCount = computed(() => selectedItemIds.value.size);
-
   async function fetchInventory() {
     loading.value = true;
     try {
@@ -46,47 +39,16 @@ export function useInventory() {
     storageUnits.value = result;
   }
 
-  function toggleSelection(itemId: string) {
-    const next = new Set(selectedItemIds.value);
-    if (next.has(itemId)) {
-      next.delete(itemId);
-    } else {
-      next.add(itemId);
-    }
-    selectedItemIds.value = next;
-  }
-
-  function toggleBatch(itemIds: string[]) {
-    const next = new Set(selectedItemIds.value);
-    const allSelected = itemIds.every(id => next.has(id));
-    if (allSelected) {
-      for (const id of itemIds) next.delete(id);
-    } else {
-      for (const id of itemIds) next.add(id);
-    }
-    selectedItemIds.value = next;
-  }
-
-  function selectAll() {
-    selectedItemIds.value = new Set(items.value.filter(i => i.movable !== false).map(i => i.id));
-  }
-
-  function clearSelection() {
-    selectedItemIds.value = new Set();
+  async function refreshAll() {
+    await Promise.all([fetchInventory(), fetchStorageUnits()]);
   }
 
   return {
     items: readonly(items),
     storageUnits: readonly(storageUnits),
-    selectedItemIds: readonly(selectedItemIds),
-    selectedItems,
-    selectionCount,
     loading: readonly(loading),
     fetchInventory,
     fetchStorageUnits,
-    toggleSelection,
-    toggleBatch,
-    selectAll,
-    clearSelection,
+    refreshAll,
   };
 }

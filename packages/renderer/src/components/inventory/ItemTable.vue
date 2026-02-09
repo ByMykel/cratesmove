@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import {ref, computed, toRef} from 'vue';
-import type {InventoryItem} from '@/types/steam';
-import {useItemGroups, type ItemGroup} from '@/composables/useItemGroups';
-import {usePrices} from '@/composables/usePrices';
-import {ChevronRight} from 'lucide-vue-next';
+import { ref, computed, toRef } from 'vue';
+import { useClipboard } from '@vueuse/core';
+import type { InventoryItem } from '@/types/steam';
+import { useItemGroups, type ItemGroup } from '@/composables/useItemGroups';
+import { ChevronRight, ClipboardCopy, Check, TriangleAlert } from 'lucide-vue-next';
+import { usePrices } from '@/composables/usePrices';
 
-const {getPrice, formatPrice} = usePrices();
+const { getPrice, formatPrice } = usePrices();
 
 const props = defineProps<{
   items: readonly InventoryItem[];
@@ -17,7 +18,7 @@ const emit = defineEmits<{
   toggleGroup: [ids: string[]];
 }>();
 
-const {groups} = useItemGroups(toRef(props, 'items'));
+const { groups } = useItemGroups(toRef(() => props.items));
 
 const expandedGroups = ref<Set<string>>(new Set());
 
@@ -51,6 +52,18 @@ function handleItemCheckbox(item: InventoryItem) {
 }
 
 const hasItems = computed(() => props.items.length > 0);
+
+const { copy } = useClipboard();
+const copiedId = ref<string | null>(null);
+
+async function copyRawData(item: InventoryItem) {
+  if (!item._rawData) return;
+  await copy(item._rawData);
+  copiedId.value = item.id;
+  setTimeout(() => {
+    copiedId.value = null;
+  }, 2000);
+}
 </script>
 
 <template>
@@ -83,10 +96,38 @@ const hasItems = computed(() => props.items.length > 0);
       </thead>
       <tbody class="divide-y divide-(--ui-border)/50">
         <template v-for="group in groups" :key="group.market_hash_name">
+          <!-- Parse error row -->
+          <tr v-if="group._parseError" class="transition-colors hover:bg-(--ui-bg-elevated)/50">
+            <td class="px-2 py-0 align-middle"></td>
+            <td class="px-2 py-0 align-middle">
+              <TriangleAlert class="h-3.5 w-3.5 text-amber-500" />
+            </td>
+            <td colspan="2" class="px-2 py-2 align-middle">
+              <p class="text-xs text-(--ui-text-muted)">
+                Failed to load this item. Copy the raw data and share it so we can fix this.
+              </p>
+            </td>
+            <td class="px-2 py-0 align-middle">
+              <button
+                class="inline-flex items-center justify-center rounded p-1 transition-colors hover:bg-(--ui-bg-elevated)"
+                title="Copy raw data"
+                @click="copyRawData(group.items[0])"
+              >
+                <Check v-if="copiedId === group.items[0].id" class="h-3.5 w-3.5 text-green-500" />
+                <ClipboardCopy v-else class="h-3.5 w-3.5 text-(--ui-text-muted)" />
+              </button>
+            </td>
+          </tr>
+
+          <!-- Normal group row -->
           <tr
+            v-else
             class="transition-colors hover:bg-(--ui-bg-elevated)/50"
-            :class="{'opacity-40': !group.movable, 'cursor-pointer': group.items.length > 1}"
+            :class="{ 'opacity-40': !group.movable, 'cursor-pointer': group.items.length > 1 }"
+            :tabindex="group.items.length > 1 ? 0 : -1"
             @click="group.items.length > 1 && toggleExpand(group.market_hash_name)"
+            @keydown.enter="group.items.length > 1 && toggleExpand(group.market_hash_name)"
+            @keydown.space.prevent="group.items.length > 1 && toggleExpand(group.market_hash_name)"
           >
             <td class="px-2 py-0 align-middle" @click.stop>
               <UCheckbox
@@ -100,7 +141,7 @@ const hasItems = computed(() => props.items.length > 0);
               <ChevronRight
                 v-if="group.items.length > 1"
                 class="h-3.5 w-3.5 transition-transform"
-                :class="{'rotate-90': expandedGroups.has(group.market_hash_name)}"
+                :class="{ 'rotate-90': expandedGroups.has(group.market_hash_name) }"
               />
             </td>
             <td class="py-1 align-middle">
@@ -118,18 +159,26 @@ const hasItems = computed(() => props.items.length > 0);
               {{ group.items.length }}
             </td>
             <td class="px-2 py-0 align-middle text-right tabular-nums text-(--ui-text-muted)">
-              {{ getPrice(group.market_hash_name) != null
-                ? formatPrice(getPrice(group.market_hash_name)! * group.items.length)
-                : '--' }}
+              {{
+                getPrice(group.market_hash_name) != null
+                  ? formatPrice(getPrice(group.market_hash_name)! * group.items.length)
+                  : '--'
+              }}
             </td>
           </tr>
 
-          <template v-if="group.items.length > 1 && expandedGroups.has(group.market_hash_name)">
+          <template
+            v-if="
+              !group._parseError &&
+              group.items.length > 1 &&
+              expandedGroups.has(group.market_hash_name)
+            "
+          >
             <tr
               v-for="item in group.items"
               :key="item.id"
               class="transition-colors hover:bg-(--ui-bg-elevated)/30"
-              :class="{'opacity-40': item.movable === false}"
+              :class="{ 'opacity-40': item.movable === false }"
             >
               <td class="px-2 py-0 align-middle" @click.stop>
                 <UCheckbox
@@ -157,7 +206,9 @@ const hasItems = computed(() => props.items.length > 0);
                 </span>
               </td>
               <td></td>
-              <td class="px-2 py-0 align-middle text-right tabular-nums text-(--ui-text-muted) text-xs">
+              <td
+                class="px-2 py-0 align-middle text-right tabular-nums text-(--ui-text-muted) text-xs"
+              >
                 {{ formatPrice(getPrice(item.market_hash_name)) }}
               </td>
             </tr>

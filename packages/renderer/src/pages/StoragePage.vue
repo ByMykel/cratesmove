@@ -1,22 +1,23 @@
 <script setup lang="ts">
-import {onMounted, ref, computed} from 'vue';
-import {useRoute, useRouter} from 'vue-router';
-import AppLayout from '@/components/AppLayout.vue';
-import ItemTable from '@/components/ItemTable.vue';
-import MoveItemsDialog from '@/components/MoveItemsDialog.vue';
-import RenameDialog from '@/components/RenameDialog.vue';
-import OperationProgress from '@/components/OperationProgress.vue';
-import {useInventory} from '@/composables/useInventory';
-import {useStorageUnits} from '@/composables/useStorageUnits';
-import {usePrices} from '@/composables/usePrices';
-import {ArrowLeft, Plus, Pencil, ArrowUpFromLine, Loader2} from 'lucide-vue-next';
+import { onMounted, ref, computed } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import AppLayout from '@/components/layout/AppLayout.vue';
+import ItemTable from '@/components/inventory/ItemTable.vue';
+import MoveItemsDialog from '@/components/storage/MoveItemsDialog.vue';
+import RenameDialog from '@/components/storage/RenameDialog.vue';
+import OperationProgress from '@/components/inventory/OperationProgress.vue';
+import { useInventory } from '@/composables/useInventory';
+import { useStorageUnits } from '@/composables/useStorageUnits';
+import { useSelection } from '@/composables/useSelection';
+import { ArrowLeft, Plus, Pencil, ArrowUpFromLine, Loader2 } from 'lucide-vue-next';
+import { usePrices } from '@/composables/usePrices';
 
 const route = useRoute();
 const router = useRouter();
 
 const storageId = computed(() => route.params.id as string);
 
-const {items, storageUnits, fetchInventory, fetchStorageUnits} = useInventory();
+const { items, storageUnits, fetchInventory, fetchStorageUnits } = useInventory();
 const {
   inspectStorage,
   depositToStorage,
@@ -26,13 +27,18 @@ const {
   operationProgress,
   operationInProgress,
 } = useStorageUnits();
+const {
+  selectedIds,
+  toggle: toggleSelection,
+  toggleBatch: handleToggleGroup,
+  clear: clearSelection,
+} = useSelection();
 
 const loading = ref(false);
-const selectedIds = ref<Set<string>>(new Set());
 const showAddDialog = ref(false);
 const showRenameDialog = ref(false);
 
-const {getTotalValue, formatPrice} = usePrices();
+const { getTotalValue, formatPrice } = usePrices();
 
 const contents = computed(() => getContents(storageId.value));
 const currentUnit = computed(() => storageUnits.value.find(u => u.id === storageId.value));
@@ -50,30 +56,9 @@ onMounted(async () => {
   }
 });
 
-function toggleSelection(id: string) {
-  const next = new Set(selectedIds.value);
-  if (next.has(id)) {
-    next.delete(id);
-  } else {
-    next.add(id);
-  }
-  selectedIds.value = next;
-}
-
-function handleToggleGroup(ids: string[]) {
-  const next = new Set(selectedIds.value);
-  const allSelected = ids.every(id => next.has(id));
-  if (allSelected) {
-    for (const id of ids) next.delete(id);
-  } else {
-    for (const id of ids) next.add(id);
-  }
-  selectedIds.value = next;
-}
-
 async function handleRetrieve() {
   const itemIds = [...selectedIds.value];
-  selectedIds.value = new Set();
+  clearSelection();
   await retrieveFromStorage(storageId.value, itemIds);
   await refresh();
 }

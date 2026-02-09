@@ -1,33 +1,30 @@
 <script setup lang="ts">
-import {onMounted, computed} from 'vue';
-import {useRouter} from 'vue-router';
-import AppLayout from '@/components/AppLayout.vue';
-import ItemTable from '@/components/ItemTable.vue';
-import StorageUnitCard from '@/components/StorageUnitCard.vue';
-import BulkActions from '@/components/BulkActions.vue';
-import OperationProgress from '@/components/OperationProgress.vue';
+import { onMounted, computed } from 'vue';
+import { useRouter } from 'vue-router';
+import AppLayout from '@/components/layout/AppLayout.vue';
+import ItemTable from '@/components/inventory/ItemTable.vue';
+import StorageUnitCard from '@/components/inventory/StorageUnitCard.vue';
+import BulkActions from '@/components/inventory/BulkActions.vue';
+import OperationProgress from '@/components/inventory/OperationProgress.vue';
 
-import {useInventory} from '@/composables/useInventory';
-import {useStorageUnits} from '@/composables/useStorageUnits';
-import {usePrices} from '@/composables/usePrices';
-import {Loader2, RefreshCw, Archive} from 'lucide-vue-next';
+import { useInventory } from '@/composables/useInventory';
+import { useSelection } from '@/composables/useSelection';
+import { useStorageUnits } from '@/composables/useStorageUnits';
+import { usePrices } from '@/composables/usePrices';
+import { Loader2, RefreshCw, Archive } from 'lucide-vue-next';
 
 const router = useRouter();
+const { items, storageUnits, loading, refreshAll } = useInventory();
 const {
-  items,
-  storageUnits,
-  selectedItemIds,
+  selectedIds,
   selectionCount,
-  loading,
-  fetchInventory,
-  fetchStorageUnits,
-  toggleSelection,
+  toggle: toggleSelection,
   toggleBatch,
-  clearSelection,
-} = useInventory();
-const {operationProgress, operationInProgress, depositToStorage, inspectStorage, getContents} =
+  clear: clearSelection,
+} = useSelection();
+const { operationProgress, operationInProgress, depositToStorage, inspectStorage, getContents } =
   useStorageUnits();
-const {getTotalValue, formatPrice} = usePrices();
+const { getTotalValue, formatPrice } = usePrices();
 
 const inventoryValue = computed(() => getTotalValue(items.value));
 
@@ -36,22 +33,18 @@ function storageValue(unitId: string): number {
 }
 
 onMounted(async () => {
-  await Promise.all([fetchInventory(), fetchStorageUnits()]);
+  await refreshAll();
   // Inspect all storage units in background to get their contents for price display
   for (const unit of storageUnits.value) {
     inspectStorage(unit.id);
   }
 });
 
-async function handleRefresh() {
-  await Promise.all([fetchInventory(), fetchStorageUnits()]);
-}
-
 async function handleDeposit(storageId: string) {
-  const itemIds = [...selectedItemIds.value];
+  const itemIds = [...selectedIds.value];
   clearSelection();
   await depositToStorage(storageId, itemIds);
-  await Promise.all([fetchInventory(), fetchStorageUnits()]);
+  await refreshAll();
 }
 
 function openStorage(id: string) {
@@ -80,7 +73,7 @@ function openStorage(id: string) {
             square
             size="xs"
             :disabled="loading"
-            @click="handleRefresh"
+            @click="refreshAll"
           >
             <Loader2 v-if="loading" class="h-3.5 w-3.5 animate-spin" />
             <RefreshCw v-else class="h-3.5 w-3.5" />
@@ -95,7 +88,7 @@ function openStorage(id: string) {
       <ItemTable
         v-else
         :items="items"
-        :selected-ids="selectedItemIds"
+        :selected-ids="selectedIds"
         @toggle-item="toggleSelection"
         @toggle-group="toggleBatch"
       />

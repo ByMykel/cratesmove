@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import {ref} from 'vue';
-import {useSteam} from '@/composables/useSteam';
-import {Loader2} from 'lucide-vue-next';
+import { ref } from 'vue';
+import { useSteam } from '@/composables/useSteam';
+import { Loader2 } from 'lucide-vue-next';
 
-const {authState, error, credentialLogin, submitSteamGuard, steamGuardType} = useSteam();
+const { authState, error, credentialLogin, submitSteamGuard, steamGuardType } = useSteam();
 
 const username = ref('');
 const password = ref('');
