@@ -51,4 +51,4 @@ packages/
 - Linting: ESLint 9 (flat config) + typescript-eslint + eslint-plugin-vue
 - Formatting: Prettier
 - Run `npm run lint:fix && npm run format` before committing
-- **Commits:** Always use [Conventional Commits](https://www.conventionalcommits.org/) (e.g. `feat:`, `fix:`, `chore:`, `docs:`, `refactor:`)
+- **Commits:** Always use [Conventional Commits](https://www.conventionalcommits.org/) (e.g. `feat:`, `fix:`, `chore:`, `docs:`, `refactor:`). Keep commit messages short and simple — one line, no bullet lists or multi-line bodies.
