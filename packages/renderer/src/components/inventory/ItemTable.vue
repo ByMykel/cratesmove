@@ -81,7 +81,7 @@ async function copyRawData(item: InventoryItem) {
         <col class="w-10" />
         <col class="w-24" />
       </colgroup>
-      <thead class="sticky top-0 z-10 backdrop-blur-xl bg-(--ui-bg)/60">
+      <thead class="sticky top-0 backdrop-blur-xl bg-(--ui-bg)/60">
         <tr class="text-left text-xs text-(--ui-text-muted)">
           <th class="px-2 py-3"></th>
           <th class="px-2 py-3"></th>
