@@ -174,7 +174,7 @@
       padding: 180px 0 80px;
       text-align: center;
       position: relative;
-      overflow: hidden;
+      overflow-x: clip;
     }
 
     .hero-glow {
@@ -679,7 +679,6 @@
         margin-top: 12px;
         font-size: 13px;
         color: var(--text-muted);
-        animation: hint-fade 4s ease forwards;
       }
 
       .scroll-hint svg {
@@ -691,11 +690,6 @@
       @keyframes hint-nudge {
         0%, 100% { transform: translateX(0); }
         50% { transform: translateX(5px); }
-      }
-
-      @keyframes hint-fade {
-        0%, 70% { opacity: 1; }
-        100% { opacity: 0; }
       }
 
       .nav-links .hide-mobile {
