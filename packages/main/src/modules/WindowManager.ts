@@ -1,7 +1,8 @@
 import type { AppModule } from '../AppModule.js';
 import { ModuleContext } from '../ModuleContext.js';
-import { BrowserWindow } from 'electron';
+import { app, BrowserWindow } from 'electron';
 import type { AppInitConfig } from '../AppInitConfig.js';
+import { join } from 'node:path';
 
 class WindowManager implements AppModule {
   readonly #preload: { path: string };
@@ -30,6 +31,7 @@ class WindowManager implements AppModule {
   async createWindow(): Promise<BrowserWindow> {
     const browserWindow = new BrowserWindow({
       show: false, // Use the 'ready-to-show' event to show the instantiated BrowserWindow.
+      icon: join(app.getAppPath(), 'buildResources', 'icon.png'),
       webPreferences: {
         nodeIntegration: false,
         contextIsolation: true,
