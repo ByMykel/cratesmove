@@ -139,6 +139,7 @@ function openStorage(id: string) {
         :selected-ids="selectedIds"
         @toggle-item="toggleSelection"
         @toggle-group="toggleBatch"
+        @toggle-all="toggleBatch(items.filter(i => i.movable !== false).map(i => i.id))"
       />
 
       <BulkActions

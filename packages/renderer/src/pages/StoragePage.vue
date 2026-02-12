@@ -108,6 +108,7 @@ async function refresh(id: string) {
         :selected-ids="selectedIds"
         @toggle-item="toggleSelection"
         @toggle-group="handleToggleGroup"
+        @toggle-all="handleToggleGroup(contents.filter(i => i.movable !== false).map(i => i.id))"
       />
 
       <!-- Retrieve bar -->

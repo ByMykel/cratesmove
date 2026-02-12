@@ -16,6 +16,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   toggleItem: [id: string];
   toggleGroup: [ids: string[]];
+  toggleAll: [];
 }>();
 
 const { groups } = useItemGroups(toRef(() => props.items));
@@ -51,6 +52,18 @@ function handleItemCheckbox(item: InventoryItem) {
   emit('toggleItem', item.id);
 }
 
+const allMovableIds = computed(() =>
+  props.items.filter(i => i.movable !== false).map(i => i.id),
+);
+
+const allCheckValue = computed<boolean | 'indeterminate'>(() => {
+  if (allMovableIds.value.length === 0) return false;
+  const selectedCount = allMovableIds.value.filter(id => props.selectedIds.has(id)).length;
+  if (selectedCount === 0) return false;
+  if (selectedCount === allMovableIds.value.length) return true;
+  return 'indeterminate';
+});
+
 const hasItems = computed(() => props.items.length > 0);
 
 const { copy } = useClipboard();
@@ -83,7 +96,14 @@ async function copyRawData(item: InventoryItem) {
       </colgroup>
       <thead class="sticky top-0 z-[1] backdrop-blur-xl bg-(--ui-bg)/60">
         <tr class="text-left text-xs text-(--ui-text-muted)">
-          <th class="px-2 py-3"></th>
+          <th class="px-2 py-3" @click.stop>
+            <UCheckbox
+              size="lg"
+              :model-value="allCheckValue"
+              :disabled="allMovableIds.length === 0"
+              @update:model-value="emit('toggleAll')"
+            />
+          </th>
           <th class="px-2 py-3"></th>
           <th class="py-3"></th>
           <th class="px-2 py-3 font-semibold">Name</th>
