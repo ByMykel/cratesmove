@@ -91,8 +91,6 @@ async function refresh(id: string) {
           </p>
         </div>
 
-        <UBadge variant="subtle" color="neutral"> {{ contents.length }}/1000 </UBadge>
-
         <UButton variant="outline" color="neutral" size="sm" @click="showRenameDialog = true">
           <Pencil class="h-3.5 w-3.5" />
           <span>Rename</span>
