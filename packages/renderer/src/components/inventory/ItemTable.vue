@@ -114,10 +114,13 @@ async function copyRawData(item: InventoryItem) {
           <td colspan="6" class="h-px bg-(--ui-border)"></td>
         </tr>
       </thead>
-      <tbody class="divide-y divide-(--ui-border)/50">
+      <tbody>
         <template v-for="group in groups" :key="group.market_hash_name">
           <!-- Parse error row -->
-          <tr v-if="group._parseError" class="transition-colors hover:bg-(--ui-bg-elevated)/50">
+          <tr
+            v-if="group._parseError"
+            class="border-t border-(--ui-border)/50 transition-colors hover:bg-(--ui-bg-elevated)/50"
+          >
             <td class="px-2 py-0 align-middle"></td>
             <td class="px-2 py-0 align-middle">
               <TriangleAlert class="h-3.5 w-3.5 text-amber-500" />
@@ -142,7 +145,7 @@ async function copyRawData(item: InventoryItem) {
           <!-- Normal group row -->
           <tr
             v-else
-            class="transition-colors hover:bg-(--ui-bg-elevated)/50"
+            class="border-t border-(--ui-border)/50 transition-colors hover:bg-(--ui-bg-elevated)/50"
             :class="{ 'opacity-40': !group.movable, 'cursor-pointer': group.items.length > 1 }"
             :tabindex="group.items.length > 1 ? 0 : -1"
             @click="group.items.length > 1 && toggleExpand(group.market_hash_name)"
