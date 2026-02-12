@@ -24,6 +24,7 @@ declare module 'vue' {
     SavedAccountList: typeof import('./src/components/auth/SavedAccountList.vue')['default']
     StorageUnitCard: typeof import('./src/components/inventory/StorageUnitCard.vue')['default']
     ThemeToggle: typeof import('./src/components/common/ThemeToggle.vue')['default']
+    TitleBar: typeof import('./src/components/layout/TitleBar.vue')['default']
     ToastContainer: typeof import('./src/components/common/ToastContainer.vue')['default']
     UApp: typeof import('./../../node_modules/@nuxt/ui/dist/runtime/components/App.vue')['default']
     UBadge: typeof import('./../../node_modules/@nuxt/ui/dist/runtime/components/Badge.vue')['default']

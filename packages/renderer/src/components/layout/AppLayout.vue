@@ -7,7 +7,7 @@ const { switchingAccount } = useSteam();
 </script>
 
 <template>
-  <div class="flex h-screen flex-col bg-background">
+  <div class="flex h-full flex-col bg-background">
     <AppHeader />
     <div class="relative flex flex-1 overflow-hidden">
       <slot />

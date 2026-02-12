@@ -78,6 +78,19 @@ function steamRemoveAccount(steamId: string) {
   return ipcRenderer.invoke('steam:remove-account', steamId);
 }
 
+// Window Controls
+function windowMinimize() {
+  return ipcRenderer.invoke('window:minimize');
+}
+
+function windowMaximize() {
+  return ipcRenderer.invoke('window:maximize');
+}
+
+function windowClose() {
+  return ipcRenderer.invoke('window:close');
+}
+
 // Steam Event Listener
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Electron IPC callback signature
 function onSteamEvent(channel: string, callback: (...args: any[]) => void) {
@@ -109,4 +122,7 @@ export {
   getAppVersion,
   checkForUpdates,
   installUpdate,
+  windowMinimize,
+  windowMaximize,
+  windowClose,
 };

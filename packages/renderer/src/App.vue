@@ -3,6 +3,7 @@ import { useSteam } from '@/composables/useSteam';
 import { watch, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { onSteamEvent } from '@app/preload';
+import TitleBar from '@/components/layout/TitleBar.vue';
 
 const { isConnected, switchingAccount, savedAccounts, trySavedSession, getSavedAccounts } =
   useSteam();
@@ -45,6 +46,9 @@ onMounted(async () => {
 
 <template>
   <UApp :toaster="{ position: 'bottom-left' }">
-    <router-view />
+    <div class="flex h-screen flex-col overflow-hidden">
+      <TitleBar class="shrink-0" />
+      <router-view class="min-h-0 flex-1" />
+    </div>
   </UApp>
 </template>

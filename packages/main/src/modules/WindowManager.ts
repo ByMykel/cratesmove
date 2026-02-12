@@ -1,6 +1,6 @@
 import type { AppModule } from '../AppModule.js';
 import { ModuleContext } from '../ModuleContext.js';
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, ipcMain, Menu } from 'electron';
 import type { AppInitConfig } from '../AppInitConfig.js';
 import { join } from 'node:path';
 
@@ -23,6 +23,26 @@ class WindowManager implements AppModule {
 
   async enable({ app }: ModuleContext): Promise<void> {
     await app.whenReady();
+
+    Menu.setApplicationMenu(null);
+
+    ipcMain.handle('window:minimize', () => {
+      BrowserWindow.getFocusedWindow()?.minimize();
+    });
+
+    ipcMain.handle('window:maximize', () => {
+      const win = BrowserWindow.getFocusedWindow();
+      if (win?.isMaximized()) {
+        win.unmaximize();
+      } else {
+        win?.maximize();
+      }
+    });
+
+    ipcMain.handle('window:close', () => {
+      BrowserWindow.getFocusedWindow()?.close();
+    });
+
     await this.restoreOrCreateWindow(true);
     app.on('second-instance', () => this.restoreOrCreateWindow(true));
     app.on('activate', () => this.restoreOrCreateWindow(true));
@@ -31,6 +51,7 @@ class WindowManager implements AppModule {
   async createWindow(): Promise<BrowserWindow> {
     const browserWindow = new BrowserWindow({
       show: false, // Use the 'ready-to-show' event to show the instantiated BrowserWindow.
+      frame: false,
       icon: join(app.getAppPath(), 'buildResources', 'icon.png'),
       webPreferences: {
         nodeIntegration: false,

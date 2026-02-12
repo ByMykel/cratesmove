@@ -12,7 +12,7 @@ const hasSavedAccounts = computed(() => savedAccounts.value.length > 0);
 </script>
 
 <template>
-  <div class="flex min-h-screen items-center justify-center bg-(--ui-bg) p-4">
+  <div class="flex h-full items-center justify-center bg-(--ui-bg) p-4">
     <UCard class="w-full max-w-md">
       <template #header>
         <div class="flex flex-col items-center text-center">
