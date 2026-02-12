@@ -3,13 +3,12 @@ import { onMounted, ref, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import AppLayout from '@/components/layout/AppLayout.vue';
 import ItemTable from '@/components/inventory/ItemTable.vue';
-import MoveItemsDialog from '@/components/storage/MoveItemsDialog.vue';
 import RenameDialog from '@/components/storage/RenameDialog.vue';
 import OperationProgress from '@/components/inventory/OperationProgress.vue';
 import { useInventory } from '@/composables/useInventory';
 import { useStorageUnits } from '@/composables/useStorageUnits';
 import { useSelection } from '@/composables/useSelection';
-import { ArrowLeft, Plus, Pencil, ArrowUpFromLine, Loader2 } from 'lucide-vue-next';
+import { ArrowLeft, Pencil, ArrowUpFromLine, Loader2 } from 'lucide-vue-next';
 import { usePrices } from '@/composables/usePrices';
 
 const route = useRoute();
@@ -17,10 +16,9 @@ const router = useRouter();
 
 const storageId = computed(() => route.params.id as string);
 
-const { items, storageUnits, fetchInventory, fetchStorageUnits } = useInventory();
+const { storageUnits, fetchInventory, fetchStorageUnits } = useInventory();
 const {
   inspectStorage,
-  depositToStorage,
   retrieveFromStorage,
   renameStorage,
   getContents,
@@ -35,7 +33,6 @@ const {
 } = useSelection();
 
 const loading = ref(false);
-const showAddDialog = ref(false);
 const showRenameDialog = ref(false);
 
 const { getTotalValue, formatPrice } = usePrices();
@@ -61,13 +58,6 @@ async function handleRetrieve() {
   const itemIds = [...selectedIds.value];
   clearSelection();
   await retrieveFromStorage(id, itemIds);
-  await refresh(id);
-}
-
-async function handleDeposit(itemIds: string[]) {
-  const id = storageId.value;
-  showAddDialog.value = false;
-  await depositToStorage(id, itemIds);
   await refresh(id);
 }
 
@@ -107,11 +97,6 @@ async function refresh(id: string) {
           <Pencil class="h-3.5 w-3.5" />
           <span>Rename</span>
         </UButton>
-
-        <UButton variant="outline" color="neutral" size="sm" @click="showAddDialog = true">
-          <Plus class="h-3.5 w-3.5" />
-          <span>Add Items</span>
-        </UButton>
       </div>
 
       <!-- Contents -->
@@ -139,15 +124,6 @@ async function refresh(id: string) {
         </UButton>
       </div>
     </div>
-
-    <!-- Dialogs -->
-    <MoveItemsDialog
-      :open="showAddDialog"
-      :items="items"
-      :storage-name="unitName"
-      @update:open="showAddDialog = $event"
-      @confirm="handleDeposit"
-    />
 
     <RenameDialog
       :open="showRenameDialog"
