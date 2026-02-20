@@ -11,6 +11,7 @@ const { getPrice, formatPrice } = usePrices();
 const props = defineProps<{
   items: readonly InventoryItem[];
   selectedIds: ReadonlySet<string>;
+  disabled?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -100,7 +101,7 @@ async function copyRawData(item: InventoryItem) {
             <UCheckbox
               size="lg"
               :model-value="allCheckValue"
-              :disabled="allMovableIds.length === 0"
+              :disabled="props.disabled || allMovableIds.length === 0"
               @update:model-value="emit('toggleAll')"
             />
           </th>
@@ -156,7 +157,7 @@ async function copyRawData(item: InventoryItem) {
               <UCheckbox
                 size="lg"
                 :model-value="groupCheckValue(group)"
-                :disabled="!group.movable"
+                :disabled="props.disabled || !group.movable"
                 @update:model-value="handleGroupCheckbox(group)"
               />
             </td>
@@ -207,7 +208,7 @@ async function copyRawData(item: InventoryItem) {
                 <UCheckbox
                   size="lg"
                   :model-value="selectedIds.has(item.id)"
-                  :disabled="item.movable === false"
+                  :disabled="props.disabled || item.movable === false"
                   @update:model-value="handleItemCheckbox(item)"
                 />
               </td>

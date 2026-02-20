@@ -10,6 +10,7 @@ import {
   steamRemoveAccount,
 } from '@app/preload';
 import type { AuthState, UserInfo, SavedAccountMeta } from '@/types/steam';
+import { useInventoryStore } from '@/composables/useInventoryStore';
 
 const authState = ref<AuthState>('disconnected');
 const userInfo = ref<UserInfo | null>(null);
@@ -108,6 +109,7 @@ export function useSteam() {
 
   async function logout() {
     await steamLogout();
+    useInventoryStore().reset();
     isConnected.value = false;
     userInfo.value = null;
     authState.value = 'disconnected';
@@ -121,6 +123,7 @@ export function useSteam() {
   async function switchAccount(steamId: string) {
     switchingAccount.value = true;
     error.value = null;
+    useInventoryStore().reset();
     try {
       await steamSwitchAccount(steamId);
     } catch (err: unknown) {

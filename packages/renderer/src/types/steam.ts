@@ -19,6 +19,12 @@ export interface InventoryItem {
   _rawData?: string;
 }
 
+export type ItemLocation = { type: 'inventory' } | { type: 'storage'; storageId: string };
+
+export interface NormalizedItem extends InventoryItem {
+  location: ItemLocation;
+}
+
 export interface StorageUnit {
   id: string;
   name: string;
