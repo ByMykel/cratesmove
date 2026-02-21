@@ -10,6 +10,7 @@ import {
   steamRemoveAccount,
 } from '@app/preload';
 import type { AuthState, UserInfo, SavedAccountMeta } from '@/types/steam';
+import { useInventoryStore } from '@/composables/useInventoryStore';
 
 const authState = ref<AuthState>('disconnected');
 const userInfo = ref<UserInfo | null>(null);
@@ -21,6 +22,7 @@ const savedAccounts = ref<SavedAccountMeta[]>([]);
 const switchingAccount = ref(false);
 
 let listenersRegistered = false;
+let connectedDuringSwitch = false;
 
 function registerListeners() {
   if (listenersRegistered) return;
@@ -37,12 +39,16 @@ function registerListeners() {
         isConnected.value = true;
         error.value = null;
         restoringSession.value = false;
-        // Don't reset switchingAccount here — wait for inventory-updated so the
-        // overlay stays until the new user's inventory is actually loaded
+        // Mark that the new account has connected — the next inventory-updated
+        // event is from the new account and can safely clear switchingAccount
+        if (switchingAccount.value) {
+          connectedDuringSwitch = true;
+        }
       } else if (data.state === 'error') {
         isConnected.value = false;
         restoringSession.value = false;
         switchingAccount.value = false;
+        connectedDuringSwitch = false;
       } else if (data.state === 'disconnected') {
         isConnected.value = false;
         restoringSession.value = false;
@@ -72,8 +78,9 @@ function registerListeners() {
   });
 
   onSteamEvent('steam:inventory-updated', () => {
-    if (switchingAccount.value) {
+    if (switchingAccount.value && connectedDuringSwitch) {
       switchingAccount.value = false;
+      connectedDuringSwitch = false;
     }
   });
 }
@@ -108,6 +115,7 @@ export function useSteam() {
 
   async function logout() {
     await steamLogout();
+    useInventoryStore().reset();
     isConnected.value = false;
     userInfo.value = null;
     authState.value = 'disconnected';
@@ -120,12 +128,15 @@ export function useSteam() {
 
   async function switchAccount(steamId: string) {
     switchingAccount.value = true;
+    connectedDuringSwitch = false;
     error.value = null;
+    useInventoryStore().reset();
     try {
       await steamSwitchAccount(steamId);
     } catch (err: unknown) {
       error.value = err instanceof Error ? err.message : String(err);
       switchingAccount.value = false;
+      connectedDuringSwitch = false;
     }
   }
 

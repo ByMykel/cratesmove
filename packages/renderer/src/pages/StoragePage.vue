@@ -5,8 +5,7 @@ import AppLayout from '@/components/layout/AppLayout.vue';
 import ItemTable from '@/components/inventory/ItemTable.vue';
 import RenameDialog from '@/components/storage/RenameDialog.vue';
 import OperationProgress from '@/components/inventory/OperationProgress.vue';
-import { useInventory } from '@/composables/useInventory';
-import { useStorageUnits } from '@/composables/useStorageUnits';
+import { useInventoryStore } from '@/composables/useInventoryStore';
 import { useSelection } from '@/composables/useSelection';
 import { ArrowLeft, Pencil, ArrowUpFromLine, Loader2 } from 'lucide-vue-next';
 import { usePrices } from '@/composables/usePrices';
@@ -16,15 +15,7 @@ const router = useRouter();
 
 const storageId = computed(() => route.params.id as string);
 
-const { storageUnits, fetchInventory, fetchStorageUnits } = useInventory();
-const {
-  inspectStorage,
-  retrieveFromStorage,
-  renameStorage,
-  getContents,
-  operationProgress,
-  operationInProgress,
-} = useStorageUnits();
+const store = useInventoryStore();
 const {
   selectedIds,
   toggle: toggleSelection,
@@ -37,8 +28,8 @@ const showRenameDialog = ref(false);
 
 const { getTotalValue, formatPrice } = usePrices();
 
-const contents = computed(() => getContents(storageId.value));
-const currentUnit = computed(() => storageUnits.value.find(u => u.id === storageId.value));
+const contents = computed(() => store.getStorageContents(storageId.value));
+const currentUnit = computed(() => store.storageUnits.value.get(storageId.value));
 const storageValue = computed(() => getTotalValue(contents.value));
 const unitName = computed(
   () => currentUnit.value?.custom_name || currentUnit.value?.name || 'Storage Unit',
@@ -47,7 +38,11 @@ const unitName = computed(
 onMounted(async () => {
   loading.value = true;
   try {
-    await Promise.all([inspectStorage(storageId.value), fetchInventory(), fetchStorageUnits()]);
+    await Promise.all([
+      store.inspectStorage(storageId.value),
+      store.fetchInventory(),
+      store.fetchStorageUnits(),
+    ]);
   } finally {
     loading.value = false;
   }
@@ -57,20 +52,20 @@ async function handleRetrieve() {
   const id = storageId.value;
   const itemIds = [...selectedIds.value];
   clearSelection();
-  await retrieveFromStorage(id, itemIds);
+  await store.retrieveFromStorage(id, itemIds);
   await refresh(id);
 }
 
 const toast = useToast();
 
 async function handleRename(name: string) {
-  await renameStorage(storageId.value, name);
-  await fetchStorageUnits();
+  await store.renameStorage(storageId.value, name);
+  await store.fetchStorageUnits();
   toast.add({ title: `Renamed to "${name}"`, color: 'success' });
 }
 
 async function refresh(id: string) {
-  await Promise.all([inspectStorage(id), fetchInventory(), fetchStorageUnits()]);
+  await Promise.all([store.inspectStorage(id), store.fetchInventory(), store.fetchStorageUnits()]);
 }
 </script>
 
@@ -106,6 +101,7 @@ async function refresh(id: string) {
         v-else
         :items="contents"
         :selected-ids="selectedIds"
+        :disabled="store.operationInProgress.value"
         @toggle-item="toggleSelection"
         @toggle-group="handleToggleGroup"
         @toggle-all="handleToggleGroup(contents.filter(i => i.movable !== false).map(i => i.id))"
@@ -131,6 +127,9 @@ async function refresh(id: string) {
       @confirm="handleRename"
     />
 
-    <OperationProgress :progress="operationProgress" :in-progress="operationInProgress" />
+    <OperationProgress
+      :progress="store.operationProgress.value"
+      :in-progress="store.operationInProgress.value"
+    />
   </AppLayout>
 </template>

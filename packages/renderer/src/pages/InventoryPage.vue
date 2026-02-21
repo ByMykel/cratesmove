@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, computed, watch, ref, watchEffect } from 'vue';
+import { onMounted, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import AppLayout from '@/components/layout/AppLayout.vue';
 import ItemTable from '@/components/inventory/ItemTable.vue';
@@ -7,14 +7,15 @@ import StorageUnitCard from '@/components/inventory/StorageUnitCard.vue';
 import BulkActions from '@/components/inventory/BulkActions.vue';
 import OperationProgress from '@/components/inventory/OperationProgress.vue';
 
-import { useInventory } from '@/composables/useInventory';
+import { useInventoryStore } from '@/composables/useInventoryStore';
 import { useSelection } from '@/composables/useSelection';
-import { useStorageUnits } from '@/composables/useStorageUnits';
 import { usePrices } from '@/composables/usePrices';
+import { useSteam } from '@/composables/useSteam';
 import { Loader2, RefreshCw, Archive } from 'lucide-vue-next';
 
 const router = useRouter();
-const { items, storageUnits, loading, refreshAll } = useInventory();
+const store = useInventoryStore();
+const { switchingAccount } = useSteam();
 const {
   selectedIds,
   selectionCount,
@@ -22,48 +23,23 @@ const {
   toggleBatch,
   clear: clearSelection,
 } = useSelection();
-const { operationProgress, operationInProgress, depositToStorage, inspectStorage, getContents } =
-  useStorageUnits();
 const { getTotalValue, formatPrice } = usePrices();
 
-const inventoryValue = computed(() => getTotalValue(items.value));
-
-const liveTotalValue = computed(() => {
-  let total = inventoryValue.value;
-  for (const unit of storageUnits.value) {
-    total += getTotalValue(getContents(unit.id));
-  }
-  return total;
-});
-
-// Use a ref so we have full control over when the displayed total updates.
-// During any operation (deposit or retrieve), items move between inventory and
-// storageContents cache, but the cache is only refreshed after inspectStorage.
-// This causes the live total to temporarily double-count or under-count items.
-// We suppress updates while any operation is in progress (operationInProgress is
-// shared across pages) and also during handleDeposit's post-operation refresh.
-const totalAccountValue = ref(0);
-let suppressTotal = false;
-
-watchEffect(() => {
-  const live = liveTotalValue.value;
-  if (!operationInProgress.value && !suppressTotal) {
-    totalAccountValue.value = live;
-  }
-});
+const inventoryValue = computed(() => getTotalValue(store.inventoryItems.value));
+const totalAccountValue = computed(() => getTotalValue(store.allItems.value));
 
 function storageValue(unitId: string): number {
-  return getTotalValue(getContents(unitId));
+  return getTotalValue(store.getStorageContents(unitId));
 }
 
 const inspectedIds = new Set<string>();
 
 async function inspectAllUnits() {
-  for (const unit of storageUnits.value) {
+  for (const unit of store.storageUnitList.value) {
     if (inspectedIds.has(unit.id)) continue;
     inspectedIds.add(unit.id);
     try {
-      await inspectStorage(unit.id);
+      await store.inspectStorage(unit.id);
     } catch {
       // Individual failure shouldn't block other units
     }
@@ -71,22 +47,28 @@ async function inspectAllUnits() {
 }
 
 onMounted(async () => {
-  await refreshAll();
+  await store.refreshAll();
 });
 
 // Inspect storage units whenever they become available.
 // Handles the case where the GC connects after the page mounts.
-watch(storageUnits, () => inspectAllUnits());
+watch(store.storageUnitList, () => inspectAllUnits());
+
+// Clear component-local state when switching accounts so stale IDs
+// don't prevent re-inspection or leave phantom selections.
+watch(switchingAccount, (switching) => {
+  if (switching) {
+    inspectedIds.clear();
+    clearSelection();
+  }
+});
 
 async function handleDeposit(storageId: string) {
   const itemIds = [...selectedIds.value];
   clearSelection();
-  suppressTotal = true;
-  await depositToStorage(storageId, itemIds);
-  await refreshAll();
-  await inspectStorage(storageId);
-  suppressTotal = false;
-  totalAccountValue.value = liveTotalValue.value;
+  await store.depositToStorage(storageId, itemIds);
+  await store.inspectStorage(storageId);
+  await store.refreshAll();
 }
 
 function openStorage(id: string) {
@@ -103,12 +85,15 @@ function openStorage(id: string) {
       >
         <h2 class="text-sm font-semibold">
           Inventory
-          <span class="text-(--ui-text-muted)">({{ items.length }})</span>
-          <span v-if="inventoryValue > 0" class="ml-2 text-xs font-normal text-(--ui-text-muted)">
-            {{ formatPrice(inventoryValue) }}
+          <span class="text-(--ui-text-muted)">({{ store.inventoryItems.value.length }})</span>
+          <span
+            v-if="totalAccountValue > 0"
+            class="ml-2 text-xs font-normal text-(--ui-text-muted)"
+          >
+            {{ formatPrice(inventoryValue > 0 ? inventoryValue : totalAccountValue) }}
           </span>
           <span
-            v-if="totalAccountValue > inventoryValue"
+            v-if="totalAccountValue > inventoryValue && inventoryValue > 0"
             class="ml-1 text-xs font-normal text-(--ui-text-muted)"
           >
             ({{ formatPrice(totalAccountValue) }} total)
@@ -120,31 +105,37 @@ function openStorage(id: string) {
             color="neutral"
             square
             size="xs"
-            :disabled="loading"
-            @click="refreshAll"
+            :disabled="store.loading.value"
+            @click="store.refreshAll"
           >
-            <Loader2 v-if="loading" class="h-3.5 w-3.5 animate-spin" />
+            <Loader2 v-if="store.loading.value" class="h-3.5 w-3.5 animate-spin" />
             <RefreshCw v-else class="h-3.5 w-3.5" />
           </UButton>
         </div>
       </div>
 
-      <div v-if="loading && items.length === 0" class="flex flex-1 items-center justify-center">
+      <div
+        v-if="store.loading.value && store.inventoryItems.value.length === 0"
+        class="flex flex-1 items-center justify-center"
+      >
         <Loader2 class="h-8 w-8 animate-spin text-(--ui-text-muted)" />
       </div>
 
       <ItemTable
         v-else
-        :items="items"
+        :items="store.inventoryItems.value"
         :selected-ids="selectedIds"
+        :disabled="store.operationInProgress.value"
         @toggle-item="toggleSelection"
         @toggle-group="toggleBatch"
-        @toggle-all="toggleBatch(items.filter(i => i.movable !== false).map(i => i.id))"
+        @toggle-all="
+          toggleBatch(store.inventoryItems.value.filter(i => i.movable !== false).map(i => i.id))
+        "
       />
 
       <BulkActions
         :selection-count="selectionCount"
-        :storage-units="storageUnits"
+        :storage-units="store.storageUnitList.value"
         @deposit="handleDeposit"
         @clear="clearSelection"
       />
@@ -161,7 +152,7 @@ function openStorage(id: string) {
 
       <div class="flex-1 overflow-y-auto">
         <div
-          v-if="storageUnits.length === 0"
+          v-if="store.storageUnitList.value.length === 0"
           class="flex flex-col items-center gap-2 p-4 text-center text-sm text-(--ui-text-muted)"
         >
           <p>No storage units found</p>
@@ -169,7 +160,7 @@ function openStorage(id: string) {
 
         <div v-else class="p-1">
           <StorageUnitCard
-            v-for="unit in storageUnits"
+            v-for="unit in store.storageUnitList.value"
             :key="unit.id"
             :unit="unit"
             :price="storageValue(unit.id) > 0 ? formatPrice(storageValue(unit.id)) : undefined"
@@ -179,6 +170,9 @@ function openStorage(id: string) {
       </div>
     </div>
 
-    <OperationProgress :progress="operationProgress" :in-progress="operationInProgress" />
+    <OperationProgress
+      :progress="store.operationProgress.value"
+      :in-progress="store.operationInProgress.value"
+    />
   </AppLayout>
 </template>
