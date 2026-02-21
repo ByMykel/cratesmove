@@ -10,10 +10,12 @@ import OperationProgress from '@/components/inventory/OperationProgress.vue';
 import { useInventoryStore } from '@/composables/useInventoryStore';
 import { useSelection } from '@/composables/useSelection';
 import { usePrices } from '@/composables/usePrices';
+import { useSteam } from '@/composables/useSteam';
 import { Loader2, RefreshCw, Archive } from 'lucide-vue-next';
 
 const router = useRouter();
 const store = useInventoryStore();
+const { switchingAccount } = useSteam();
 const {
   selectedIds,
   selectionCount,
@@ -52,6 +54,15 @@ onMounted(async () => {
 // Handles the case where the GC connects after the page mounts.
 watch(store.storageUnitList, () => inspectAllUnits());
 
+// Clear component-local state when switching accounts so stale IDs
+// don't prevent re-inspection or leave phantom selections.
+watch(switchingAccount, (switching) => {
+  if (switching) {
+    inspectedIds.clear();
+    clearSelection();
+  }
+});
+
 async function handleDeposit(storageId: string) {
   const itemIds = [...selectedIds.value];
   clearSelection();
@@ -75,11 +86,14 @@ function openStorage(id: string) {
         <h2 class="text-sm font-semibold">
           Inventory
           <span class="text-(--ui-text-muted)">({{ store.inventoryItems.value.length }})</span>
-          <span v-if="inventoryValue > 0" class="ml-2 text-xs font-normal text-(--ui-text-muted)">
-            {{ formatPrice(inventoryValue) }}
+          <span
+            v-if="totalAccountValue > 0"
+            class="ml-2 text-xs font-normal text-(--ui-text-muted)"
+          >
+            {{ formatPrice(inventoryValue > 0 ? inventoryValue : totalAccountValue) }}
           </span>
           <span
-            v-if="totalAccountValue > inventoryValue"
+            v-if="totalAccountValue > inventoryValue && inventoryValue > 0"
             class="ml-1 text-xs font-normal text-(--ui-text-muted)"
           >
             ({{ formatPrice(totalAccountValue) }} total)
