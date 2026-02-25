@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, computed, watch } from 'vue';
+import { onMounted, ref, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import AppLayout from '@/components/layout/AppLayout.vue';
 import ItemTable from '@/components/inventory/ItemTable.vue';
@@ -11,7 +11,7 @@ import { useInventoryStore } from '@/composables/useInventoryStore';
 import { useSelection } from '@/composables/useSelection';
 import { usePrices } from '@/composables/usePrices';
 import { useSteam } from '@/composables/useSteam';
-import { Loader2, RefreshCw, Archive } from 'lucide-vue-next';
+import { Loader2, RefreshCw, Archive, Search } from 'lucide-vue-next';
 
 const router = useRouter();
 const store = useInventoryStore();
@@ -24,6 +24,8 @@ const {
   clear: clearSelection,
 } = useSelection();
 const { getTotalValue, formatPrice } = usePrices();
+
+const search = ref('');
 
 const inventoryValue = computed(() => getTotalValue(store.inventoryItems.value));
 const totalAccountValue = computed(() => getTotalValue(store.allItems.value));
@@ -53,6 +55,8 @@ onMounted(async () => {
 // Inspect storage units whenever they become available.
 // Handles the case where the GC connects after the page mounts.
 watch(store.storageUnitList, () => inspectAllUnits());
+
+watch(search, () => clearSelection());
 
 // Clear component-local state when switching accounts so stale IDs
 // don't prevent re-inspection or leave phantom selections.
@@ -100,6 +104,16 @@ function openStorage(id: string) {
           </span>
         </h2>
         <div class="flex items-center gap-2">
+          <UInput
+            v-model="search"
+            placeholder="Search items..."
+            size="xs"
+            :ui="{ root: 'w-48' }"
+          >
+            <template #leading>
+              <Search class="h-3.5 w-3.5 text-(--ui-text-muted)" />
+            </template>
+          </UInput>
           <UButton
             variant="ghost"
             color="neutral"
@@ -126,6 +140,7 @@ function openStorage(id: string) {
         :items="store.inventoryItems.value"
         :selected-ids="selectedIds"
         :disabled="store.operationInProgress.value"
+        :search="search"
         @toggle-item="toggleSelection"
         @toggle-group="toggleBatch"
         @toggle-all="

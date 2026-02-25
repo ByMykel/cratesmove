@@ -9,11 +9,22 @@ export interface ItemGroup {
   _parseError?: boolean;
 }
 
-export function useItemGroups(items: Ref<readonly InventoryItem[]>) {
+export function useItemGroups(items: Ref<readonly InventoryItem[]>, search?: Ref<string>) {
   const groups = computed<ItemGroup[]>(() => {
+    const query = search?.value?.toLowerCase().trim() ?? '';
+
+    let source: readonly InventoryItem[] = items.value;
+    if (query) {
+      source = source.filter(
+        item =>
+          item.market_hash_name.toLowerCase().includes(query) ||
+          (item.custom_name && item.custom_name.toLowerCase().includes(query)),
+      );
+    }
+
     const map = new Map<string, InventoryItem[]>();
 
-    for (const item of items.value) {
+    for (const item of source) {
       // Give each error item its own group so they don't collapse together
       const key = item._parseError ? `__error_${item.id}` : item.market_hash_name;
       const arr = map.get(key);

@@ -12,6 +12,7 @@ const props = defineProps<{
   items: readonly InventoryItem[];
   selectedIds: ReadonlySet<string>;
   disabled?: boolean;
+  search?: string;
 }>();
 
 const emit = defineEmits<{
@@ -20,7 +21,10 @@ const emit = defineEmits<{
   toggleAll: [];
 }>();
 
-const { groups } = useItemGroups(toRef(() => props.items));
+const { groups } = useItemGroups(
+  toRef(() => props.items),
+  toRef(() => props.search ?? ''),
+);
 
 const expandedGroups = ref<Set<string>>(new Set());
 

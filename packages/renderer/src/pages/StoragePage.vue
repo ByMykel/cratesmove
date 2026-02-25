@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue';
+import { onMounted, ref, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import AppLayout from '@/components/layout/AppLayout.vue';
 import ItemTable from '@/components/inventory/ItemTable.vue';
@@ -7,7 +7,7 @@ import RenameDialog from '@/components/storage/RenameDialog.vue';
 import OperationProgress from '@/components/inventory/OperationProgress.vue';
 import { useInventoryStore } from '@/composables/useInventoryStore';
 import { useSelection } from '@/composables/useSelection';
-import { ArrowLeft, Pencil, ArrowUpFromLine, Loader2 } from 'lucide-vue-next';
+import { ArrowLeft, Pencil, ArrowUpFromLine, Loader2, Search } from 'lucide-vue-next';
 import { usePrices } from '@/composables/usePrices';
 
 const route = useRoute();
@@ -25,6 +25,7 @@ const {
 
 const loading = ref(false);
 const showRenameDialog = ref(false);
+const search = ref('');
 
 const { getTotalValue, formatPrice } = usePrices();
 
@@ -34,6 +35,8 @@ const storageValue = computed(() => getTotalValue(contents.value));
 const unitName = computed(
   () => currentUnit.value?.custom_name || currentUnit.value?.name || 'Storage Unit',
 );
+
+watch(search, () => clearSelection());
 
 onMounted(async () => {
   loading.value = true;
@@ -86,6 +89,17 @@ async function refresh(id: string) {
           </p>
         </div>
 
+        <UInput
+          v-model="search"
+          placeholder="Search items..."
+          size="xs"
+          :ui="{ root: 'w-48' }"
+        >
+          <template #leading>
+            <Search class="h-3.5 w-3.5 text-(--ui-text-muted)" />
+          </template>
+        </UInput>
+
         <UButton variant="outline" color="neutral" size="sm" @click="showRenameDialog = true">
           <Pencil class="h-3.5 w-3.5" />
           <span>Rename</span>
@@ -102,6 +116,7 @@ async function refresh(id: string) {
         :items="contents"
         :selected-ids="selectedIds"
         :disabled="store.operationInProgress.value"
+        :search="search"
         @toggle-item="toggleSelection"
         @toggle-group="handleToggleGroup"
         @toggle-all="handleToggleGroup(contents.filter(i => i.movable !== false).map(i => i.id))"
