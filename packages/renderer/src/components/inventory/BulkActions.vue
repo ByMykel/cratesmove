@@ -44,14 +44,7 @@ function handleDeposit(storageId: string) {
       :description="`Select a storage unit to deposit ${selectionCount} items into.`"
     >
       <template #body>
-        <div
-          v-if="storageUnits.length === 0"
-          class="py-4 text-center text-sm text-(--ui-text-muted)"
-        >
-          No storage units found
-        </div>
-
-        <div v-else class="flex flex-col gap-1">
+        <div v-if="storageUnits.length > 0" class="flex flex-col gap-1">
           <button
             v-for="unit in storageUnits"
             :key="unit.id"

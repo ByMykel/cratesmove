@@ -166,14 +166,7 @@ function openStorage(id: string) {
       </div>
 
       <div class="flex-1 overflow-y-auto">
-        <div
-          v-if="store.storageUnitList.value.length === 0"
-          class="flex flex-col items-center gap-2 p-4 text-center text-sm text-(--ui-text-muted)"
-        >
-          <p>No storage units found</p>
-        </div>
-
-        <div v-else class="p-1">
+        <div v-if="store.storageUnitList.value.length > 0" class="p-1">
           <StorageUnitCard
             v-for="unit in store.storageUnitList.value"
             :key="unit.id"

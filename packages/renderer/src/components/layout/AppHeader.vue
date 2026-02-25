@@ -3,19 +3,18 @@ import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useSteam } from '@/composables/useSteam';
 import { useUpdater } from '@/composables/useUpdater';
-import { Package, ChevronDown } from 'lucide-vue-next';
-import ThemeToggle from '@/components/common/ThemeToggle.vue';
+import { Package, ChevronDown, Download, Loader2 } from 'lucide-vue-next';
+import { useTheme } from '@/composables/useTheme';
 
 const { userInfo, savedAccounts, logout, switchAccount } = useSteam();
-const {
-  appVersion,
-  updateDownloaded,
-  updateVersion,
-  downloadProgress,
-  updateAvailable,
-  installUpdate,
-} = useUpdater();
+const { updateDownloaded, updateVersion, downloadProgress, updateAvailable, installUpdate } =
+  useUpdater();
+const { preference, resolvedTheme } = useTheme();
 const router = useRouter();
+
+const themeIcon = computed(() =>
+  resolvedTheme.value === 'light' ? 'i-lucide-sun' : 'i-lucide-moon',
+);
 
 const otherAccounts = computed(() =>
   savedAccounts.value.filter(a => a.steamId !== userInfo.value?.steamId),
@@ -29,10 +28,12 @@ interface DropdownItem {
   ui?: Record<string, string>;
   color?: 'error';
   disabled?: boolean;
+  active?: boolean;
+  children?: DropdownItem[];
   onSelect?: () => void;
 }
 
-const iconUi = { itemLeadingIcon: 'size-4' };
+const iconUi = { itemLeadingIcon: 'size-4', itemLeadingAvatar: 'rounded-lg' };
 
 const isDownloading = computed(
   () => updateAvailable.value && !updateDownloaded.value && downloadProgress.value > 0,
@@ -46,7 +47,10 @@ const dropdownItems = computed(() => {
     { type: 'label', label: 'Accounts' },
     ...otherAccounts.value.map(account => ({
       label: account.personaName,
-      avatar: account.avatarUrl ? { src: account.avatarUrl, alt: account.personaName } : undefined,
+      avatar: account.avatarUrl
+        ? { src: account.avatarUrl, alt: account.personaName }
+        : undefined,
+      ui: iconUi,
       onSelect: () => switchAccount(account.steamId),
     })),
     {
@@ -57,31 +61,43 @@ const dropdownItems = computed(() => {
     },
   ]);
 
-  // Update group
-  const updateItems: DropdownItem[] = [];
-  if (updateDownloaded.value) {
-    updateItems.push({
-      label: `Update to v${updateVersion.value}`,
-      icon: 'i-lucide-download',
-      ui: iconUi,
-      onSelect: () => installUpdate(),
-    });
-  } else if (isDownloading.value) {
-    updateItems.push({
-      label: `Downloading update... ${downloadProgress.value}%`,
-      icon: 'i-lucide-loader-2',
-      ui: iconUi,
-      disabled: true,
-    });
-  } else {
-    updateItems.push({
-      label: `Version ${appVersion.value}`,
-      icon: 'i-lucide-check',
-      ui: iconUi,
-      disabled: true,
-    });
-  }
-  items.push(updateItems);
+  // Appearance + sign out group
+  items.push([
+    {
+      label: 'Appearance',
+      icon: themeIcon.value,
+      ui: { ...iconUi, itemTrailingIcon: 'size-3.5 text-(--ui-text-dimmed)', content: 'min-w-32' },
+      children: [
+        {
+          label: 'Light',
+          icon: 'i-lucide-sun',
+          ui: iconUi,
+          active: preference.value === 'light',
+          onSelect: () => {
+            preference.value = 'light';
+          },
+        },
+        {
+          label: 'Dark',
+          icon: 'i-lucide-moon',
+          ui: iconUi,
+          active: preference.value === 'dark',
+          onSelect: () => {
+            preference.value = 'dark';
+          },
+        },
+        {
+          label: 'System',
+          icon: 'i-lucide-monitor',
+          ui: iconUi,
+          active: preference.value === 'system',
+          onSelect: () => {
+            preference.value = 'system';
+          },
+        },
+      ],
+    },
+  ]);
 
   // Sign out group
   items.push([
@@ -105,27 +121,42 @@ const dropdownItems = computed(() => {
       <h1 class="text-lg font-semibold">cratesmove</h1>
     </div>
 
-    <div class="flex items-center gap-3">
-      <ThemeToggle />
+    <div class="flex items-center gap-2">
+      <UButton
+        v-if="updateDownloaded"
+        variant="soft"
+        size="xs"
+        class="gap-1.5"
+        @click="installUpdate()"
+      >
+        <Download class="h-3.5 w-3.5" />
+        Update to v{{ updateVersion }}
+      </UButton>
+      <UButton
+        v-else-if="isDownloading"
+        variant="soft"
+        size="xs"
+        class="gap-1.5"
+        disabled
+      >
+        <Loader2 class="h-3.5 w-3.5 animate-spin" />
+        {{ downloadProgress }}%
+      </UButton>
 
-      <UDropdownMenu v-if="userInfo" :items="dropdownItems">
+      <UDropdownMenu v-if="userInfo" :items="dropdownItems" :ui="{ item: 'items-center', content: 'min-w-48' }">
         <UButton
           variant="ghost"
           color="neutral"
           size="sm"
-          class="relative gap-2 text-(--ui-text-muted) hover:text-(--ui-text)"
+          class="gap-2 text-(--ui-text-muted) hover:text-(--ui-text)"
         >
           <img
             v-if="userInfo.avatarUrl"
             :src="userInfo.avatarUrl"
-            class="h-6 w-6 rounded-full ring-1 ring-(--ui-border)"
+            class="h-6 w-6 rounded-lg ring-1 ring-(--ui-border)"
             alt="avatar"
           />
           <span class="text-sm">{{ userInfo.personaName }}</span>
-          <span
-            v-if="updateDownloaded"
-            class="absolute top-0.5 right-0.5 h-2 w-2 rounded-full bg-(--ui-primary)"
-          />
           <ChevronDown class="h-3.5 w-3.5" />
         </UButton>
       </UDropdownMenu>

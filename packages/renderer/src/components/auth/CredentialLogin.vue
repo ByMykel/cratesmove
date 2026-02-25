@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useSteam } from '@/composables/useSteam';
-import { Loader2 } from 'lucide-vue-next';
+import { Loader2, ShieldCheck } from 'lucide-vue-next';
 
 const { authState, error, credentialLogin, submitSteamGuard, steamGuardType } = useSteam();
 
@@ -27,15 +27,21 @@ async function handleSteamGuard() {
     class="flex flex-col gap-4"
     @submit.prevent="handleSteamGuard"
   >
-    <p class="text-sm text-(--ui-text-muted)">
-      Enter the Steam Guard code sent to your
-      {{ steamGuardType === 'email' ? 'email' : 'authenticator' }}
-    </p>
+    <div class="flex flex-col items-center gap-2 text-center">
+      <div class="flex items-center justify-center rounded-xl bg-(--ui-primary)/10 p-2.5">
+        <ShieldCheck class="h-6 w-6 text-(--ui-primary)" />
+      </div>
+      <p class="text-sm font-semibold">Steam Guard</p>
+      <p class="text-xs text-(--ui-text-muted)">
+        Enter the code sent to your
+        {{ steamGuardType === 'email' ? 'email' : 'authenticator' }}
+      </p>
+    </div>
 
     <UInput
       v-model="steamGuardCode"
-      placeholder="Steam Guard code"
-      class="text-center text-lg tracking-widest"
+      placeholder="X X X X X"
+      class="text-center text-lg tracking-[0.3em]"
       :maxlength="5"
       autofocus
     />
@@ -45,7 +51,9 @@ async function handleSteamGuard() {
 
   <!-- Login Form -->
   <form v-else class="flex flex-col gap-4" @submit.prevent="handleLogin">
-    <div class="flex flex-col gap-2">
+    <p class="text-sm font-medium text-(--ui-text-muted)">Sign in with Steam</p>
+
+    <div class="flex flex-col gap-3">
       <UInput v-model="username" placeholder="Username" autocomplete="username" />
       <UInput
         v-model="password"
@@ -55,9 +63,12 @@ async function handleSteamGuard() {
       />
     </div>
 
-    <p v-if="error" class="text-sm text-red-500">
+    <div
+      v-if="error"
+      class="rounded-lg bg-red-500/10 px-3 py-2 text-center text-sm text-red-500"
+    >
       {{ error }}
-    </p>
+    </div>
 
     <UButton type="submit" :disabled="!username || !password || authState === 'connecting'" block>
       <Loader2 v-if="authState === 'connecting'" class="h-4 w-4 animate-spin" />

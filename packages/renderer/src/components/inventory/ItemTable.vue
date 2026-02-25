@@ -86,11 +86,7 @@ async function copyRawData(item: InventoryItem) {
 
 <template>
   <div class="relative isolate h-full overflow-y-auto">
-    <div v-if="!hasItems" class="flex h-64 items-center justify-center text-(--ui-text-muted)">
-      No items found
-    </div>
-
-    <table v-else class="w-full text-sm" style="table-layout: fixed">
+    <table v-if="hasItems" class="w-full text-sm" style="table-layout: fixed">
       <colgroup>
         <col class="w-9" />
         <col class="w-6" />
