@@ -42,6 +42,7 @@
     "typescript-eslint": "^8.56.1"
   },
   "dependencies": {
-    "@app/main": "*"
+    "@app/main": "*",
+    "vue-eslint-parser": "^10.4.0"
   }
 }
