@@ -34,5 +34,6 @@ declare module 'vue' {
     UInput: typeof import('./../../node_modules/@nuxt/ui/dist/runtime/components/Input.vue')['default']
     UModal: typeof import('./../../node_modules/@nuxt/ui/dist/runtime/components/Modal.vue')['default']
     UProgress: typeof import('./../../node_modules/@nuxt/ui/dist/runtime/components/Progress.vue')['default']
+    UTooltip: typeof import('./../../node_modules/@nuxt/ui/dist/runtime/components/Tooltip.vue')['default']
   }
 }
