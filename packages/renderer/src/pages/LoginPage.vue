@@ -13,13 +13,9 @@ const hasSavedAccounts = computed(() => savedAccounts.value.length > 0);
 
 <template>
   <div class="relative flex h-full items-center justify-center overflow-hidden bg-(--ui-bg) p-4">
-<div class="flex w-full max-w-sm flex-col items-center gap-6">
-
+    <div class="flex w-full max-w-sm flex-col items-center gap-6">
       <!-- Card -->
-      <UCard
-        class="w-full ring-0 shadow-none"
-        :ui="{ body: 'sm:p-6' }"
-      >
+      <UCard class="w-full ring-0 shadow-none" :ui="{ body: 'sm:p-6' }">
         <!-- Restoring saved session -->
         <div v-if="restoringSession" class="flex flex-col items-center gap-3 py-8">
           <Loader2 class="h-8 w-8 animate-spin text-(--ui-primary)" />
@@ -27,7 +23,15 @@ const hasSavedAccounts = computed(() => savedAccounts.value.length > 0);
         </div>
 
         <template v-else>
-          <Transition mode="out-in" enter-active-class="transition duration-200 ease-out" enter-from-class="translate-y-2 opacity-0" enter-to-class="translate-y-0 opacity-100" leave-active-class="transition duration-150 ease-in" leave-from-class="translate-y-0 opacity-100" leave-to-class="-translate-y-2 opacity-0">
+          <Transition
+            mode="out-in"
+            enter-active-class="transition duration-200 ease-out"
+            enter-from-class="translate-y-2 opacity-0"
+            enter-to-class="translate-y-0 opacity-100"
+            leave-active-class="transition duration-150 ease-in"
+            leave-from-class="translate-y-0 opacity-100"
+            leave-to-class="-translate-y-2 opacity-0"
+          >
             <!-- Saved accounts list -->
             <div v-if="hasSavedAccounts && !showCredentialForm" key="saved">
               <SavedAccountList />

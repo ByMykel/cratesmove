@@ -47,9 +47,7 @@ const dropdownItems = computed(() => {
     { type: 'label', label: 'Accounts' },
     ...otherAccounts.value.map(account => ({
       label: account.personaName,
-      avatar: account.avatarUrl
-        ? { src: account.avatarUrl, alt: account.personaName }
-        : undefined,
+      avatar: account.avatarUrl ? { src: account.avatarUrl, alt: account.personaName } : undefined,
       ui: iconUi,
       onSelect: () => switchAccount(account.steamId),
     })),
@@ -132,18 +130,16 @@ const dropdownItems = computed(() => {
         <Download class="h-3.5 w-3.5" />
         Update to v{{ updateVersion }}
       </UButton>
-      <UButton
-        v-else-if="isDownloading"
-        variant="soft"
-        size="xs"
-        class="gap-1.5"
-        disabled
-      >
+      <UButton v-else-if="isDownloading" variant="soft" size="xs" class="gap-1.5" disabled>
         <Loader2 class="h-3.5 w-3.5 animate-spin" />
         {{ downloadProgress }}%
       </UButton>
 
-      <UDropdownMenu v-if="userInfo" :items="dropdownItems" :ui="{ item: 'items-center', content: 'min-w-48' }">
+      <UDropdownMenu
+        v-if="userInfo"
+        :items="dropdownItems"
+        :ui="{ item: 'items-center', content: 'min-w-48' }"
+      >
         <UButton
           variant="ghost"
           color="neutral"

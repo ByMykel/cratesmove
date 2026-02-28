@@ -8,12 +8,7 @@ import {
   steamRenameStorage,
   onSteamEvent,
 } from '@app/preload';
-import type {
-  InventoryItem,
-  StorageUnit,
-  NormalizedItem,
-  OperationProgress,
-} from '@/types/steam';
+import type { InventoryItem, StorageUnit, NormalizedItem, OperationProgress } from '@/types/steam';
 
 const items = ref<Map<string, NormalizedItem>>(new Map());
 const storageUnits = ref<Map<string, StorageUnit>>(new Map());
@@ -24,7 +19,6 @@ const operationError = ref<string | null>(null);
 // Tracks the target storage during a deposit so reconcileInventory can
 // relocate items instead of losing them from the map.
 let depositTarget: string | null = null;
-
 
 const listenerCleanups: Array<() => void> = [];
 

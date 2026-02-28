@@ -100,7 +100,13 @@ async function refresh(id: string) {
           </template>
         </UInput>
 
-        <UButton variant="outline" color="neutral" size="sm" class="h-[28px]" @click="showRenameDialog = true">
+        <UButton
+          variant="outline"
+          color="neutral"
+          size="sm"
+          class="h-[28px]"
+          @click="showRenameDialog = true"
+        >
           <Pencil class="h-3.5 w-3.5" />
           <span>Rename</span>
         </UButton>

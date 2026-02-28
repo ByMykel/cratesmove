@@ -61,7 +61,7 @@ watch(search, () => clearSelection());
 
 // Clear component-local state when switching accounts so stale IDs
 // don't prevent re-inspection or leave phantom selections.
-watch(switchingAccount, (switching) => {
+watch(switchingAccount, switching => {
   if (switching) {
     inspectedIds.clear();
     clearSelection();
@@ -129,13 +129,7 @@ function openStorage(id: string) {
             </UButton>
           </UTooltip>
           <UTooltip text="Storage Units" class="lg:hidden">
-            <UButton
-              variant="ghost"
-              color="neutral"
-              square
-              size="sm"
-              @click="sidebarOpen = true"
-            >
+            <UButton variant="ghost" color="neutral" square size="sm" @click="sidebarOpen = true">
               <Archive class="h-4 w-4" />
             </UButton>
           </UTooltip>
@@ -193,7 +187,12 @@ function openStorage(id: string) {
     </div>
 
     <!-- Storage units slideover (small screens) -->
-    <USlideover v-model:open="sidebarOpen" side="right" title="Storage Units" description="Browse and select a storage unit">
+    <USlideover
+      v-model:open="sidebarOpen"
+      side="right"
+      title="Storage Units"
+      description="Browse and select a storage unit"
+    >
       <template #body>
         <div v-if="store.storageUnitList.value.length > 0">
           <StorageUnitCard

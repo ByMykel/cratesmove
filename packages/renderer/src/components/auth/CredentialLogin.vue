@@ -63,10 +63,7 @@ async function handleSteamGuard() {
       />
     </div>
 
-    <div
-      v-if="error"
-      class="rounded-lg bg-red-500/10 px-3 py-2 text-center text-sm text-red-500"
-    >
+    <div v-if="error" class="rounded-lg bg-red-500/10 px-3 py-2 text-center text-sm text-red-500">
       {{ error }}
     </div>
 
