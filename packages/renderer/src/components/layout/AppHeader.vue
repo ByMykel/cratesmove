@@ -6,7 +6,7 @@ import { useUpdater } from '@/composables/useUpdater';
 import { Package, ChevronDown, Download, Loader2 } from 'lucide-vue-next';
 import { useTheme } from '@/composables/useTheme';
 
-const { userInfo, savedAccounts, logout, switchAccount } = useSteam();
+const { userInfo, savedAccounts, logout, switchAccount, switchingAccount } = useSteam();
 const { updateDownloaded, updateVersion, downloadProgress, updateAvailable, installUpdate } =
   useUpdater();
 const { preference, resolvedTheme } = useTheme();
@@ -149,6 +149,7 @@ const dropdownItems = computed(() => {
           color="neutral"
           size="sm"
           class="gap-2 text-(--ui-text-muted) hover:text-(--ui-text)"
+          :disabled="switchingAccount"
         >
           <img
             v-if="userInfo.avatarUrl"
