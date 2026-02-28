@@ -93,14 +93,14 @@ async function refresh(id: string) {
           v-model="search"
           placeholder="Search items..."
           size="xs"
-          :ui="{ root: 'w-48' }"
+          :ui="{ root: 'w-48', base: 'h-[28px]' }"
         >
           <template #leading>
             <Search class="h-3.5 w-3.5 text-(--ui-text-muted)" />
           </template>
         </UInput>
 
-        <UButton variant="outline" color="neutral" size="sm" @click="showRenameDialog = true">
+        <UButton variant="outline" color="neutral" size="sm" class="h-[28px]" @click="showRenameDialog = true">
           <Pencil class="h-3.5 w-3.5" />
           <span>Rename</span>
         </UButton>

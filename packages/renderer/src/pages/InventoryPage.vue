@@ -26,6 +26,7 @@ const {
 const { getTotalValue, formatPrice } = usePrices();
 
 const search = ref('');
+const sidebarOpen = ref(false);
 
 const inventoryValue = computed(() => getTotalValue(store.inventoryItems.value));
 const totalAccountValue = computed(() => getTotalValue(store.allItems.value));
@@ -108,23 +109,36 @@ function openStorage(id: string) {
             v-model="search"
             placeholder="Search items..."
             size="xs"
-            :ui="{ root: 'w-48' }"
+            :ui="{ root: 'w-48', base: 'h-[28px]' }"
           >
             <template #leading>
               <Search class="h-3.5 w-3.5 text-(--ui-text-muted)" />
             </template>
           </UInput>
-          <UButton
-            variant="ghost"
-            color="neutral"
-            square
-            size="xs"
-            :disabled="store.loading.value"
-            @click="store.refreshAll"
-          >
-            <Loader2 v-if="store.loading.value" class="h-3.5 w-3.5 animate-spin" />
-            <RefreshCw v-else class="h-3.5 w-3.5" />
-          </UButton>
+          <UTooltip text="Refresh inventory">
+            <UButton
+              variant="ghost"
+              color="neutral"
+              square
+              size="sm"
+              :disabled="store.loading.value"
+              @click="store.refreshAll"
+            >
+              <Loader2 v-if="store.loading.value" class="h-4 w-4 animate-spin" />
+              <RefreshCw v-else class="h-4 w-4" />
+            </UButton>
+          </UTooltip>
+          <UTooltip text="Storage Units" class="lg:hidden">
+            <UButton
+              variant="ghost"
+              color="neutral"
+              square
+              size="sm"
+              @click="sidebarOpen = true"
+            >
+              <Archive class="h-4 w-4" />
+            </UButton>
+          </UTooltip>
         </div>
       </div>
 
@@ -156,8 +170,8 @@ function openStorage(id: string) {
       />
     </div>
 
-    <!-- Storage units sidebar -->
-    <div class="flex w-64 flex-col border-l border-(--ui-border)">
+    <!-- Storage units sidebar (large screens) -->
+    <div class="hidden lg:flex w-96 flex-col border-l border-(--ui-border)">
       <div class="flex h-10 items-center justify-between border-b border-(--ui-border) px-4">
         <h2 class="flex items-center gap-2 text-sm font-semibold">
           <Archive class="h-4 w-4" />
@@ -177,6 +191,24 @@ function openStorage(id: string) {
         </div>
       </div>
     </div>
+
+    <!-- Storage units slideover (small screens) -->
+    <USlideover v-model:open="sidebarOpen" side="right" title="Storage Units" description="Browse and select a storage unit">
+      <template #body>
+        <div v-if="store.storageUnitList.value.length > 0">
+          <StorageUnitCard
+            v-for="unit in store.storageUnitList.value"
+            :key="unit.id"
+            :unit="unit"
+            :price="storageValue(unit.id) > 0 ? formatPrice(storageValue(unit.id)) : undefined"
+            @click="
+              openStorage(unit.id);
+              sidebarOpen = false;
+            "
+          />
+        </div>
+      </template>
+    </USlideover>
 
     <OperationProgress
       :progress="store.operationProgress.value"
