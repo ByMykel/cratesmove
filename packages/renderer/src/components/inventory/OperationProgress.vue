@@ -9,6 +9,12 @@ const props = defineProps<{
   inProgress: boolean;
 }>();
 
+const label = computed(() => {
+  if (props.progress?.phase === 'retrieving') return 'Retrieving items...';
+  if (props.progress?.phase === 'depositing') return 'Depositing items...';
+  return 'Moving items...';
+});
+
 const percentage = computed(() => {
   if (!props.progress || props.progress.total === 0) return 0;
   return Math.round((props.progress.current / props.progress.total) * 100);
@@ -25,7 +31,7 @@ function cancel() {
     class="fixed bottom-4 right-4 z-50 w-72 rounded-lg border border-(--ui-border) bg-(--ui-bg) p-4 shadow-lg"
   >
     <div class="mb-2 flex items-center justify-between">
-      <p class="text-sm font-medium">Moving items... {{ progress.current }}/{{ progress.total }}</p>
+      <p class="text-sm font-medium">{{ label }} {{ progress.current }}/{{ progress.total }}</p>
       <UButton variant="ghost" color="neutral" size="xs" square @click="cancel">
         <X class="h-3.5 w-3.5" />
       </UButton>

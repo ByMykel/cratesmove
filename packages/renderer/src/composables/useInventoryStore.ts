@@ -5,6 +5,7 @@ import {
   steamInspectStorage,
   steamDepositToStorage,
   steamRetrieveFromStorage,
+  steamMoveToStorage,
   steamRenameStorage,
   onSteamEvent,
 } from '@app/preload';
@@ -191,6 +192,14 @@ async function renameStorage(storageId: string, name: string) {
   await steamRenameStorage({ storageId, name });
 }
 
+async function moveToStorage(fromStorageId: string, toStorageId: string, itemIds: string[]) {
+  operationInProgress.value = true;
+  operationError.value = null;
+  depositTarget = toStorageId;
+  await steamMoveToStorage({ fromStorageId, toStorageId, itemIds });
+  depositTarget = null;
+}
+
 export function useInventoryStore() {
   registerListeners();
 
@@ -212,6 +221,7 @@ export function useInventoryStore() {
     inspectStorage,
     depositToStorage,
     retrieveFromStorage,
+    moveToStorage,
     renameStorage,
   };
 }

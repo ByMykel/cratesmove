@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { StorageUnit } from '@/types/steam';
-import { ArrowRight, X, Archive } from 'lucide-vue-next';
+import { X, Archive } from 'lucide-vue-next';
 import { ref } from 'vue';
 
 defineProps<{
@@ -33,10 +33,7 @@ function handleDeposit(storageId: string) {
       </UButton>
     </div>
 
-    <UButton @click="showDialog = true">
-      <span>Move to Storage</span>
-      <ArrowRight class="h-4 w-4" />
-    </UButton>
+    <UButton @click="showDialog = true"> Move to Storage </UButton>
 
     <UModal
       v-model:open="showDialog"

@@ -7,7 +7,7 @@ import RenameDialog from '@/components/storage/RenameDialog.vue';
 import OperationProgress from '@/components/inventory/OperationProgress.vue';
 import { useInventoryStore } from '@/composables/useInventoryStore';
 import { useSelection } from '@/composables/useSelection';
-import { ArrowLeft, Pencil, ArrowUpFromLine, Loader2, Search } from 'lucide-vue-next';
+import { ArrowLeft, Pencil, Archive, Loader2, Search } from 'lucide-vue-next';
 import { usePrices } from '@/composables/usePrices';
 
 const route = useRoute();
@@ -25,6 +25,7 @@ const {
 
 const loading = ref(false);
 const showRenameDialog = ref(false);
+const showMoveDialog = ref(false);
 const search = ref('');
 
 const { getTotalValue, formatPrice } = usePrices();
@@ -34,6 +35,9 @@ const currentUnit = computed(() => store.storageUnits.value.get(storageId.value)
 const storageValue = computed(() => getTotalValue(contents.value));
 const unitName = computed(
   () => currentUnit.value?.custom_name || currentUnit.value?.name || 'Storage Unit',
+);
+const otherStorageUnits = computed(() =>
+  store.storageUnitList.value.filter(u => u.id !== storageId.value),
 );
 
 watch(search, () => clearSelection());
@@ -57,6 +61,19 @@ async function handleRetrieve() {
   clearSelection();
   await store.retrieveFromStorage(id, itemIds);
   await refresh(id);
+}
+
+async function handleMoveToStorage(targetStorageId: string) {
+  showMoveDialog.value = false;
+  const id = storageId.value;
+  const itemIds = [...selectedIds.value];
+  clearSelection();
+  await store.moveToStorage(id, targetStorageId, itemIds);
+  await Promise.all([
+    store.inspectStorage(id),
+    store.inspectStorage(targetStorageId),
+    store.refreshAll(),
+  ]);
 }
 
 const toast = useToast();
@@ -128,17 +145,40 @@ async function refresh(id: string) {
         @toggle-all="handleToggleGroup(contents.filter(i => i.movable !== false).map(i => i.id))"
       />
 
-      <!-- Retrieve bar -->
+      <!-- Action bar -->
       <div
         v-if="selectedIds.size > 0"
         class="sticky bottom-0 flex items-center justify-between border-t border-(--ui-border) bg-(--ui-bg) px-4 py-3"
       >
         <span class="text-sm font-medium"> {{ selectedIds.size }} items selected </span>
-        <UButton @click="handleRetrieve">
-          <ArrowUpFromLine class="h-4 w-4" />
-          <span>Retrieve from Storage</span>
-        </UButton>
+        <div class="flex items-center gap-2">
+          <UButton variant="outline" color="neutral" @click="showMoveDialog = true">
+            Move to Another Storage
+          </UButton>
+          <UButton @click="handleRetrieve"> Move to Inventory </UButton>
+        </div>
       </div>
+
+      <UModal
+        v-model:open="showMoveDialog"
+        title="Move to Storage"
+        :description="`Select a storage unit to move ${selectedIds.size} items into.`"
+      >
+        <template #body>
+          <div v-if="otherStorageUnits.length > 0" class="flex flex-col gap-1">
+            <button
+              v-for="unit in otherStorageUnits"
+              :key="unit.id"
+              class="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors hover:bg-(--ui-bg-elevated)"
+              @click="handleMoveToStorage(unit.id)"
+            >
+              <Archive class="h-4 w-4 shrink-0 text-(--ui-text-muted)" />
+              <span class="flex-1 truncate text-left">{{ unit.custom_name || unit.name }}</span>
+              <span class="text-xs text-(--ui-text-muted)">{{ unit.item_count }}/1000</span>
+            </button>
+          </div>
+        </template>
+      </UModal>
     </div>
 
     <RenameDialog

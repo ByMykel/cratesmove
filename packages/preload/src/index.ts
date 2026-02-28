@@ -44,6 +44,14 @@ function steamRetrieveFromStorage(args: { storageId: string; itemIds: string[] }
   return ipcRenderer.invoke('steam:retrieve-from-storage', args);
 }
 
+function steamMoveToStorage(args: {
+  fromStorageId: string;
+  toStorageId: string;
+  itemIds: string[];
+}) {
+  return ipcRenderer.invoke('steam:move-to-storage', args);
+}
+
 function steamRenameStorage(args: { storageId: string; name: string }) {
   return ipcRenderer.invoke('steam:rename-storage', args);
 }
@@ -113,6 +121,7 @@ export {
   steamInspectStorage,
   steamDepositToStorage,
   steamRetrieveFromStorage,
+  steamMoveToStorage,
   steamRenameStorage,
   steamCancelOperation,
   steamGetSavedAccounts,

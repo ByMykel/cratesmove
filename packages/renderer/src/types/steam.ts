@@ -56,6 +56,7 @@ export interface OperationProgress {
   current: number;
   total: number;
   itemId: string;
+  phase?: 'retrieving' | 'depositing';
 }
 
 export interface PriceData {

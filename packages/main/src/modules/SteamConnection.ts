@@ -25,6 +25,12 @@ interface RetrieveArgs {
   itemIds: string[];
 }
 
+interface MoveArgs {
+  fromStorageId: string;
+  toStorageId: string;
+  itemIds: string[];
+}
+
 interface RenameArgs {
   storageId: string;
   name: string;
@@ -113,6 +119,7 @@ class SteamConnection implements AppModule {
     ipcMain.handle('steam:retrieve-from-storage', (_e, args: RetrieveArgs) =>
       this.#retrieveFromStorage(args),
     );
+    ipcMain.handle('steam:move-to-storage', (_e, args: MoveArgs) => this.#moveToStorage(args));
     ipcMain.handle('steam:rename-storage', (_e, args: RenameArgs) => this.#renameStorage(args));
     ipcMain.handle('steam:cancel-operation', () => {
       this.#operationCancelled = true;
@@ -728,6 +735,82 @@ class SteamConnection implements AppModule {
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
       console.error('Retrieve operation failed:', message);
+      broadcastToRenderers('steam:operation-complete', { success: false, error: message });
+    }
+    this.#sendInventoryUpdate();
+  }
+
+  async #moveToStorage({ fromStorageId, toStorageId, itemIds }: MoveArgs) {
+    this.#operationCancelled = false;
+    const total = itemIds.length;
+    try {
+      for (let i = 0; i < total; i++) {
+        if (this.#operationCancelled) {
+          broadcastToRenderers('steam:operation-complete', {
+            success: false,
+            error: 'Operation cancelled',
+          });
+          return;
+        }
+
+        const itemId = itemIds[i];
+        broadcastToRenderers('steam:operation-progress', {
+          current: i + 1,
+          total,
+          itemId,
+          phase: 'retrieving',
+        });
+
+        // Retrieve item from source storage
+        await new Promise<void>(resolve => {
+          this.#csgo.removeFromCasket(fromStorageId, itemId);
+          const timeout = setTimeout(() => resolve(), OPERATION_TIMEOUT_MS);
+          const handler = () => {
+            clearTimeout(timeout);
+            resolve();
+          };
+          this.#csgo.once('itemAcquired', handler);
+          this.#csgo.once('itemCustomizationNotification', handler);
+        });
+
+        await this.#delay(OPERATION_DELAY_MS);
+
+        if (this.#operationCancelled) {
+          broadcastToRenderers('steam:operation-complete', {
+            success: false,
+            error: 'Operation cancelled',
+          });
+          return;
+        }
+
+        broadcastToRenderers('steam:operation-progress', {
+          current: i + 1,
+          total,
+          itemId,
+          phase: 'depositing',
+        });
+
+        // Deposit item to target storage
+        await new Promise<void>(resolve => {
+          this.#csgo.addToCasket(toStorageId, itemId);
+          const timeout = setTimeout(() => resolve(), OPERATION_TIMEOUT_MS);
+          const handler = () => {
+            clearTimeout(timeout);
+            resolve();
+          };
+          this.#csgo.once('itemRemoved', handler);
+          this.#csgo.once('itemCustomizationNotification', handler);
+        });
+
+        if (i < total - 1) {
+          await this.#delay(OPERATION_DELAY_MS);
+        }
+      }
+
+      broadcastToRenderers('steam:operation-complete', { success: true });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error('Move operation failed:', message);
       broadcastToRenderers('steam:operation-complete', { success: false, error: message });
     }
     this.#sendInventoryUpdate();
