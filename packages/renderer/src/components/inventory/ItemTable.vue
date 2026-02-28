@@ -164,7 +164,12 @@ function openOnMarket(marketHashName: string) {
             @keydown.enter="group.items.length > 1 && toggleExpand(group.market_hash_name)"
             @keydown.space.prevent="group.items.length > 1 && toggleExpand(group.market_hash_name)"
           >
-            <td class="px-2 py-0 align-middle" @click.stop>
+            <td class="relative px-2 py-0 align-middle" @click.stop>
+              <div
+                v-if="group.rarity?.color"
+                class="absolute inset-y-0 left-0 w-[3px]"
+                :style="{ backgroundColor: group.rarity.color }"
+              />
               <UCheckbox
                 size="lg"
                 :model-value="groupCheckValue(group)"
@@ -189,7 +194,9 @@ function openOnMarket(marketHashName: string) {
                 />
               </div>
             </td>
-            <td class="px-2 py-0 align-middle font-medium">{{ group.market_hash_name }}</td>
+            <td class="px-2 py-0 align-middle font-medium">
+              {{ group.market_hash_name }}
+            </td>
             <td class="px-2 py-0 align-middle tabular-nums text-(--ui-text-muted)">
               {{ group.items.length }}
             </td>
@@ -228,7 +235,12 @@ function openOnMarket(marketHashName: string) {
               class="transition-colors hover:bg-(--ui-bg-elevated)/30"
               :class="{ 'opacity-40': item.movable === false }"
             >
-              <td class="px-2 py-0 align-middle" @click.stop>
+              <td class="relative px-2 py-0 align-middle" @click.stop>
+                <div
+                  v-if="item.rarity?.color"
+                  class="absolute inset-y-0 left-0 w-[3px]"
+                  :style="{ backgroundColor: item.rarity.color }"
+                />
                 <UCheckbox
                   size="lg"
                   :model-value="selectedIds.has(item.id)"

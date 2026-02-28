@@ -68,14 +68,6 @@ const OPERATION_DELAY_MS = 500;
 const OPERATION_TIMEOUT_MS = 5000;
 const INVALID_TOKEN_ERESULTS = new Set([5, 15, 35]);
 
-function getWearCondition(paintWear: number): string {
-  if (paintWear < 0.07) return 'Factory New';
-  if (paintWear < 0.15) return 'Minimal Wear';
-  if (paintWear < 0.38) return 'Field-Tested';
-  if (paintWear < 0.45) return 'Well-Worn';
-  return 'Battle-Scarred';
-}
-
 class SteamConnection implements AppModule {
   #steamUser: SteamUser;
   #csgo: GlobalOffensive;
@@ -598,11 +590,11 @@ class SteamConnection implements AppModule {
     // ★ items (quality 3, e.g. knives/gloves) are always movable
     if (item.quality === 3) return true;
 
-    // Collectibles (coins, service medals, pins) are generally non-movable
-    if (resolved?.category === 'collectible') return false;
+    // Non-marketable collectibles (coins, service medals) are non-movable
+    if (resolved?.entity === 'collectible' && !resolved.marketable) return false;
 
     // Promotional music kits (origin 0 = timed drop for default music kit)
-    if (resolved?.category === 'music_kit' && item.origin === 0) return false;
+    if (resolved?.entity === 'music_kit' && item.origin === 0) return false;
 
     // Unresolved items with no paint are base/stock weapons
     if (!resolved && !item.paint_index) return false;
@@ -847,10 +839,10 @@ class SteamConnection implements AppModule {
       market_hash_name: '',
       image: '',
       tradable: false,
+      marketable: false,
       def_index: item.def_index ?? 0,
       paint_index: 0,
-      rarity: '',
-      rarity_color: '',
+      rarity: null,
       quality: '',
       paint_wear: null,
       custom_name: null,
@@ -867,22 +859,18 @@ class SteamConnection implements AppModule {
 
     const resolved = resolveItem(item);
 
-    const baseName = item.market_hash_name || resolved?.name || '';
-    const wearCondition = item.paint_wear != null ? getWearCondition(item.paint_wear) : null;
-    const marketHashName = wearCondition ? `${baseName} (${wearCondition})` : baseName;
-
     return {
       id: String(item.id),
       classid: String(item.classid ?? ''),
       instanceid: String(item.instanceid ?? ''),
       name: resolved?.name || item.market_hash_name || item.custom_name || `Item #${defIndex}`,
-      market_hash_name: marketHashName,
+      market_hash_name: resolved?.name || item.market_hash_name || '',
       image: resolved?.image || item.icon_url || '',
       tradable: item.tradable ?? false,
+      marketable: resolved?.marketable ?? false,
       def_index: defIndex,
       paint_index: paintIndex,
-      rarity: item.rarity?.toString() ?? '',
-      rarity_color: '',
+      rarity: resolved?.rarity ?? null,
       quality: item.quality?.toString() ?? '',
       paint_wear: item.paint_wear ?? null,
       custom_name: item.custom_name || null,

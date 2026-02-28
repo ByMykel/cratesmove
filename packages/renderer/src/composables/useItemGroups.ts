@@ -4,6 +4,7 @@ import type { InventoryItem } from '@/types/steam';
 export interface ItemGroup {
   market_hash_name: string;
   image: string;
+  rarity: { id: string; name: string; color: string } | null;
   movable: boolean;
   items: InventoryItem[];
   _parseError?: boolean;
@@ -39,6 +40,7 @@ export function useItemGroups(items: Ref<readonly InventoryItem[]>, search?: Ref
       .map(([market_hash_name, groupItems]) => ({
         market_hash_name,
         image: groupItems[0].image,
+        rarity: groupItems[0].rarity,
         movable: groupItems.some(i => i.movable !== false),
         items: groupItems,
         _parseError: groupItems[0]._parseError,

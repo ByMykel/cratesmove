@@ -6,11 +6,11 @@ export interface InventoryItem {
   market_hash_name: string;
   image: string;
   tradable: boolean;
+  marketable: boolean;
   movable: boolean;
   def_index: number;
   paint_index?: number;
-  rarity?: string;
-  rarity_color?: string;
+  rarity: { id: string; name: string; color: string } | null;
   quality?: string;
   paint_wear?: number;
   custom_name?: string;
