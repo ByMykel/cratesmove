@@ -42,8 +42,10 @@ packages/
 4. Create a single commit named after the version (e.g. `v0.3.0`)
 5. Push to remote
 6. Create a tag with `git tag v0.X.0` and push it with `git push --tags`
-7. The `release.yml` GitHub Action triggers on `v*` tags, builds for Windows/macOS/Linux, and creates a **draft** release with auto-generated notes and artifacts attached
-8. Edit the draft release on GitHub to write a user-friendly changelog and publish it
+7. The `release.yml` GitHub Action triggers on `v*` tags, builds for Windows/macOS/Linux, and creates a **draft** release with artifacts attached
+8. Wait for the GitHub Action workflow to finish (check with `gh run list --limit 1`)
+9. Write a friendly changelog for the draft release using `gh release edit`. Look at previous releases (`gh release view v0.X.0`) to match the style — a `## What's Changed` section with a bullet list describing each change in plain language (no technical jargon), plus a `**Full Changelog**` comparison link at the bottom
+10. Publish the release on GitHub
 
 ## Code Style
 
