@@ -15,7 +15,10 @@ defineEmits<{
 <template>
   <UTooltip :text="unit.custom_name || unit.name" :delay-duration="300">
     <div
-      class="flex cursor-pointer items-center gap-3 rounded-md px-3 py-2 transition-colors hover:bg-(--ui-bg-elevated)"
+      :class="[
+        'flex cursor-pointer items-center gap-3 rounded-md px-3 py-2 transition-colors hover:bg-(--ui-bg-elevated)',
+        unit.item_count === 0 && 'opacity-50',
+      ]"
       @click="$emit('click')"
     >
       <Archive class="h-4 w-4 shrink-0 text-(--ui-text-muted)" />
