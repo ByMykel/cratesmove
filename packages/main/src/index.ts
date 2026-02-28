@@ -24,7 +24,7 @@ export async function initApp(initConfig: AppInitConfig) {
         new Set(initConfig.renderer instanceof URL ? [initConfig.renderer.origin] : []),
       ),
     )
-    .init(allowExternalUrls(new Set()));
+    .init(allowExternalUrls(new Set(['https://steamcommunity.com'])));
 
   await moduleRunner;
 }

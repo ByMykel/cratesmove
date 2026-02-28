@@ -82,6 +82,11 @@ async function copyRawData(item: InventoryItem) {
     copiedId.value = null;
   }, 2000);
 }
+
+function openOnMarket(marketHashName: string) {
+  const url = `https://steamcommunity.com/market/listings/730/${encodeURIComponent(marketHashName)}`;
+  window.open(url, '_blank');
+}
 </script>
 
 <template>
@@ -94,6 +99,7 @@ async function copyRawData(item: InventoryItem) {
         <col />
         <col class="w-10" />
         <col class="w-24" />
+        <col class="w-10" />
       </colgroup>
       <thead class="sticky top-0 z-[1] backdrop-blur-xl bg-(--ui-bg)/60">
         <tr class="text-left text-xs text-(--ui-text-muted)">
@@ -110,9 +116,10 @@ async function copyRawData(item: InventoryItem) {
           <th class="px-2 py-3 font-semibold">Name</th>
           <th class="px-2 py-3 font-semibold">Qty</th>
           <th class="px-2 py-3 font-semibold text-right">Price</th>
+          <th class="px-2 py-3"></th>
         </tr>
         <tr>
-          <td colspan="6" class="h-px bg-(--ui-border)"></td>
+          <td colspan="7" class="h-px bg-(--ui-border)"></td>
         </tr>
       </thead>
       <tbody>
@@ -141,6 +148,7 @@ async function copyRawData(item: InventoryItem) {
                 <ClipboardCopy v-else class="h-3.5 w-3.5 text-(--ui-text-muted)" />
               </button>
             </td>
+            <td></td>
           </tr>
 
           <!-- Normal group row -->
@@ -189,6 +197,24 @@ async function copyRawData(item: InventoryItem) {
                   : '--'
               }}
             </td>
+            <td class="px-2 py-0 align-middle" @click.stop>
+              <UDropdownMenu
+                v-if="group.movable"
+                :items="[
+                  {
+                    label: 'View in Community Market',
+                    onSelect: () => openOnMarket(group.market_hash_name),
+                  },
+                ]"
+              >
+                <UButton
+                  icon="i-lucide-ellipsis"
+                  variant="ghost"
+                  color="neutral"
+                  size="xs"
+                />
+              </UDropdownMenu>
+            </td>
           </tr>
 
           <template
@@ -235,6 +261,7 @@ async function copyRawData(item: InventoryItem) {
               >
                 {{ formatPrice(getPrice(item.market_hash_name)) }}
               </td>
+              <td></td>
             </tr>
           </template>
         </template>
