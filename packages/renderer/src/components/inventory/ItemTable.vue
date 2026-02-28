@@ -8,6 +8,11 @@ import { usePrices } from '@/composables/usePrices';
 
 const { getPrice, formatPrice } = usePrices();
 
+function thumb(url: string, size = '62fx62f') {
+  if (!url || !url.includes('community.akamai.steamstatic.com')) return url;
+  return `${url}/${size}`;
+}
+
 const props = defineProps<{
   items: readonly InventoryItem[];
   selectedIds: ReadonlySet<string>;
@@ -57,9 +62,7 @@ function handleItemCheckbox(item: InventoryItem) {
   emit('toggleItem', item.id);
 }
 
-const allMovableIds = computed(() =>
-  props.items.filter(i => i.movable !== false).map(i => i.id),
-);
+const allMovableIds = computed(() => props.items.filter(i => i.movable !== false).map(i => i.id));
 
 const allCheckValue = computed<boolean | 'indeterminate'>(() => {
   if (allMovableIds.value.length === 0) return false;
@@ -179,7 +182,7 @@ function openOnMarket(marketHashName: string) {
             <td class="py-1 align-middle">
               <div class="flex items-center justify-center">
                 <img
-                  :src="group.image"
+                  :src="thumb(group.image)"
                   :alt="group.market_hash_name"
                   class="h-8 w-auto object-contain"
                   loading="lazy"
@@ -207,12 +210,7 @@ function openOnMarket(marketHashName: string) {
                   },
                 ]"
               >
-                <UButton
-                  icon="i-lucide-ellipsis"
-                  variant="ghost"
-                  color="neutral"
-                  size="xs"
-                />
+                <UButton icon="i-lucide-ellipsis" variant="ghost" color="neutral" size="xs" />
               </UDropdownMenu>
             </td>
           </tr>
@@ -242,7 +240,7 @@ function openOnMarket(marketHashName: string) {
               <td class="py-1 align-middle">
                 <div class="flex items-center justify-center">
                   <img
-                    :src="item.image"
+                    :src="thumb(item.image)"
                     :alt="item.name"
                     class="h-6 w-auto object-contain"
                     loading="lazy"
