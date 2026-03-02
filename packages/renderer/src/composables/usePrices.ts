@@ -45,7 +45,7 @@ function applyData(data: PriceData) {
 }
 
 async function fetchFromCDN(): Promise<PriceData> {
-  const res = await fetch(CDN_URL);
+  const res = await fetch(CDN_URL, { cache: 'no-cache' });
   if (!res.ok) throw new Error(`Failed to fetch prices: ${res.status}`);
   return res.json();
 }
