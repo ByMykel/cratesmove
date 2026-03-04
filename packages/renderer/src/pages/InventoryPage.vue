@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { useVirtualizer } from '@tanstack/vue-virtual';
 import AppLayout from '@/components/layout/AppLayout.vue';
 import ItemTable from '@/components/inventory/ItemTable.vue';
 import StorageUnitCard from '@/components/inventory/StorageUnitCard.vue';
@@ -23,16 +24,37 @@ const {
   toggleBatch,
   clear: clearSelection,
 } = useSelection();
-const { getTotalValue, formatPrice } = usePrices();
+const { getPrice, formatPrice } = usePrices();
 
 const search = ref('');
 const sidebarOpen = ref(false);
 
-const inventoryValue = computed(() => getTotalValue(store.inventoryItems.value));
-const totalAccountValue = computed(() => getTotalValue(store.allItems.value));
+// Pre-compute all values in a single pass instead of per-unit iterations
+const valueIndex = computed(() => {
+  let invTotal = 0;
+  let allTotal = 0;
+  const byStorage = new Map<string, number>();
+
+  for (const item of store.allItems.value) {
+    const p = getPrice(item.market_hash_name);
+    if (p == null) continue;
+    allTotal += p;
+    if (item.location.type === 'inventory') {
+      invTotal += p;
+    } else {
+      const sid = item.location.storageId;
+      byStorage.set(sid, (byStorage.get(sid) ?? 0) + p);
+    }
+  }
+
+  return { invTotal, allTotal, byStorage };
+});
+
+const inventoryValue = computed(() => valueIndex.value.invTotal);
+const totalAccountValue = computed(() => valueIndex.value.allTotal);
 
 function storageValue(unitId: string): number {
-  return getTotalValue(store.getStorageContents(unitId));
+  return valueIndex.value.byStorage.get(unitId) ?? 0;
 }
 
 const inspectedIds = new Set<string>();
@@ -79,6 +101,29 @@ async function handleDeposit(storageId: string) {
 function openStorage(id: string) {
   router.push(`/storage/${id}`);
 }
+
+// Virtualize the storage units sidebar
+const UNIT_HEIGHT = 40;
+const sidebarScrollEl = ref<HTMLElement | null>(null);
+const slideoverScrollEl = ref<HTMLElement | null>(null);
+
+const sidebarVirtualizer = useVirtualizer({
+  get count() {
+    return store.storageUnitList.value.length;
+  },
+  getScrollElement: () => sidebarScrollEl.value,
+  estimateSize: () => UNIT_HEIGHT,
+  overscan: 10,
+});
+
+const slideoverVirtualizer = useVirtualizer({
+  get count() {
+    return store.storageUnitList.value.length;
+  },
+  getScrollElement: () => slideoverScrollEl.value,
+  estimateSize: () => UNIT_HEIGHT,
+  overscan: 10,
+});
 </script>
 
 <template>
@@ -173,14 +218,24 @@ function openStorage(id: string) {
         </h2>
       </div>
 
-      <div class="flex-1 overflow-y-auto">
-        <div v-if="store.storageUnitList.value.length > 0" class="p-1">
+      <div ref="sidebarScrollEl" class="flex-1 overflow-y-auto">
+        <div
+          v-if="store.storageUnitList.value.length > 0"
+          class="relative"
+          :style="{ height: `${sidebarVirtualizer.getTotalSize() + 8}px` }"
+        >
           <StorageUnitCard
-            v-for="unit in store.storageUnitList.value"
-            :key="unit.id"
-            :unit="unit"
-            :price="storageValue(unit.id) > 0 ? formatPrice(storageValue(unit.id)) : undefined"
-            @click="openStorage(unit.id)"
+            v-for="vRow in sidebarVirtualizer.getVirtualItems()"
+            :key="store.storageUnitList.value[vRow.index].id"
+            :unit="store.storageUnitList.value[vRow.index]"
+            :price="
+              storageValue(store.storageUnitList.value[vRow.index].id) > 0
+                ? formatPrice(storageValue(store.storageUnitList.value[vRow.index].id))
+                : undefined
+            "
+            class="absolute left-1 right-1"
+            :style="{ top: `${vRow.start + 4}px`, height: `${vRow.size}px` }"
+            @click="openStorage(store.storageUnitList.value[vRow.index].id)"
           />
         </div>
       </div>
@@ -194,14 +249,25 @@ function openStorage(id: string) {
       description="Browse and select a storage unit"
     >
       <template #body>
-        <div v-if="store.storageUnitList.value.length > 0">
+        <div
+          v-if="store.storageUnitList.value.length > 0"
+          ref="slideoverScrollEl"
+          class="relative h-full overflow-y-auto"
+          :style="{ height: `${slideoverVirtualizer.getTotalSize()}px` }"
+        >
           <StorageUnitCard
-            v-for="unit in store.storageUnitList.value"
-            :key="unit.id"
-            :unit="unit"
-            :price="storageValue(unit.id) > 0 ? formatPrice(storageValue(unit.id)) : undefined"
+            v-for="vRow in slideoverVirtualizer.getVirtualItems()"
+            :key="store.storageUnitList.value[vRow.index].id"
+            :unit="store.storageUnitList.value[vRow.index]"
+            :price="
+              storageValue(store.storageUnitList.value[vRow.index].id) > 0
+                ? formatPrice(storageValue(store.storageUnitList.value[vRow.index].id))
+                : undefined
+            "
+            class="absolute left-0 right-0"
+            :style="{ top: `${vRow.start}px`, height: `${vRow.size}px` }"
             @click="
-              openStorage(unit.id);
+              openStorage(store.storageUnitList.value[vRow.index].id);
               sidebarOpen = false;
             "
           />

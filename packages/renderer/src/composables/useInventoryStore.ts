@@ -107,31 +107,42 @@ function reconcileStorageContents(storageId: string, freshItems: InventoryItem[]
   items.value = next;
 }
 
-// Derived state
-const inventoryItems = computed(() => {
-  const result: NormalizedItem[] = [];
+// Derived state — build a location index once so all lookups are O(1)
+const itemIndex = computed(() => {
+  const inv: NormalizedItem[] = [];
+  const byStorage = new Map<string, NormalizedItem[]>();
+  const all: NormalizedItem[] = [];
+
   for (const item of items.value.values()) {
+    all.push(item);
     if (item.location.type === 'inventory') {
-      result.push(item);
+      inv.push(item);
+    } else {
+      const sid = item.location.storageId;
+      let arr = byStorage.get(sid);
+      if (!arr) {
+        arr = [];
+        byStorage.set(sid, arr);
+      }
+      arr.push(item);
     }
   }
-  return result;
+
+  return { inv, byStorage, all };
 });
+
+const inventoryItems = computed(() => itemIndex.value.inv);
 
 const storageUnitList = computed(() =>
   Array.from(storageUnits.value.values()).sort((a, b) => a.name.localeCompare(b.name)),
 );
 
-const allItems = computed(() => Array.from(items.value.values()));
+const allItems = computed(() => itemIndex.value.all);
+
+const EMPTY_ARRAY: NormalizedItem[] = [];
 
 function getStorageContents(storageId: string): NormalizedItem[] {
-  const result: NormalizedItem[] = [];
-  for (const item of items.value.values()) {
-    if (item.location.type === 'storage' && item.location.storageId === storageId) {
-      result.push(item);
-    }
-  }
-  return result;
+  return itemIndex.value.byStorage.get(storageId) ?? EMPTY_ARRAY;
 }
 
 function reset() {
