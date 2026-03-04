@@ -3,7 +3,7 @@ import { ref, computed, toRef } from 'vue';
 import { useClipboard } from '@vueuse/core';
 import { useVirtualizer } from '@tanstack/vue-virtual';
 import type { InventoryItem } from '@/types/steam';
-import { useItemGroups, type ItemGroup } from '@/composables/useItemGroups';
+import { useItemGroups, type ItemGroup, type SortBy } from '@/composables/useItemGroups';
 import { ChevronRight, ClipboardCopy, Check, TriangleAlert } from 'lucide-vue-next';
 import { usePrices } from '@/composables/usePrices';
 
@@ -19,6 +19,9 @@ const props = defineProps<{
   selectedIds: ReadonlySet<string>;
   disabled?: boolean;
   search?: string;
+  rarityFilter?: string[];
+  entityFilter?: string[];
+  sortBy?: SortBy;
 }>();
 
 const emit = defineEmits<{
@@ -27,10 +30,14 @@ const emit = defineEmits<{
   toggleAll: [];
 }>();
 
-const { groups } = useItemGroups(
-  toRef(() => props.items),
-  toRef(() => props.search ?? ''),
-);
+const { groups } = useItemGroups({
+  items: toRef(() => props.items),
+  search: toRef(() => props.search ?? ''),
+  rarityFilter: toRef(() => props.rarityFilter ?? []),
+  entityFilter: toRef(() => props.entityFilter ?? []),
+  sortBy: toRef(() => props.sortBy ?? 'name'),
+  getPrice,
+});
 
 const expandedGroups = ref<Set<string>>(new Set());
 

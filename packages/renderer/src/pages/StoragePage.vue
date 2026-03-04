@@ -7,8 +7,10 @@ import RenameDialog from '@/components/storage/RenameDialog.vue';
 import OperationProgress from '@/components/inventory/OperationProgress.vue';
 import { useInventoryStore } from '@/composables/useInventoryStore';
 import { useSelection } from '@/composables/useSelection';
-import { ArrowLeft, Pencil, Archive, Loader2, Search } from 'lucide-vue-next';
+import { ArrowLeft, Pencil, Archive, Loader2, Search, SlidersHorizontal } from 'lucide-vue-next';
 import { usePrices } from '@/composables/usePrices';
+import type { SortBy } from '@/composables/useItemGroups';
+import FilterPanel from '@/components/inventory/FilterPanel.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -27,6 +29,10 @@ const loading = ref(false);
 const showRenameDialog = ref(false);
 const showMoveDialog = ref(false);
 const search = ref('');
+const rarityFilter = ref<string[]>([]);
+const entityFilter = ref<string[]>([]);
+const sortBy = ref<SortBy>('name');
+const filterPanelOpen = ref(false);
 
 const { getTotalValue, formatPrice } = usePrices();
 
@@ -40,7 +46,34 @@ const otherStorageUnits = computed(() =>
   store.storageUnitList.value.filter(u => u.id !== storageId.value),
 );
 
+const availableRarities = computed(() => {
+  const seen = new Map<string, string>();
+  for (const item of contents.value) {
+    if (item.rarity?.name && !seen.has(item.rarity.name)) {
+      seen.set(item.rarity.name, item.rarity.color);
+    }
+  }
+  return [...seen.entries()]
+    .map(([name, color]) => ({ name, color }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+});
+
+const availableEntities = computed(() => {
+  const set = new Set<string>();
+  for (const item of contents.value) {
+    if (item.entity) set.add(item.entity);
+  }
+  return [...set].sort();
+});
+
+const hasActiveFilters = computed(
+  () => rarityFilter.value.length > 0 || entityFilter.value.length > 0 || sortBy.value !== 'name',
+);
+
 watch(search, () => clearSelection());
+watch(rarityFilter, () => clearSelection());
+watch(entityFilter, () => clearSelection());
+watch(sortBy, () => clearSelection());
 
 onMounted(async () => {
   loading.value = true;
@@ -116,6 +149,22 @@ async function refresh(id: string) {
             <Search class="h-3.5 w-3.5 text-(--ui-text-muted)" />
           </template>
         </UInput>
+        <UTooltip text="Filter & Sort">
+          <UButton
+            variant="ghost"
+            color="neutral"
+            square
+            size="sm"
+            class="relative"
+            @click="filterPanelOpen = true"
+          >
+            <SlidersHorizontal class="h-4 w-4" />
+            <span
+              v-if="hasActiveFilters"
+              class="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-(--ui-primary)"
+            />
+          </UButton>
+        </UTooltip>
 
         <UButton
           variant="outline"
@@ -140,6 +189,9 @@ async function refresh(id: string) {
         :selected-ids="selectedIds"
         :disabled="store.operationInProgress.value"
         :search="search"
+        :rarity-filter="rarityFilter"
+        :entity-filter="entityFilter"
+        :sort-by="sortBy"
         @toggle-item="toggleSelection"
         @toggle-group="handleToggleGroup"
         @toggle-all="handleToggleGroup(contents.filter(i => i.movable !== false).map(i => i.id))"
@@ -186,6 +238,15 @@ async function refresh(id: string) {
       :current-name="unitName"
       @update:open="showRenameDialog = $event"
       @confirm="handleRename"
+    />
+
+    <FilterPanel
+      v-model:open="filterPanelOpen"
+      v-model:rarity-filter="rarityFilter"
+      v-model:entity-filter="entityFilter"
+      v-model:sort-by="sortBy"
+      :rarities="availableRarities"
+      :entities="availableEntities"
     />
 
     <OperationProgress

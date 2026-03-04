@@ -11,6 +11,7 @@ export interface InventoryItem {
   def_index: number;
   paint_index?: number;
   rarity: { id: string; name: string; color: string } | null;
+  entity: string | null;
   quality?: string;
   paint_wear?: number;
   custom_name?: string;

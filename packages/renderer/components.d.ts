@@ -15,6 +15,7 @@ declare module 'vue' {
     AppLayout: typeof import('./src/components/layout/AppLayout.vue')['default']
     BulkActions: typeof import('./src/components/inventory/BulkActions.vue')['default']
     CredentialLogin: typeof import('./src/components/auth/CredentialLogin.vue')['default']
+    FilterPanel: typeof import('./src/components/inventory/FilterPanel.vue')['default']
     ItemTable: typeof import('./src/components/inventory/ItemTable.vue')['default']
     OperationProgress: typeof import('./src/components/inventory/OperationProgress.vue')['default']
     RenameDialog: typeof import('./src/components/storage/RenameDialog.vue')['default']
