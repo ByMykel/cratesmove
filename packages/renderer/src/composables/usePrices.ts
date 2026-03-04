@@ -1,9 +1,11 @@
-import { ref, readonly } from 'vue';
+import { ref, readonly, watch } from 'vue';
 import type { PriceData, InventoryItem } from '@/types/steam';
+import { useSettings, type PriceSource } from '@/composables/useSettings';
+import { fetchUrl } from '@app/preload';
 
-const CDN_URL =
+const STEAM_CDN_URL =
   'https://cdn.jsdelivr.net/gh/bymykel/counter-strike-price-tracker@main/static/latest.json';
-const CACHE_KEY = 'cs2-prices-cache';
+const CSFLOAT_URL = 'https://csfloat.com/api/v1/listings/price-list';
 const CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours
 
 const priceMap = ref<Record<string, number>>({});
@@ -18,9 +20,13 @@ interface CacheEntry {
   cachedAt: number;
 }
 
-function loadFromCache(): PriceData | null {
+function cacheKey(source: PriceSource): string {
+  return `cs2-prices-cache-${source}`;
+}
+
+function loadFromCache(source: PriceSource): PriceData | null {
   try {
-    const raw = localStorage.getItem(CACHE_KEY);
+    const raw = localStorage.getItem(cacheKey(source));
     if (!raw) return null;
     const entry: CacheEntry = JSON.parse(raw);
     if (Date.now() - entry.cachedAt > CACHE_TTL) return null;
@@ -30,10 +36,10 @@ function loadFromCache(): PriceData | null {
   }
 }
 
-function saveToCache(data: PriceData) {
+function saveToCache(source: PriceSource, data: PriceData) {
   try {
     const entry: CacheEntry = { data, cachedAt: Date.now() };
-    localStorage.setItem(CACHE_KEY, JSON.stringify(entry));
+    localStorage.setItem(cacheKey(source), JSON.stringify(entry));
   } catch {
     // Storage full or unavailable — ignore
   }
@@ -44,24 +50,54 @@ function applyData(data: PriceData) {
   updatedAt.value = data.metadata.updated_at;
 }
 
-async function fetchFromCDN(): Promise<PriceData> {
-  const res = await fetch(CDN_URL, { cache: 'no-cache' });
+async function fetchSteam(): Promise<PriceData> {
+  const res = await fetch(STEAM_CDN_URL, { cache: 'no-cache' });
   if (!res.ok) throw new Error(`Failed to fetch prices: ${res.status}`);
   return res.json();
 }
 
+async function fetchCSFloat(): Promise<PriceData> {
+  const text = await fetchUrl(CSFLOAT_URL);
+  const items: { market_hash_name: string; min_price: number }[] = JSON.parse(text);
+  const prices: Record<string, number> = {};
+  for (const item of items) {
+    prices[item.market_hash_name] = Math.round(item.min_price);
+  }
+  return {
+    metadata: { updated_at: new Date().toISOString(), currency: 'USD', item_count: items.length },
+    prices,
+  };
+}
+
+function fetchPrices(source: PriceSource): Promise<PriceData> {
+  return source === 'csfloat' ? fetchCSFloat() : fetchSteam();
+}
+
 async function refreshPrices() {
+  const { priceSource } = useSettings();
+  const source = priceSource.value;
   loading.value = true;
   error.value = null;
   try {
-    const data = await fetchFromCDN();
+    const data = await fetchPrices(source);
     applyData(data);
-    saveToCache(data);
+    saveToCache(source, data);
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Unknown error';
   } finally {
     loading.value = false;
   }
+}
+
+function initForSource(source: PriceSource) {
+  const cached = loadFromCache(source);
+  if (cached) {
+    applyData(cached);
+  } else {
+    priceMap.value = {};
+    updatedAt.value = null;
+  }
+  refreshPrices();
 }
 
 function getPrice(marketHashName: string): number | null {
@@ -83,16 +119,15 @@ function getTotalValue(items: readonly InventoryItem[]): number {
 }
 
 export function usePrices() {
+  const { priceSource } = useSettings();
+
   if (!initialized) {
     initialized = true;
-    const cached = loadFromCache();
-    if (cached) {
-      applyData(cached);
-      // Refresh in background even with cache hit
-      refreshPrices();
-    } else {
-      refreshPrices();
-    }
+    initForSource(priceSource.value);
+
+    watch(priceSource, newSource => {
+      initForSource(newSource);
+    });
   }
 
   return {

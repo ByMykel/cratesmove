@@ -5,11 +5,13 @@ import { useSteam } from '@/composables/useSteam';
 import { useUpdater } from '@/composables/useUpdater';
 import { Package, ChevronDown, Download, Loader2 } from 'lucide-vue-next';
 import { useTheme } from '@/composables/useTheme';
+import { useSettings } from '@/composables/useSettings';
 
 const { userInfo, savedAccounts, logout, switchAccount, switchingAccount } = useSteam();
 const { updateDownloaded, updateVersion, downloadProgress, updateAvailable, installUpdate } =
   useUpdater();
 const { preference, resolvedTheme } = useTheme();
+const { priceSource } = useSettings();
 const router = useRouter();
 
 const themeIcon = computed(() =>
@@ -59,7 +61,7 @@ const dropdownItems = computed(() => {
     },
   ]);
 
-  // Appearance + sign out group
+  // Appearance + price source group
   items.push([
     {
       label: 'Appearance',
@@ -91,6 +93,27 @@ const dropdownItems = computed(() => {
           active: preference.value === 'system',
           onSelect: () => {
             preference.value = 'system';
+          },
+        },
+      ],
+    },
+    {
+      label: 'Price Source',
+      icon: 'i-lucide-dollar-sign',
+      ui: { ...iconUi, itemTrailingIcon: 'size-3.5 text-(--ui-text-dimmed)', content: 'min-w-32' },
+      children: [
+        {
+          label: 'Steam',
+          active: priceSource.value === 'steam',
+          onSelect: () => {
+            priceSource.value = 'steam';
+          },
+        },
+        {
+          label: 'CSFloat',
+          active: priceSource.value === 'csfloat',
+          onSelect: () => {
+            priceSource.value = 'csfloat';
           },
         },
       ],

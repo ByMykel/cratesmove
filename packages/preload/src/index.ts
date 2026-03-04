@@ -86,6 +86,11 @@ function steamRemoveAccount(steamId: string) {
   return ipcRenderer.invoke('steam:remove-account', steamId);
 }
 
+// Fetch proxy (bypasses CORS via main process)
+function fetchUrl(url: string): Promise<string> {
+  return ipcRenderer.invoke('app:fetch-url', url);
+}
+
 // Platform
 const platform = process.platform;
 
@@ -134,6 +139,7 @@ export {
   getAppVersion,
   checkForUpdates,
   installUpdate,
+  fetchUrl,
   platform,
   windowMinimize,
   windowMaximize,

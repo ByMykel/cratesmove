@@ -8,6 +8,7 @@ import { autoUpdater } from './modules/AutoUpdater.js';
 import { allowInternalOrigins } from './modules/BlockNotAllowedOrigins.js';
 import { allowExternalUrls } from './modules/ExternalUrls.js';
 import { createSteamConnection } from './modules/SteamConnection.js';
+import { fetchProxy } from './modules/FetchProxy.js';
 
 export async function initApp(initConfig: AppInitConfig) {
   const moduleRunner = createModuleRunner()
@@ -17,6 +18,7 @@ export async function initApp(initConfig: AppInitConfig) {
     .init(hardwareAccelerationMode({ enable: false }))
     .init(autoUpdater())
     .init(createSteamConnection())
+    .init(fetchProxy())
 
     // Security
     .init(
