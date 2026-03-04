@@ -13,7 +13,13 @@ const updatedAt = ref<string | null>(null);
 const loading = ref(false);
 const error = ref<string | null>(null);
 
-let initialized = false;
+const { priceSource } = useSettings();
+
+initForSource(priceSource.value);
+
+watch(priceSource, newSource => {
+  initForSource(newSource);
+});
 
 interface CacheEntry {
   data: PriceData;
@@ -74,7 +80,6 @@ function fetchPrices(source: PriceSource): Promise<PriceData> {
 }
 
 async function refreshPrices() {
-  const { priceSource } = useSettings();
   const source = priceSource.value;
   loading.value = true;
   error.value = null;
@@ -119,17 +124,6 @@ function getTotalValue(items: readonly InventoryItem[]): number {
 }
 
 export function usePrices() {
-  const { priceSource } = useSettings();
-
-  if (!initialized) {
-    initialized = true;
-    initForSource(priceSource.value);
-
-    watch(priceSource, newSource => {
-      initForSource(newSource);
-    });
-  }
-
   return {
     priceMap: readonly(priceMap),
     updatedAt: readonly(updatedAt),
