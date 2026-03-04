@@ -86,6 +86,9 @@ function steamRemoveAccount(steamId: string) {
   return ipcRenderer.invoke('steam:remove-account', steamId);
 }
 
+// Platform
+const platform = process.platform;
+
 // Window Controls
 function windowMinimize() {
   return ipcRenderer.invoke('window:minimize');
@@ -131,6 +134,7 @@ export {
   getAppVersion,
   checkForUpdates,
   installUpdate,
+  platform,
   windowMinimize,
   windowMaximize,
   windowClose,

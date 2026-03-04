@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { Minus, Square, X } from 'lucide-vue-next';
-import { windowMinimize, windowMaximize, windowClose } from '@app/preload';
+import { windowMinimize, windowMaximize, windowClose, platform } from '@app/preload';
 </script>
 
 <template>
   <div
+    v-if="platform === 'win32'"
     class="flex h-8 items-center justify-end border-b border-(--ui-border) bg-(--ui-bg)"
     style="-webkit-app-region: drag"
   >
