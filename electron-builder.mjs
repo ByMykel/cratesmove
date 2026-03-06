@@ -33,6 +33,7 @@ export default /** @type import('electron-builder').Configuration */
    * as they can unpredictably change during deployment, making them impossible to locate and download for update.
    */
   artifactName: '${productName}-${version}-${os}-${arch}.${ext}',
+  extraResources: ['./buildResources/icon.png'],
   files: [
     'LICENSE*',
     pkg.main,

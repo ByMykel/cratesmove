@@ -56,7 +56,9 @@ class WindowManager implements AppModule {
       height: 800,
       minWidth: 800,
       minHeight: 600,
-      icon: join(app.getAppPath(), 'buildResources', 'icon.png'),
+      icon: app.isPackaged
+        ? join(process.resourcesPath, 'buildResources', 'icon.png')
+        : join(app.getAppPath(), 'buildResources', 'icon.png'),
       webPreferences: {
         nodeIntegration: false,
         contextIsolation: true,
