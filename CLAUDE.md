@@ -47,6 +47,16 @@ packages/
 9. Write a friendly changelog for the draft release using `gh release edit`. Look at previous releases (`gh release view v0.X.0`) to match the style — a `## What's Changed` section with a bullet list describing each change in plain language (no technical jargon), plus a `**Full Changelog**` comparison link at the bottom
 10. Publish the release on GitHub
 
+## Steam Libraries
+
+The main process (`packages/main/src/modules/SteamConnection.ts`) uses three core libraries. Full API docs are in `references/`:
+
+| Library | Docs | Purpose |
+|---------|------|---------|
+| `steam-user` v5 | [`references/steam-user.md`](references/steam-user.md) | Steam client protocol (CM connection, auth via refresh token, personas) |
+| `globaloffensive` v3 | [`references/globaloffensive.md`](references/globaloffensive.md) | CS2 Game Coordinator (inventory, storage unit/casket operations) |
+| `steam-session` v1 | [`references/steam-session.md`](references/steam-session.md) | Credential login + Steam Guard 2FA (produces refresh tokens) |
+
 ## Code Style
 
 - Vue: Composition API with `<script setup>` and TypeScript
