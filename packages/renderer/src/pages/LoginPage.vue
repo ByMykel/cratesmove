@@ -5,7 +5,7 @@ import SavedAccountList from '@/components/auth/SavedAccountList.vue';
 import { Loader2 } from 'lucide-vue-next';
 import { useSteam } from '@/composables/useSteam';
 
-const { error, restoringSession, savedAccounts, switchingAccount } = useSteam();
+const { restoringSession, savedAccounts, switchingAccount } = useSteam();
 
 const showCredentialForm = ref(false);
 const hasSavedAccounts = computed(() => savedAccounts.value.length > 0);
@@ -64,13 +64,6 @@ const hasSavedAccounts = computed(() => savedAccounts.value.length > 0);
               </UButton>
             </div>
           </Transition>
-
-          <div
-            v-if="error"
-            class="mt-4 rounded-lg bg-red-500/10 px-3 py-2 text-center text-sm text-red-500"
-          >
-            {{ error }}
-          </div>
         </template>
       </UCard>
     </div>

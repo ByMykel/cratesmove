@@ -9,6 +9,21 @@ const username = ref('');
 const password = ref('');
 const steamGuardCode = ref('');
 
+const ERROR_MESSAGES: Record<string, string> = {
+  InvalidPassword: 'Incorrect password. Please try again.',
+  InvalidLoginAuthCode: 'Invalid Steam Guard code. Please try again.',
+  TwoFactorCodeMismatch: 'Invalid authenticator code. Please try again.',
+  RateLimitExceeded: 'Too many attempts. Please wait and try again.',
+  AccountDisabled: 'This account has been disabled.',
+  AccountLoginDeniedNeedTwoFactor: 'Steam Guard authentication required.',
+  Timeout: 'Connection timed out. Please try again.',
+};
+
+function friendlyError(raw: string | null): string {
+  if (!raw) return '';
+  return ERROR_MESSAGES[raw] ?? raw;
+}
+
 async function handleLogin() {
   if (!username.value || !password.value) return;
   await credentialLogin(username.value, password.value);
@@ -64,7 +79,7 @@ async function handleSteamGuard() {
     </div>
 
     <div v-if="error" class="rounded-lg bg-red-500/10 px-3 py-2 text-center text-sm text-red-500">
-      {{ error }}
+      {{ friendlyError(error) }}
     </div>
 
     <UButton type="submit" :disabled="!username || !password || authState === 'connecting'" block>
