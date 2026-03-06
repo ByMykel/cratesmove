@@ -4,7 +4,6 @@ import {
   steamCredentialLogin,
   steamSubmitSteamGuard,
   steamLogout,
-  steamTrySavedSession,
   steamGetSavedAccounts,
   steamSwitchAccount,
   steamRemoveAccount,
@@ -32,7 +31,6 @@ const userInfo = ref<UserInfo | null>(null);
 const error = ref<string | null>(null);
 const steamGuardType = ref<'email' | 'mobile' | null>(null);
 const isConnected = ref(false);
-const restoringSession = ref(false);
 const savedAccounts = ref<SavedAccountMeta[]>([]);
 const switchingAccount = ref(false);
 
@@ -53,7 +51,7 @@ function registerListeners() {
       if (data.state === 'connected') {
         isConnected.value = true;
         error.value = null;
-        restoringSession.value = false;
+
         // Mark that the new account has connected — the next inventory-updated
         // event is from the new account and can safely clear switchingAccount
         if (switchingAccount.value) {
@@ -61,12 +59,12 @@ function registerListeners() {
         }
       } else if (data.state === 'error') {
         isConnected.value = false;
-        restoringSession.value = false;
+
         switchingAccount.value = false;
         connectedDuringSwitch = false;
       } else if (data.state === 'disconnected') {
         isConnected.value = false;
-        restoringSession.value = false;
+
         // Don't reset switchingAccount on disconnect — it's expected during a switch
       }
     },
@@ -106,16 +104,6 @@ function registerListeners() {
 
 export function useSteam() {
   registerListeners();
-
-  async function trySavedSession() {
-    restoringSession.value = true;
-    authState.value = 'connecting';
-    const hasSession = await steamTrySavedSession();
-    if (!hasSession) {
-      restoringSession.value = false;
-      authState.value = 'disconnected';
-    }
-  }
 
   async function credentialLogin(username: string, password: string) {
     authState.value = 'connecting';
@@ -169,10 +157,8 @@ export function useSteam() {
     error: readonly(error),
     steamGuardType: readonly(steamGuardType),
     isConnected: readonly(isConnected),
-    restoringSession: readonly(restoringSession),
     savedAccounts: readonly(savedAccounts),
     switchingAccount: readonly(switchingAccount),
-    trySavedSession,
     credentialLogin,
     submitSteamGuard,
     logout,

@@ -5,8 +5,7 @@ import { useRouter } from 'vue-router';
 import { onSteamEvent } from '@app/preload';
 import TitleBar from '@/components/layout/TitleBar.vue';
 
-const { isConnected, switchingAccount, savedAccounts, trySavedSession, getSavedAccounts } =
-  useSteam();
+const { isConnected, switchingAccount, getSavedAccounts } = useSteam();
 const toast = useToast();
 const router = useRouter();
 
@@ -35,12 +34,8 @@ watch(isConnected, connected => {
   }
 });
 
-// Load saved accounts and auto-login only if there's exactly one
-onMounted(async () => {
-  await getSavedAccounts();
-  if (savedAccounts.value.length === 1) {
-    trySavedSession();
-  }
+onMounted(() => {
+  getSavedAccounts();
 });
 </script>
 

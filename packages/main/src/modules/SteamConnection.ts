@@ -431,6 +431,11 @@ class SteamConnection implements AppModule {
         const refreshToken = this.#loginSession!.refreshToken;
         const steamId = this.#extractSteamIdFromToken(refreshToken);
 
+        // Clean up the login session — its polling will cancel and emit a
+        // spurious "login attempt has been cancelled" error if we don't.
+        this.#loginSession!.removeAllListeners();
+        this.#loginSession = null;
+
         if (steamId) {
           await this.#saveRefreshTokenForAccount(steamId, refreshToken);
           await this.#upsertAccountMeta({

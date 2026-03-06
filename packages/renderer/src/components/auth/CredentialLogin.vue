@@ -22,7 +22,6 @@ async function handleSteamGuard() {
 
 function onPinComplete(value: string[]) {
   steamGuardCode.value = value;
-  handleSteamGuard();
 }
 </script>
 
