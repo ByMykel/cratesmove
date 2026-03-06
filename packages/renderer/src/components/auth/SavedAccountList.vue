@@ -17,7 +17,19 @@ async function handleSwitch(steamId: string) {
   <div class="flex flex-col gap-2">
     <p class="text-sm font-medium text-(--ui-text-muted)">Choose an account</p>
 
-    <div class="flex flex-col gap-2">
+    <!-- Empty state -->
+    <div
+      v-if="savedAccounts.length === 0"
+      class="flex items-center gap-3 rounded-xl border border-dashed border-(--ui-border) px-3 py-3"
+    >
+      <div class="h-10 w-10 shrink-0 rounded-lg bg-(--ui-bg-elevated)" />
+      <div class="flex flex-1 flex-col gap-2">
+        <div class="h-3 w-32 rounded bg-(--ui-bg-elevated)" />
+        <div class="h-3 w-20 rounded bg-(--ui-bg-elevated)" />
+      </div>
+    </div>
+
+    <div v-else class="flex flex-col gap-2">
       <div
         v-for="account in savedAccounts"
         :key="account.steamId"

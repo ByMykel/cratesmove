@@ -13,9 +13,9 @@ const view = ref<'accounts' | 'credentials'>(
 
 <template>
   <div class="relative flex h-full items-center justify-center overflow-hidden bg-(--ui-bg) p-4">
-    <div class="flex w-full max-w-sm flex-col items-center gap-6">
+    <div class="flex w-full max-w-sm flex-col items-center gap-4">
       <!-- Card -->
-      <UCard class="w-full ring-0 shadow-none" :ui="{ body: 'sm:p-6' }">
+      <UCard class="w-full ring-0 shadow-none" :ui="{ body: 'p-0 sm:p-0' }">
         <Transition
           mode="out-in"
           enter-active-class="transition duration-200 ease-out"

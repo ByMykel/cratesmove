@@ -1,17 +1,34 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useSteam } from '@/composables/useSteam';
-import { Loader2, ShieldCheck } from 'lucide-vue-next';
+import { ShieldCheck } from 'lucide-vue-next';
 
 const { authState, credentialLogin, submitSteamGuard, steamGuardType } = useSteam();
 
-const username = ref('');
-const password = ref('');
+const authFormRef = ref<{ state: Record<string, string> }>();
 const steamGuardCode = ref<string[]>([]);
 
-async function handleLogin() {
-  if (!username.value || !password.value) return;
-  await credentialLogin(username.value, password.value);
+const loginFields = [
+  {
+    name: 'username',
+    type: 'text' as const,
+    label: 'Username',
+    placeholder: 'Username',
+    autocomplete: 'username',
+    required: true,
+  },
+  {
+    name: 'password',
+    type: 'password' as const,
+    label: 'Password',
+    placeholder: 'Password',
+    autocomplete: 'current-password',
+    required: true,
+  },
+];
+
+async function handleLogin(payload: { data: { username: string; password: string } }) {
+  await credentialLogin(payload.data.username, payload.data.password);
 }
 
 async function handleSteamGuard() {
@@ -58,28 +75,16 @@ function onPinComplete(value: string[]) {
   </form>
 
   <!-- Login Form -->
-  <form v-else class="flex flex-col gap-4" @submit.prevent="handleLogin">
-    <p class="text-sm font-medium text-(--ui-text-muted)">Sign in with Steam</p>
-
-    <div class="flex flex-col gap-3">
-      <UInput
-        v-model="username"
-        placeholder="Username"
-        autocomplete="username"
-        :disabled="authState === 'connecting'"
-      />
-      <UInput
-        v-model="password"
-        type="password"
-        placeholder="Password"
-        autocomplete="current-password"
-        :disabled="authState === 'connecting'"
-      />
-    </div>
-
-    <UButton type="submit" :disabled="!username || !password || authState === 'connecting'" block>
-      <Loader2 v-if="authState === 'connecting'" class="h-4 w-4 animate-spin" />
-      <span v-else>Sign In</span>
-    </UButton>
-  </form>
+  <UAuthForm
+    v-else
+    ref="authFormRef"
+    :fields="loginFields"
+    :loading="authState === 'connecting'"
+    :disabled="authState === 'connecting'"
+    :submit="{
+      label: 'Sign In',
+      disabled: !authFormRef?.state?.username || !authFormRef?.state?.password,
+    }"
+    @submit="handleLogin"
+  />
 </template>

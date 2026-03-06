@@ -26,6 +26,7 @@ declare module 'vue' {
     ThemeToggle: typeof import('./src/components/common/ThemeToggle.vue')['default']
     TitleBar: typeof import('./src/components/layout/TitleBar.vue')['default']
     UApp: typeof import('./../../node_modules/@nuxt/ui/dist/runtime/components/App.vue')['default']
+    UAuthForm: typeof import('./../../node_modules/@nuxt/ui/dist/runtime/components/AuthForm.vue')['default']
     UBadge: typeof import('./../../node_modules/@nuxt/ui/dist/runtime/components/Badge.vue')['default']
     UButton: typeof import('./../../node_modules/@nuxt/ui/dist/runtime/components/Button.vue')['default']
     UCard: typeof import('./../../node_modules/@nuxt/ui/dist/runtime/components/Card.vue')['default']
