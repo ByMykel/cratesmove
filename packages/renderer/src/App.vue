@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useSteam } from '@/composables/useSteam';
+import { useSteam, friendlyError } from '@/composables/useSteam';
 import { watch, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { onSteamEvent } from '@app/preload';
@@ -11,7 +11,7 @@ const toast = useToast();
 const router = useRouter();
 
 onSteamEvent('steam:error', (_event: unknown, data: { message: string }) => {
-  toast.add({ title: data.message, color: 'error' });
+  toast.add({ title: friendlyError(data.message), color: 'error' });
 });
 
 // Auth guard

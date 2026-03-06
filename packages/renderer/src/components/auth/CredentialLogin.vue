@@ -3,26 +3,11 @@ import { ref } from 'vue';
 import { useSteam } from '@/composables/useSteam';
 import { Loader2, ShieldCheck } from 'lucide-vue-next';
 
-const { authState, error, credentialLogin, submitSteamGuard, steamGuardType } = useSteam();
+const { authState, credentialLogin, submitSteamGuard, steamGuardType } = useSteam();
 
 const username = ref('');
 const password = ref('');
-const steamGuardCode = ref('');
-
-const ERROR_MESSAGES: Record<string, string> = {
-  InvalidPassword: 'Incorrect password. Please try again.',
-  InvalidLoginAuthCode: 'Invalid Steam Guard code. Please try again.',
-  TwoFactorCodeMismatch: 'Invalid authenticator code. Please try again.',
-  RateLimitExceeded: 'Too many attempts. Please wait and try again.',
-  AccountDisabled: 'This account has been disabled.',
-  AccountLoginDeniedNeedTwoFactor: 'Steam Guard authentication required.',
-  Timeout: 'Connection timed out. Please try again.',
-};
-
-function friendlyError(raw: string | null): string {
-  if (!raw) return '';
-  return ERROR_MESSAGES[raw] ?? raw;
-}
+const steamGuardCode = ref<string[]>([]);
 
 async function handleLogin() {
   if (!username.value || !password.value) return;
@@ -30,8 +15,14 @@ async function handleLogin() {
 }
 
 async function handleSteamGuard() {
-  if (!steamGuardCode.value) return;
-  await submitSteamGuard(steamGuardCode.value);
+  const code = (steamGuardCode.value ?? []).join('');
+  if (code.length < 5) return;
+  await submitSteamGuard(code);
+}
+
+function onPinComplete(value: string[]) {
+  steamGuardCode.value = value;
+  handleSteamGuard();
 }
 </script>
 
@@ -53,15 +44,18 @@ async function handleSteamGuard() {
       </p>
     </div>
 
-    <UInput
+    <UPinInput
       v-model="steamGuardCode"
-      placeholder="X X X X X"
-      class="text-center text-lg tracking-[0.3em]"
-      :maxlength="5"
+      :length="5"
+      otp
       autofocus
+      :ui="{ root: 'justify-center' }"
+      @complete="onPinComplete"
     />
 
-    <UButton type="submit" :disabled="!steamGuardCode" block> Verify </UButton>
+    <UButton type="submit" :disabled="(steamGuardCode ?? []).join('').length < 5" block>
+      Verify
+    </UButton>
   </form>
 
   <!-- Login Form -->
@@ -76,10 +70,6 @@ async function handleSteamGuard() {
         placeholder="Password"
         autocomplete="current-password"
       />
-    </div>
-
-    <div v-if="error" class="rounded-lg bg-red-500/10 px-3 py-2 text-center text-sm text-red-500">
-      {{ friendlyError(error) }}
     </div>
 
     <UButton type="submit" :disabled="!username || !password || authState === 'connecting'" block>

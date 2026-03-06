@@ -12,6 +12,21 @@ import {
 import type { AuthState, UserInfo, SavedAccountMeta } from '@/types/steam';
 import { useInventoryStore } from '@/composables/useInventoryStore';
 
+const ERROR_MESSAGES: Record<string, string> = {
+  InvalidPassword: 'Incorrect password. Please try again.',
+  InvalidLoginAuthCode: 'Invalid Steam Guard code. Please try again.',
+  TwoFactorCodeMismatch: 'Invalid authenticator code. Please try again.',
+  RateLimitExceeded: 'Too many attempts. Please wait and try again.',
+  AccountDisabled: 'This account has been disabled.',
+  AccountLoginDeniedNeedTwoFactor: 'Steam Guard authentication required.',
+  Timeout: 'Connection timed out. Please try again.',
+};
+
+export function friendlyError(raw: string | null): string {
+  if (!raw) return '';
+  return ERROR_MESSAGES[raw] ?? raw;
+}
+
 const authState = ref<AuthState>('disconnected');
 const userInfo = ref<UserInfo | null>(null);
 const error = ref<string | null>(null);
