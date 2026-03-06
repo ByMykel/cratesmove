@@ -71,6 +71,10 @@ function registerListeners() {
 
   onSteamEvent('steam:error', (_event: unknown, data: { message: string }) => {
     error.value = data.message;
+    if (switchingAccount.value) {
+      switchingAccount.value = false;
+      connectedDuringSwitch = false;
+    }
   });
 
   onSteamEvent('steam:saved-accounts-updated', (_event: unknown, data: SavedAccountMeta[]) => {
