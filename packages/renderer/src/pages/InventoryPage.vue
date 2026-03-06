@@ -90,14 +90,16 @@ function storageValue(unitId: string): number {
 const inspectedIds = new Set<string>();
 
 async function inspectAllUnits() {
-  for (const unit of store.storageUnitList.value) {
-    if (inspectedIds.has(unit.id)) continue;
+  const units = store.storageUnitList.value.filter(u => !inspectedIds.has(u.id));
+  for (const unit of units) {
     inspectedIds.add(unit.id);
     try {
       await store.inspectStorage(unit.id);
     } catch {
       // Individual failure shouldn't block other units
     }
+    // Throttle GC calls to avoid flooding
+    await new Promise(r => setTimeout(r, 200));
   }
 }
 
@@ -109,10 +111,7 @@ onMounted(async () => {
 // Handles the case where the GC connects after the page mounts.
 watch(store.storageUnitList, () => inspectAllUnits());
 
-watch(search, () => clearSelection());
-watch(rarityFilter, () => clearSelection());
-watch(entityFilter, () => clearSelection());
-watch(sortBy, () => clearSelection());
+watch([search, rarityFilter, entityFilter, sortBy], () => clearSelection());
 
 // Clear component-local state when switching accounts so stale IDs
 // don't prevent re-inspection or leave phantom selections.

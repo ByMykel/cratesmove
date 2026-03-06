@@ -75,6 +75,7 @@ class SteamConnection implements AppModule {
   #activeSteamId: string | null = null;
   #operationCancelled = false;
   #suppressReconnect = false;
+  #inventoryUpdateTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
     this.#steamUser = new SteamUser();
@@ -887,10 +888,14 @@ class SteamConnection implements AppModule {
   }
 
   #sendInventoryUpdate() {
-    const items = this.#getInventory();
-    broadcastToRenderers('steam:inventory-updated', items);
-    const units = this.#getStorageUnits();
-    broadcastToRenderers('steam:storage-units-updated', units);
+    if (this.#inventoryUpdateTimer) return;
+    this.#inventoryUpdateTimer = setTimeout(() => {
+      this.#inventoryUpdateTimer = null;
+      const items = this.#getInventory();
+      broadcastToRenderers('steam:inventory-updated', items);
+      const units = this.#getStorageUnits();
+      broadcastToRenderers('steam:storage-units-updated', units);
+    }, 100);
   }
 
   #delay(ms: number): Promise<void> {

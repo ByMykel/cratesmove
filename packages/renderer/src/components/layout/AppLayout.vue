@@ -20,7 +20,7 @@ const { switchingAccount } = useSteam();
       >
         <div
           v-if="switchingAccount"
-          class="absolute inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-(--ui-bg)/80 backdrop-blur-sm"
+          class="absolute inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-(--ui-bg)"
         >
           <Loader2 class="h-8 w-8 animate-spin text-(--ui-primary)" />
         </div>
