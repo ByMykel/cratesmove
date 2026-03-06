@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref } from 'vue';
 import CredentialLogin from '@/components/auth/CredentialLogin.vue';
 import SavedAccountList from '@/components/auth/SavedAccountList.vue';
 import { Loader2 } from 'lucide-vue-next';
@@ -7,8 +7,9 @@ import { useSteam } from '@/composables/useSteam';
 
 const { restoringSession, savedAccounts, switchingAccount } = useSteam();
 
-const showCredentialForm = ref(false);
-const hasSavedAccounts = computed(() => savedAccounts.value.length > 0);
+const view = ref<'accounts' | 'credentials'>(
+  savedAccounts.value.length > 0 ? 'accounts' : 'credentials',
+);
 </script>
 
 <template>
@@ -33,7 +34,7 @@ const hasSavedAccounts = computed(() => savedAccounts.value.length > 0);
             leave-to-class="-translate-y-2 opacity-0"
           >
             <!-- Saved accounts list -->
-            <div v-if="hasSavedAccounts && !showCredentialForm" key="saved">
+            <div v-if="view === 'accounts'" key="saved">
               <SavedAccountList />
 
               <UButton
@@ -42,7 +43,7 @@ const hasSavedAccounts = computed(() => savedAccounts.value.length > 0);
                 block
                 class="mt-4"
                 :disabled="switchingAccount"
-                @click="showCredentialForm = true"
+                @click="view = 'credentials'"
               >
                 Sign in with a different account
               </UButton>
@@ -53,12 +54,12 @@ const hasSavedAccounts = computed(() => savedAccounts.value.length > 0);
               <CredentialLogin />
 
               <UButton
-                v-if="hasSavedAccounts"
+                v-if="savedAccounts.length > 0"
                 variant="link"
                 color="neutral"
                 block
                 class="mt-4"
-                @click="showCredentialForm = false"
+                @click="view = 'accounts'"
               >
                 Back to saved accounts
               </UButton>

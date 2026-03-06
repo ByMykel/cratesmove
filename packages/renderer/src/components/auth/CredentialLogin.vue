@@ -63,12 +63,18 @@ function onPinComplete(value: string[]) {
     <p class="text-sm font-medium text-(--ui-text-muted)">Sign in with Steam</p>
 
     <div class="flex flex-col gap-3">
-      <UInput v-model="username" placeholder="Username" autocomplete="username" />
+      <UInput
+        v-model="username"
+        placeholder="Username"
+        autocomplete="username"
+        :disabled="authState === 'connecting'"
+      />
       <UInput
         v-model="password"
         type="password"
         placeholder="Password"
         autocomplete="current-password"
+        :disabled="authState === 'connecting'"
       />
     </div>
 
