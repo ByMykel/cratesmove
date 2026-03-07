@@ -22,7 +22,9 @@ export default /** @type import('electron-builder').Configuration */
     icon: 'buildResources/icons',
     category: 'Utility',
     desktop: {
-      StartupWMClass: 'cratesmove',
+      entry: {
+        StartupWMClass: 'cratesmove',
+      },
     },
   },
   win: {
