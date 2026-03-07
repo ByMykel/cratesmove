@@ -10,6 +10,12 @@ import { LoginSession, EAuthTokenPlatformType, EAuthSessionGuardType } from 'ste
 
 import { resolveItem, getAttributeUint32, type ResolvedItemData } from 'cs2-inventory-resolver';
 
+interface ProxySettings {
+  mode: 'none' | 'custom';
+  type: 'http' | 'socks5';
+  url: string;
+}
+
 interface CredentialLoginArgs {
   username: string;
   password: string;
@@ -67,6 +73,7 @@ interface RawInventoryItem {
 const OPERATION_DELAY_MS = 500;
 const OPERATION_TIMEOUT_MS = 5000;
 const INVALID_TOKEN_ERESULTS = new Set([5, 15, 35]);
+const DEFAULT_PROXY: ProxySettings = { mode: 'none', type: 'http', url: '' };
 
 class SteamConnection implements AppModule {
   #steamUser: SteamUser;
@@ -76,6 +83,7 @@ class SteamConnection implements AppModule {
   #operationCancelled = false;
   #suppressReconnect = false;
   #inventoryUpdateTimer: ReturnType<typeof setTimeout> | null = null;
+  #proxySettings: ProxySettings = { ...DEFAULT_PROXY };
 
   constructor() {
     this.#steamUser = new SteamUser();
@@ -85,6 +93,10 @@ class SteamConnection implements AppModule {
   enable({ app: electronApp }: ModuleContext): void {
     this.#registerIpcHandlers();
     this.#registerSteamEvents();
+    this.#loadProxySettings().then(settings => {
+      this.#proxySettings = settings;
+      this.#applySteamUserProxy();
+    });
 
     electronApp.on('before-quit', () => {
       if (this.#steamUser.steamID) {
@@ -117,6 +129,10 @@ class SteamConnection implements AppModule {
     ipcMain.handle('steam:cancel-operation', () => {
       this.#operationCancelled = true;
     });
+    ipcMain.handle('app:get-proxy', () => this.#proxySettings);
+    ipcMain.handle('app:set-proxy', (_e, settings: ProxySettings) =>
+      this.#setProxySettings(settings),
+    );
   }
 
   #registerSteamEvents() {
@@ -193,6 +209,55 @@ class SteamConnection implements AppModule {
     this.#csgo.on('itemChanged', () => {
       this.#sendInventoryUpdate();
     });
+  }
+
+  // --- Proxy settings ---
+
+  #getProxyPath(): string {
+    return join(app.getPath('userData'), 'proxy.json');
+  }
+
+  async #loadProxySettings(): Promise<ProxySettings> {
+    try {
+      const data = await readFile(this.#getProxyPath(), 'utf-8');
+      return JSON.parse(data);
+    } catch {
+      return { ...DEFAULT_PROXY };
+    }
+  }
+
+  async #saveProxySettings(settings: ProxySettings): Promise<void> {
+    await writeFile(this.#getProxyPath(), JSON.stringify(settings, null, 2), 'utf-8');
+  }
+
+  #getSteamUserProxyOptions(): Record<string, string | null> {
+    if (this.#proxySettings.mode === 'custom' && this.#proxySettings.url) {
+      if (this.#proxySettings.type === 'socks5') {
+        return { httpProxy: null, socksProxy: this.#proxySettings.url };
+      }
+      return { httpProxy: this.#proxySettings.url, socksProxy: null };
+    }
+    return { httpProxy: null, socksProxy: null };
+  }
+
+  #getSessionProxyOptions(): Record<string, string | undefined> {
+    if (this.#proxySettings.mode === 'custom' && this.#proxySettings.url) {
+      if (this.#proxySettings.type === 'socks5') {
+        return { socksProxy: this.#proxySettings.url };
+      }
+      return { httpProxy: this.#proxySettings.url };
+    }
+    return {};
+  }
+
+  #applySteamUserProxy(): void {
+    this.#steamUser.setOptions(this.#getSteamUserProxyOptions());
+  }
+
+  async #setProxySettings(settings: ProxySettings): Promise<void> {
+    this.#proxySettings = settings;
+    await this.#saveProxySettings(settings);
+    this.#applySteamUserProxy();
   }
 
   // --- Multi-account storage paths ---
@@ -426,7 +491,10 @@ class SteamConnection implements AppModule {
       await this.#logOffCurrent();
       this.#suppressReconnect = false;
 
-      this.#loginSession = new LoginSession(EAuthTokenPlatformType.SteamClient);
+      this.#loginSession = new LoginSession(
+        EAuthTokenPlatformType.SteamClient,
+        this.#getSessionProxyOptions(),
+      );
 
       this.#loginSession.on('authenticated', async () => {
         const refreshToken = this.#loginSession!.refreshToken;

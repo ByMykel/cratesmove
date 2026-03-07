@@ -2,13 +2,18 @@
 import { ref } from 'vue';
 import CredentialLogin from '@/components/auth/CredentialLogin.vue';
 import SavedAccountList from '@/components/auth/SavedAccountList.vue';
+import ProxyDialog from '@/components/layout/ProxyDialog.vue';
 import { useSteam } from '@/composables/useSteam';
+import { useSettings } from '@/composables/useSettings';
 
 const { savedAccounts, switchingAccount } = useSteam();
+const { proxyMode } = useSettings();
 
 const view = ref<'accounts' | 'credentials'>(
   savedAccounts.value.length > 0 ? 'accounts' : 'credentials',
 );
+
+const showProxyDialog = ref(false);
 </script>
 
 <template>
@@ -59,5 +64,18 @@ const view = ref<'accounts' | 'credentials'>(
         </Transition>
       </UCard>
     </div>
+
+    <UButton
+      variant="ghost"
+      color="neutral"
+      size="xs"
+      icon="i-lucide-globe"
+      class="absolute bottom-4 right-4 text-(--ui-text-dimmed)"
+      @click="showProxyDialog = true"
+    >
+      {{ proxyMode === 'custom' ? 'Proxy enabled' : 'Configure proxy' }}
+    </UButton>
+
+    <ProxyDialog v-model:open="showProxyDialog" />
   </div>
 </template>

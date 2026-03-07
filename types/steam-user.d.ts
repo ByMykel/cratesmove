@@ -8,6 +8,7 @@ declare module 'steam-user' {
     logOff(): void;
     gamesPlayed(appids: number[], force?: boolean): void;
     getPersonas(steamids: unknown[]): void;
+    setOptions(options: Record<string, unknown>): void;
     on(event: string, listener: EventListener): this;
     once(event: string, listener: EventListener): this;
   }

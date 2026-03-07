@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useSteam } from '@/composables/useSteam';
 import { useUpdater } from '@/composables/useUpdater';
 import { Package, ChevronDown, Download, Loader2 } from 'lucide-vue-next';
 import { useTheme } from '@/composables/useTheme';
 import { useSettings } from '@/composables/useSettings';
+import ProxyDialog from '@/components/layout/ProxyDialog.vue';
 
 const { userInfo, savedAccounts, logout, switchAccount, switchingAccount } = useSteam();
 const { updateDownloaded, updateVersion, downloadProgress, updateAvailable, installUpdate } =
@@ -13,6 +14,8 @@ const { updateDownloaded, updateVersion, downloadProgress, updateAvailable, inst
 const { preference, resolvedTheme } = useTheme();
 const { priceSource } = useSettings();
 const router = useRouter();
+
+const showProxyDialog = ref(false);
 
 const themeIcon = computed(() =>
   resolvedTheme.value === 'light' ? 'i-lucide-sun' : 'i-lucide-moon',
@@ -118,6 +121,14 @@ const dropdownItems = computed(() => {
         },
       ],
     },
+    {
+      label: 'Proxy',
+      icon: 'i-lucide-globe',
+      ui: iconUi,
+      onSelect: () => {
+        showProxyDialog.value = true;
+      },
+    },
   ]);
 
   // Sign out group
@@ -181,5 +192,7 @@ const dropdownItems = computed(() => {
         </UButton>
       </UDropdownMenu>
     </div>
+
+    <ProxyDialog v-model:open="showProxyDialog" />
   </header>
 </template>
