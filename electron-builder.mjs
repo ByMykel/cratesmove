@@ -19,8 +19,11 @@ export default /** @type import('electron-builder').Configuration */
   ],
   linux: {
     target: ['deb'],
-    icon: 'buildResources/icon.png',
+    icon: 'buildResources/icons',
     category: 'Utility',
+    desktop: {
+      StartupWMClass: 'cratesmove',
+    },
   },
   win: {
     target: ['nsis'],
