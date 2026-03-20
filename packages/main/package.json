@@ -16,7 +16,7 @@
     "@app/renderer": "*",
     "cs2-inventory-resolver": "^0.3.1",
     "electron-updater": "6.8.3",
-    "globaloffensive": "^3.2.0",
+    "globaloffensive": "^3.3.0",
     "steam-session": "^1.9.4",
     "steam-user": "^5.3.0"
   },
