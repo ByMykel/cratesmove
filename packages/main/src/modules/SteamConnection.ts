@@ -648,7 +648,11 @@ class SteamConnection implements AppModule {
           continue;
         }
 
-        result.push({ ...formatted, movable: this.#isItemMovable(item, _resolved) });
+        result.push({
+          ...formatted,
+          movable: this.#isItemMovable(item, _resolved),
+          _rawData: SteamConnection.#safeStringify(item),
+        });
       } catch {
         result.push(SteamConnection.#createErrorItem(item));
       }
@@ -704,11 +708,14 @@ class SteamConnection implements AppModule {
         resolve(
           (items || []).map((item: RawInventoryItem) => {
             try {
-              const formatted = this.#formatItem(item);
+              const { _resolved, ...formatted } = this.#formatItem(item);
               if (!formatted.market_hash_name) {
                 return SteamConnection.#createErrorItem(item);
               }
-              return formatted;
+              return {
+                ...formatted,
+                _rawData: SteamConnection.#safeStringify(item),
+              };
             } catch {
               return SteamConnection.#createErrorItem(item);
             }
