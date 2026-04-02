@@ -19,6 +19,7 @@ declare module 'vue' {
     ItemTable: typeof import('./src/components/inventory/ItemTable.vue')['default']
     OperationProgress: typeof import('./src/components/inventory/OperationProgress.vue')['default']
     ProxyDialog: typeof import('./src/components/layout/ProxyDialog.vue')['default']
+    RawDataDialog: typeof import('./src/components/inventory/RawDataDialog.vue')['default']
     RenameDialog: typeof import('./src/components/storage/RenameDialog.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
