@@ -44,7 +44,7 @@
   "dependencies": {
     "@app/main": "*",
     "@tanstack/vue-virtual": "^3.13.23",
-    "cs2-inventory-resolver": "^0.3.2",
+    "cs2-inventory-resolver": "^0.3.3",
     "vue-eslint-parser": "^10.4.0"
   }
 }
