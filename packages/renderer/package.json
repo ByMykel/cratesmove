@@ -10,8 +10,8 @@
     "dist/**"
   ],
   "dependencies": {
-    "vue": "^3.5.32",
-    "vue-router": "^5.0.4",
+    "vue": "^3.5.33",
+    "vue-router": "^5.0.6",
     "@vueuse/core": "^14.2.1",
     "@nuxt/ui": "^4.6.1",
     "lucide-vue-next": "^0.577.0"
@@ -21,6 +21,6 @@
     "@vitejs/plugin-vue": "^6.0.6",
     "typescript": "6.0.3",
     "vite": "8.0.8",
-    "vue-tsc": "^3.2.6"
+    "vue-tsc": "^3.2.7"
   }
 }
