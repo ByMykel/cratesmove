@@ -323,7 +323,17 @@ class SteamConnection implements AppModule {
 
   async #saveRefreshTokenForAccount(steamId: string, token: string): Promise<void> {
     try {
-      if (!safeStorage.isEncryptionAvailable()) return;
+      if (!safeStorage.isEncryptionAvailable()) {
+        console.error(
+          'safeStorage encryption unavailable — refresh token NOT persisted. ' +
+            'On Linux install gnome-keyring/kwallet, or launch with --password-store=basic.',
+        );
+        broadcastToRenderers('steam:error', {
+          message:
+            'Cannot save login: OS keyring unavailable. Install gnome-keyring/kwallet, or launch with --password-store=basic.',
+        });
+        return;
+      }
       const encrypted = safeStorage.encryptString(token);
       await mkdir(this.#getTokenDir(), { recursive: true });
       await writeFile(this.#getTokenPathForAccount(steamId), encrypted);
@@ -335,7 +345,13 @@ class SteamConnection implements AppModule {
 
   async #loadRefreshTokenForAccount(steamId: string): Promise<string | null> {
     try {
-      if (!safeStorage.isEncryptionAvailable()) return null;
+      if (!safeStorage.isEncryptionAvailable()) {
+        console.error(
+          'safeStorage encryption unavailable — cannot read saved refresh token. ' +
+            'On Linux install gnome-keyring/kwallet, or launch with --password-store=basic.',
+        );
+        return null;
+      }
       const encrypted = await readFile(this.#getTokenPathForAccount(steamId));
       return safeStorage.decryptString(encrypted);
     } catch {
@@ -401,7 +417,12 @@ class SteamConnection implements AppModule {
     }
 
     try {
-      if (!safeStorage.isEncryptionAvailable()) return;
+      if (!safeStorage.isEncryptionAvailable()) {
+        console.error(
+          'safeStorage encryption unavailable — skipping legacy session migration.',
+        );
+        return;
+      }
       const encrypted = await readFile(legacyPath);
       const token = safeStorage.decryptString(encrypted);
       const steamId = this.#extractSteamIdFromToken(token);
