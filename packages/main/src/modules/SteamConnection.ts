@@ -324,13 +324,9 @@ class SteamConnection implements AppModule {
   async #saveRefreshTokenForAccount(steamId: string, token: string): Promise<void> {
     try {
       if (!safeStorage.isEncryptionAvailable()) {
-        console.error(
-          'safeStorage encryption unavailable — refresh token NOT persisted. ' +
-            'On Linux install gnome-keyring/kwallet, or launch with --password-store=basic.',
-        );
+        console.error('safeStorage encryption unavailable — refresh token NOT persisted.');
         broadcastToRenderers('steam:error', {
-          message:
-            'Cannot save login: OS keyring unavailable. Install gnome-keyring/kwallet, or launch with --password-store=basic.',
+          message: 'Cannot save login: secure storage unavailable on this system.',
         });
         return;
       }
@@ -346,10 +342,7 @@ class SteamConnection implements AppModule {
   async #loadRefreshTokenForAccount(steamId: string): Promise<string | null> {
     try {
       if (!safeStorage.isEncryptionAvailable()) {
-        console.error(
-          'safeStorage encryption unavailable — cannot read saved refresh token. ' +
-            'On Linux install gnome-keyring/kwallet, or launch with --password-store=basic.',
-        );
+        console.error('safeStorage encryption unavailable — cannot read saved refresh token.');
         return null;
       }
       const encrypted = await readFile(this.#getTokenPathForAccount(steamId));
@@ -418,9 +411,7 @@ class SteamConnection implements AppModule {
 
     try {
       if (!safeStorage.isEncryptionAvailable()) {
-        console.error(
-          'safeStorage encryption unavailable — skipping legacy session migration.',
-        );
+        console.error('safeStorage encryption unavailable — skipping legacy session migration.');
         return;
       }
       const encrypted = await readFile(legacyPath);
