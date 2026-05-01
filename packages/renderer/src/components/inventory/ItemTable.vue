@@ -29,7 +29,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   toggleItem: [id: string];
   toggleGroup: [ids: string[]];
-  toggleAll: [];
+  toggleAll: [ids: string[]];
 }>();
 
 const { groups } = useItemGroups({
@@ -72,7 +72,9 @@ function handleItemCheckbox(item: InventoryItem) {
   emit('toggleItem', item.id);
 }
 
-const allMovableIds = computed(() => props.items.filter(i => i.movable !== false).map(i => i.id));
+const allMovableIds = computed(() =>
+  groups.value.flatMap(g => g.items.filter(i => i.movable !== false).map(i => i.id)),
+);
 
 const allCheckValue = computed<boolean | 'indeterminate'>(() => {
   if (allMovableIds.value.length === 0) return false;
@@ -179,7 +181,7 @@ function showRawData(item: InventoryItem) {
               size="lg"
               :model-value="allCheckValue"
               :disabled="props.disabled || allMovableIds.length === 0"
-              @update:model-value="emit('toggleAll')"
+              @update:model-value="emit('toggleAll', allMovableIds)"
             />
           </th>
           <th class="px-2 py-3"></th>

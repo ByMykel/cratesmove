@@ -213,7 +213,7 @@ async function refresh(id: string) {
         :sort-by="sortBy"
         @toggle-item="toggleSelection"
         @toggle-group="handleToggleGroup"
-        @toggle-all="handleToggleGroup(contents.filter(i => i.movable !== false).map(i => i.id))"
+        @toggle-all="handleToggleGroup"
       />
 
       <!-- Action bar -->

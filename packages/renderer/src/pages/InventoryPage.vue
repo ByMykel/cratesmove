@@ -258,9 +258,7 @@ const slideoverVirtualizer = useVirtualizer({
         :sort-by="sortBy"
         @toggle-item="toggleSelection"
         @toggle-group="toggleBatch"
-        @toggle-all="
-          toggleBatch(store.inventoryItems.value.filter(i => i.movable !== false).map(i => i.id))
-        "
+        @toggle-all="toggleBatch"
       />
 
       <BulkActions
