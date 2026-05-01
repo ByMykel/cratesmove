@@ -14,7 +14,8 @@ import { usePrices } from '@/composables/usePrices';
 import { useSteam } from '@/composables/useSteam';
 import type { SortBy } from '@/composables/useItemGroups';
 import FilterPanel from '@/components/inventory/FilterPanel.vue';
-import { Loader2, RefreshCw, Archive, Search, SlidersHorizontal } from 'lucide-vue-next';
+import { Loader2, RefreshCw, Archive, Search, SlidersHorizontal, Bug } from 'lucide-vue-next';
+import { useDebugMode } from '@/composables/useDebugMode';
 
 const router = useRouter();
 const store = useInventoryStore();
@@ -27,6 +28,7 @@ const {
   clear: clearSelection,
 } = useSelection();
 const { getPrice, formatPrice } = usePrices();
+const { debugEnabled, toggleDebug } = useDebugMode();
 
 const search = ref('');
 const rarityFilter = ref<string[]>([]);
@@ -227,6 +229,15 @@ const slideoverVirtualizer = useVirtualizer({
             </UButton>
           </UTooltip>
         </div>
+      </div>
+
+      <div
+        v-if="debugEnabled"
+        class="flex shrink-0 items-center gap-2 border-b border-(--ui-border) bg-amber-500/10 px-4 py-1.5 text-xs text-amber-400"
+      >
+        <Bug class="h-3.5 w-3.5" />
+        <span>Debug mode enabled</span>
+        <button class="ml-auto underline hover:no-underline" @click="toggleDebug">Disable</button>
       </div>
 
       <div

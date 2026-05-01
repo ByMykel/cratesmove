@@ -7,7 +7,16 @@ import RenameDialog from '@/components/storage/RenameDialog.vue';
 import OperationProgress from '@/components/inventory/OperationProgress.vue';
 import { useInventoryStore } from '@/composables/useInventoryStore';
 import { useSelection } from '@/composables/useSelection';
-import { ArrowLeft, Pencil, Archive, Loader2, Search, SlidersHorizontal } from 'lucide-vue-next';
+import {
+  ArrowLeft,
+  Pencil,
+  Archive,
+  Loader2,
+  Search,
+  SlidersHorizontal,
+  Bug,
+} from 'lucide-vue-next';
+import { useDebugMode } from '@/composables/useDebugMode';
 import { usePrices } from '@/composables/usePrices';
 import type { SortBy } from '@/composables/useItemGroups';
 import FilterPanel from '@/components/inventory/FilterPanel.vue';
@@ -35,6 +44,7 @@ const sortBy = ref<SortBy>('name');
 const filterPanelOpen = ref(false);
 
 const { getTotalValue, formatPrice } = usePrices();
+const { debugEnabled, toggleDebug } = useDebugMode();
 
 const contents = computed(() => store.getStorageContents(storageId.value));
 const currentUnit = computed(() => store.storageUnits.value.get(storageId.value));
@@ -176,6 +186,15 @@ async function refresh(id: string) {
           <Pencil class="h-3.5 w-3.5" />
           <span>Rename</span>
         </UButton>
+      </div>
+
+      <div
+        v-if="debugEnabled"
+        class="flex shrink-0 items-center gap-2 border-b border-amber-500/30 bg-amber-500/10 px-4 py-1.5 text-xs text-amber-400"
+      >
+        <Bug class="h-3.5 w-3.5" />
+        <span>Debug mode enabled</span>
+        <button class="ml-auto underline hover:no-underline" @click="toggleDebug">Disable</button>
       </div>
 
       <!-- Contents -->

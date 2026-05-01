@@ -6,6 +6,8 @@ import type { InventoryItem } from '@/types/steam';
 import { useItemGroups, type ItemGroup, type SortBy } from '@/composables/useItemGroups';
 import { ChevronRight, ClipboardCopy, Check, TriangleAlert } from 'lucide-vue-next';
 import { usePrices } from '@/composables/usePrices';
+import { useDebugMode } from '@/composables/useDebugMode';
+import RawDataDialog from './RawDataDialog.vue';
 
 const { getPrice, formatPrice } = usePrices();
 
@@ -146,6 +148,16 @@ function itemAt(idx: number) {
 
 // Controlled dropdown — only one open at a time
 const openMenuId = ref<string | null>(null);
+
+// Debug mode
+const { debugEnabled } = useDebugMode();
+const debugItem = ref<InventoryItem | null>(null);
+const debugModalOpen = ref(false);
+
+function showRawData(item: InventoryItem) {
+  debugItem.value = item;
+  debugModalOpen.value = true;
+}
 </script>
 
 <template>
@@ -325,13 +337,26 @@ const openMenuId = ref<string | null>(null);
                       </td>
                       <td class="px-2 py-0 align-middle" @click.stop>
                         <UDropdownMenu
-                          v-if="groupAt(vRow.index).movable"
+                          v-if="groupAt(vRow.index).movable || debugEnabled"
                           :open="openMenuId === groupAt(vRow.index).market_hash_name"
                           :items="[
-                            {
-                              label: 'View in Community Market',
-                              onSelect: () => openOnMarket(groupAt(vRow.index).market_hash_name),
-                            },
+                            ...(groupAt(vRow.index).movable
+                              ? [
+                                  {
+                                    label: 'View in Community Market',
+                                    onSelect: () =>
+                                      openOnMarket(groupAt(vRow.index).market_hash_name),
+                                  },
+                                ]
+                              : []),
+                            ...(debugEnabled
+                              ? [
+                                  {
+                                    label: 'View raw data',
+                                    onSelect: () => showRawData(groupAt(vRow.index).items[0]),
+                                  },
+                                ]
+                              : []),
                           ]"
                           @update:open="
                             (v: boolean) =>
@@ -407,7 +432,24 @@ const openMenuId = ref<string | null>(null);
                       >
                         {{ formatPrice(getPrice(itemAt(vRow.index).market_hash_name)) }}
                       </td>
-                      <td></td>
+                      <td class="px-2 py-0 align-middle" @click.stop>
+                        <UDropdownMenu
+                          v-if="debugEnabled"
+                          :items="[
+                            {
+                              label: 'View raw data',
+                              onSelect: () => showRawData(itemAt(vRow.index)),
+                            },
+                          ]"
+                        >
+                          <UButton
+                            icon="i-lucide-ellipsis"
+                            variant="ghost"
+                            color="neutral"
+                            size="xs"
+                          />
+                        </UDropdownMenu>
+                      </td>
                     </tr>
                   </tbody>
                 </table>
@@ -417,5 +459,12 @@ const openMenuId = ref<string | null>(null);
         </tr>
       </tbody>
     </table>
+
+    <RawDataDialog
+      :open="debugModalOpen"
+      :item-name="debugItem?.name ?? ''"
+      :raw-data="debugItem?._rawData"
+      @update:open="debugModalOpen = $event"
+    />
   </div>
 </template>
