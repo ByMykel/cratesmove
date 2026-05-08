@@ -8,12 +8,7 @@
     "skipLibCheck": true,
     "strict": true,
     "isolatedModules": true,
-    "types": ["node"],
-    "baseUrl": ".",
-    "paths": {
-      "@app/preload": ["../preload"],
-      "@app/renderer": ["../renderer"]
-    }
+    "types": ["node"]
   },
   "include": ["src/**/*.ts", "../../types/**/*.d.ts"],
   "exclude": ["**/*.spec.ts", "**/*.test.ts"]
