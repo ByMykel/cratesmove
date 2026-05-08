@@ -5,6 +5,7 @@ declare module 'steam-user' {
   export default class SteamUser {
     steamID: {toString(): string} | null;
     logOn(options: {refreshToken: string}): void;
+    logOn(options: {accountName: string; webLogonToken: string; steamID: string}): void;
     logOff(): void;
     gamesPlayed(appids: number[], force?: boolean): void;
     getPersonas(steamids: unknown[]): void;
