@@ -21,6 +21,10 @@ interface CredentialLoginArgs {
   password: string;
 }
 
+interface WebtokenLoginArgs {
+  tokenJson: string;
+}
+
 interface DepositArgs {
   storageId: string;
   itemIds: string[];
@@ -82,6 +86,7 @@ class SteamConnection implements AppModule {
   #activeSteamId: string | null = null;
   #operationCancelled = false;
   #suppressReconnect = false;
+  #sessionPersistent = true;
   #inventoryUpdateTimer: ReturnType<typeof setTimeout> | null = null;
   #proxySettings: ProxySettings = { ...DEFAULT_PROXY };
 
@@ -108,6 +113,9 @@ class SteamConnection implements AppModule {
   #registerIpcHandlers() {
     ipcMain.handle('steam:credential-login', (_e, creds: CredentialLoginArgs) =>
       this.#credentialLogin(creds),
+    );
+    ipcMain.handle('steam:webtoken-login', (_e, args: WebtokenLoginArgs) =>
+      this.#webtokenLogin(args),
     );
     ipcMain.handle('steam:submit-steam-guard', (_e, code: string) => this.#submitSteamGuard(code));
     ipcMain.handle('steam:logout', () => this.#logout());
@@ -157,6 +165,13 @@ class SteamConnection implements AppModule {
             avatarUrl: (user.avatar_url_full as string) ?? '',
           };
           broadcastToRenderers('steam:user-info', info);
+
+          // Skip persistence for transient sessions (e.g. webLogonToken login)
+          // unless the account already has a saved refresh token from a prior login.
+          if (!this.#sessionPersistent) {
+            const existingToken = await this.#loadRefreshTokenForAccount(info.steamId);
+            if (!existingToken) return;
+          }
 
           // Update saved account meta with fresh persona info
           await this.#upsertAccountMeta({
@@ -459,6 +474,7 @@ class SteamConnection implements AppModule {
     if (!token) return;
 
     try {
+      this.#sessionPersistent = true;
       broadcastToRenderers('steam:auth-state', { state: 'connecting' });
       this.#steamUser.logOn({ refreshToken: token });
     } catch {
@@ -480,6 +496,7 @@ class SteamConnection implements AppModule {
 
     try {
       this.#activeSteamId = lastSteamId;
+      this.#sessionPersistent = true;
       broadcastToRenderers('steam:auth-state', { state: 'connecting' });
       this.#steamUser.logOn({ refreshToken: token });
       return true;
@@ -502,6 +519,7 @@ class SteamConnection implements AppModule {
       this.#suppressReconnect = true;
       await this.#logOffCurrent();
       this.#suppressReconnect = false;
+      this.#sessionPersistent = true;
 
       this.#loginSession = new LoginSession(
         EAuthTokenPlatformType.SteamClient,
@@ -561,6 +579,50 @@ class SteamConnection implements AppModule {
     }
   }
 
+  async #webtokenLogin({ tokenJson }: WebtokenLoginArgs) {
+    try {
+      this.#suppressReconnect = true;
+      await this.#logOffCurrent();
+      this.#suppressReconnect = false;
+
+      let parsed: { account_name?: string; token?: string; steamid?: string };
+      try {
+        parsed = JSON.parse(tokenJson);
+      } catch {
+        broadcastToRenderers('steam:error', {
+          message:
+            'Invalid token JSON. Paste the full JSON response from the Steam community page.',
+        });
+        broadcastToRenderers('steam:auth-state', {
+          state: 'error',
+          error: 'Invalid token JSON',
+        });
+        return;
+      }
+
+      const { account_name: accountName, token: webLogonToken, steamid: steamID } = parsed;
+      if (!accountName || !webLogonToken || !steamID) {
+        broadcastToRenderers('steam:error', {
+          message: 'Token JSON missing required fields (account_name, token, steamid).',
+        });
+        broadcastToRenderers('steam:auth-state', {
+          state: 'error',
+          error: 'Token JSON missing required fields',
+        });
+        return;
+      }
+
+      this.#activeSteamId = steamID;
+      this.#sessionPersistent = false;
+      broadcastToRenderers('steam:auth-state', { state: 'connecting' });
+      this.#steamUser.logOn({ accountName, webLogonToken, steamID });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      broadcastToRenderers('steam:error', { message });
+      broadcastToRenderers('steam:auth-state', { state: 'error', error: message });
+    }
+  }
+
   async #submitSteamGuard(code: string) {
     if (this.#loginSession) {
       try {
@@ -603,6 +665,7 @@ class SteamConnection implements AppModule {
 
     // Prepare before logoff so there is no await between logOff and logOn
     this.#activeSteamId = steamId;
+    this.#sessionPersistent = true;
     await this.#saveLastAccount(steamId);
 
     try {

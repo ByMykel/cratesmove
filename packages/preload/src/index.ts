@@ -11,6 +11,10 @@ function steamCredentialLogin(creds: { username: string; password: string }) {
   return ipcRenderer.invoke('steam:credential-login', creds);
 }
 
+function steamWebtokenLogin(args: { tokenJson: string }) {
+  return ipcRenderer.invoke('steam:webtoken-login', args);
+}
+
 function steamSubmitSteamGuard(code: string) {
   return ipcRenderer.invoke('steam:submit-steam-guard', code);
 }
@@ -130,6 +134,7 @@ export {
   versions,
   send,
   steamCredentialLogin,
+  steamWebtokenLogin,
   steamSubmitSteamGuard,
   steamLogout,
   steamTrySavedSession,

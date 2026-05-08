@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import CredentialLogin from '@/components/auth/CredentialLogin.vue';
+import WebtokenLogin from '@/components/auth/WebtokenLogin.vue';
 import SavedAccountList from '@/components/auth/SavedAccountList.vue';
 import ProxyDialog from '@/components/layout/ProxyDialog.vue';
 import { useSteam } from '@/composables/useSteam';
@@ -9,7 +10,7 @@ import { useSettings } from '@/composables/useSettings';
 const { savedAccounts, switchingAccount } = useSteam();
 const { proxyMode } = useSettings();
 
-const view = ref<'accounts' | 'credentials'>(
+const view = ref<'accounts' | 'credentials' | 'webtoken'>(
   savedAccounts.value.length > 0 ? 'accounts' : 'credentials',
 );
 
@@ -47,15 +48,43 @@ const showProxyDialog = ref(false);
           </div>
 
           <!-- Credential login form -->
-          <div v-else key="credentials">
+          <div v-else-if="view === 'credentials'" key="credentials">
             <CredentialLogin />
+
+            <UButton variant="link" color="neutral" block class="mt-4" @click="view = 'webtoken'">
+              Sign in with browser token instead
+            </UButton>
 
             <UButton
               v-if="savedAccounts.length > 0"
               variant="link"
               color="neutral"
               block
+              @click="view = 'accounts'"
+            >
+              Back to saved accounts
+            </UButton>
+          </div>
+
+          <!-- Webtoken login form -->
+          <div v-else key="webtoken">
+            <WebtokenLogin />
+
+            <UButton
+              variant="link"
+              color="neutral"
+              block
               class="mt-4"
+              @click="view = 'credentials'"
+            >
+              Sign in with username and password instead
+            </UButton>
+
+            <UButton
+              v-if="savedAccounts.length > 0"
+              variant="link"
+              color="neutral"
+              block
               @click="view = 'accounts'"
             >
               Back to saved accounts

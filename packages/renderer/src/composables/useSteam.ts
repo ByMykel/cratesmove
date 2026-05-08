@@ -2,6 +2,7 @@ import { ref, readonly } from 'vue';
 import {
   onSteamEvent,
   steamCredentialLogin,
+  steamWebtokenLogin,
   steamSubmitSteamGuard,
   steamLogout,
   steamGetSavedAccounts,
@@ -116,6 +117,17 @@ export function useSteam() {
     }
   }
 
+  async function webtokenLogin(tokenJson: string) {
+    authState.value = 'connecting';
+    error.value = null;
+    try {
+      await steamWebtokenLogin({ tokenJson });
+    } catch (err: unknown) {
+      error.value = err instanceof Error ? err.message : String(err);
+      authState.value = 'error';
+    }
+  }
+
   async function submitSteamGuard(code: string) {
     await steamSubmitSteamGuard(code);
   }
@@ -160,6 +172,7 @@ export function useSteam() {
     savedAccounts: readonly(savedAccounts),
     switchingAccount: readonly(switchingAccount),
     credentialLogin,
+    webtokenLogin,
     submitSteamGuard,
     logout,
     getSavedAccounts,
