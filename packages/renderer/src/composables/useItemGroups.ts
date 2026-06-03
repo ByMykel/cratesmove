@@ -1,11 +1,13 @@
 import { computed, type Ref } from 'vue';
-import type { InventoryItem } from '@/types/steam';
+import type { InventoryItem, TradeStatus } from '@/types/steam';
 
 export interface ItemGroup {
   market_hash_name: string;
   image: string;
   rarity: { id: string; name: string; color: string } | null;
   movable: boolean;
+  /** Shared trade status, or 'mixed' when the group's items differ. */
+  status: TradeStatus | 'mixed';
   items: InventoryItem[];
   _parseError?: boolean;
 }
@@ -40,6 +42,7 @@ export interface UseItemGroupsOptions {
   search?: Ref<string>;
   rarityFilter?: Ref<string[]>;
   entityFilter?: Ref<string[]>;
+  statusFilter?: Ref<TradeStatus[]>;
   sortBy?: Ref<SortBy>;
   getPrice?: (marketHashName: string) => number | null;
 }
@@ -78,6 +81,12 @@ export function useItemGroups(
       source = source.filter(item => item.entity && entities.includes(item.entity));
     }
 
+    // Trade status filter
+    const statuses = opts.statusFilter?.value;
+    if (statuses && statuses.length > 0) {
+      source = source.filter(item => statuses.includes(item.status ?? 'tradable'));
+    }
+
     const map = new Map<string, InventoryItem[]>();
 
     for (const item of source) {
@@ -95,14 +104,18 @@ export function useItemGroups(
     const getPrice = opts.getPrice;
 
     return Array.from(map.entries())
-      .map(([market_hash_name, groupItems]) => ({
-        market_hash_name,
-        image: groupItems[0].image,
-        rarity: groupItems[0].rarity,
-        movable: groupItems.some(i => i.movable !== false),
-        items: groupItems,
-        _parseError: groupItems[0]._parseError,
-      }))
+      .map(([market_hash_name, groupItems]) => {
+        const statusSet = new Set(groupItems.map(i => i.status ?? 'tradable'));
+        return {
+          market_hash_name,
+          image: groupItems[0].image,
+          rarity: groupItems[0].rarity,
+          movable: groupItems.some(i => i.movable !== false),
+          status: statusSet.size === 1 ? [...statusSet][0] : ('mixed' as const),
+          items: groupItems,
+          _parseError: groupItems[0]._parseError,
+        };
+      })
       .sort((a, b) => {
         // Show error items first
         if (a._parseError !== b._parseError) return a._parseError ? -1 : 1;

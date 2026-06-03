@@ -24,6 +24,7 @@ declare module 'vue' {
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SavedAccountList: typeof import('./src/components/auth/SavedAccountList.vue')['default']
+    StatusBadge: typeof import('./src/components/inventory/StatusBadge.vue')['default']
     StorageUnitCard: typeof import('./src/components/inventory/StorageUnitCard.vue')['default']
     ThemeToggle: typeof import('./src/components/common/ThemeToggle.vue')['default']
     TitleBar: typeof import('./src/components/layout/TitleBar.vue')['default']

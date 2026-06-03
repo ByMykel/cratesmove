@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { SortBy } from '@/composables/useItemGroups';
+import type { TradeStatus } from '@/types/steam';
+import { STATUS_LABELS } from './tradeStatus';
 import { X } from 'lucide-vue-next';
 
 interface RarityOption {
@@ -28,21 +30,34 @@ function entityLabel(entity: string): string {
   return ENTITY_LABELS[entity] ?? entity.charAt(0).toUpperCase() + entity.slice(1);
 }
 
-const props = defineProps<{
-  open: boolean;
-  rarities: RarityOption[];
-  entities: string[];
-  rarityFilter: string[];
-  entityFilter: string[];
-  sortBy: SortBy;
-}>();
+const props = withDefaults(
+  defineProps<{
+    open: boolean;
+    rarities: RarityOption[];
+    entities: string[];
+    statuses?: TradeStatus[];
+    rarityFilter: string[];
+    entityFilter: string[];
+    statusFilter?: TradeStatus[];
+    sortBy: SortBy;
+  }>(),
+  {
+    statuses: () => [],
+    statusFilter: () => [],
+  },
+);
 
 const emit = defineEmits<{
   'update:open': [value: boolean];
   'update:rarityFilter': [value: string[]];
   'update:entityFilter': [value: string[]];
+  'update:statusFilter': [value: TradeStatus[]];
   'update:sortBy': [value: SortBy];
 }>();
+
+function statusLabel(status: TradeStatus): string {
+  return STATUS_LABELS[status];
+}
 
 const sortOptions: { label: string; value: SortBy }[] = [
   { label: 'Default', value: 'name' },
@@ -61,11 +76,16 @@ function toggle(current: string[], value: string): string[] {
 function clearAll() {
   emit('update:rarityFilter', []);
   emit('update:entityFilter', []);
+  emit('update:statusFilter', []);
   emit('update:sortBy', 'name');
 }
 
 const hasActiveFilters = computed(
-  () => props.rarityFilter.length > 0 || props.entityFilter.length > 0 || props.sortBy !== 'name',
+  () =>
+    props.rarityFilter.length > 0 ||
+    props.entityFilter.length > 0 ||
+    props.statusFilter.length > 0 ||
+    props.sortBy !== 'name',
 );
 </script>
 
@@ -107,6 +127,38 @@ const hasActiveFilters = computed(
                 "
               />
               {{ option.label }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Trade status filter -->
+        <div v-if="props.statuses.length > 0" class="py-5">
+          <div
+            class="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-(--ui-text-muted)"
+          >
+            Status
+          </div>
+          <div class="flex flex-col gap-1">
+            <button
+              v-for="status in props.statuses"
+              :key="status"
+              class="flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors"
+              :class="
+                props.statusFilter.includes(status)
+                  ? 'bg-(--ui-bg-elevated)'
+                  : 'hover:bg-(--ui-bg-elevated)/50 text-(--ui-text-muted)'
+              "
+              @click="
+                emit('update:statusFilter', toggle(props.statusFilter, status) as TradeStatus[])
+              "
+            >
+              <UCheckbox
+                :model-value="props.statusFilter.includes(status)"
+                size="sm"
+                tabindex="-1"
+                @click.prevent
+              />
+              {{ statusLabel(status) }}
             </button>
           </div>
         </div>

@@ -1,3 +1,5 @@
+export type TradeStatus = 'tradable' | 'market_listed' | 'trade_hold';
+
 export interface InventoryItem {
   id: string;
   classid: string;
@@ -8,6 +10,10 @@ export interface InventoryItem {
   tradable: boolean;
   marketable: boolean;
   movable: boolean;
+  /** Trade state of this item instance (from resolver attr 312). */
+  status: TradeStatus;
+  /** ISO 8601 expiry for a trade hold, or null. */
+  trade_hold_expires: string | null;
   def_index: number;
   paint_index?: number;
   rarity: { id: string; name: string; color: string } | null;
@@ -18,6 +24,8 @@ export interface InventoryItem {
   stickers?: ReadonlyArray<{ name: string; icon_url: string }>;
   _parseError?: boolean;
   _rawData?: string;
+  /** JSON of the cs2-inventory-resolver output for this item (debug view). */
+  _resolvedData?: string;
 }
 
 export type ItemLocation = { type: 'inventory' } | { type: 'storage'; storageId: string };

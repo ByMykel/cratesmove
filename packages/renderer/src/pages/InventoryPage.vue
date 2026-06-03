@@ -13,6 +13,7 @@ import { useSelection } from '@/composables/useSelection';
 import { usePrices } from '@/composables/usePrices';
 import { useSteam } from '@/composables/useSteam';
 import type { SortBy } from '@/composables/useItemGroups';
+import type { TradeStatus } from '@/types/steam';
 import FilterPanel from '@/components/inventory/FilterPanel.vue';
 import { Loader2, RefreshCw, Archive, Search, SlidersHorizontal, Bug } from 'lucide-vue-next';
 import { useDebugMode } from '@/composables/useDebugMode';
@@ -33,7 +34,13 @@ const { debugEnabled, toggleDebug } = useDebugMode();
 const search = ref('');
 const rarityFilter = ref<string[]>([]);
 const entityFilter = ref<string[]>([]);
+const statusFilter = ref<TradeStatus[]>([]);
 const sortBy = ref<SortBy>('name');
+
+// Only the actionable, non-default states are worth filtering on.
+// 'tradable' is the default (attr 312 absent) and would just mean "everything
+// else" — including non-marketable collectibles — so it's not offered.
+const STATUS_ORDER: TradeStatus[] = ['market_listed', 'trade_hold'];
 const sidebarOpen = ref(false);
 const filterPanelOpen = ref(false);
 
@@ -57,8 +64,20 @@ const availableEntities = computed(() => {
   return [...set].sort();
 });
 
+const availableStatuses = computed(() => {
+  const set = new Set<TradeStatus>();
+  for (const item of store.inventoryItems.value) {
+    set.add(item.status ?? 'tradable');
+  }
+  return STATUS_ORDER.filter(s => set.has(s));
+});
+
 const hasActiveFilters = computed(
-  () => rarityFilter.value.length > 0 || entityFilter.value.length > 0 || sortBy.value !== 'name',
+  () =>
+    rarityFilter.value.length > 0 ||
+    entityFilter.value.length > 0 ||
+    statusFilter.value.length > 0 ||
+    sortBy.value !== 'name',
 );
 
 // Pre-compute all values in a single pass instead of per-unit iterations
@@ -113,7 +132,7 @@ onMounted(async () => {
 // Handles the case where the GC connects after the page mounts.
 watch(store.storageUnitList, () => inspectAllUnits());
 
-watch([search, rarityFilter, entityFilter, sortBy], () => clearSelection());
+watch([search, rarityFilter, entityFilter, statusFilter, sortBy], () => clearSelection());
 
 // Clear component-local state when switching accounts so stale IDs
 // don't prevent re-inspection or leave phantom selections.
@@ -255,6 +274,7 @@ const slideoverVirtualizer = useVirtualizer({
         :search="search"
         :rarity-filter="rarityFilter"
         :entity-filter="entityFilter"
+        :status-filter="statusFilter"
         :sort-by="sortBy"
         @toggle-item="toggleSelection"
         @toggle-group="toggleBatch"
@@ -339,9 +359,11 @@ const slideoverVirtualizer = useVirtualizer({
       v-model:open="filterPanelOpen"
       v-model:rarity-filter="rarityFilter"
       v-model:entity-filter="entityFilter"
+      v-model:status-filter="statusFilter"
       v-model:sort-by="sortBy"
       :rarities="availableRarities"
       :entities="availableEntities"
+      :statuses="availableStatuses"
     />
 
     <OperationProgress

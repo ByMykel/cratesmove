@@ -2,12 +2,13 @@
 import { ref, computed, toRef } from 'vue';
 import { useClipboard } from '@vueuse/core';
 import { useVirtualizer } from '@tanstack/vue-virtual';
-import type { InventoryItem } from '@/types/steam';
+import type { InventoryItem, TradeStatus } from '@/types/steam';
 import { useItemGroups, type ItemGroup, type SortBy } from '@/composables/useItemGroups';
 import { ChevronRight, ClipboardCopy, Check, TriangleAlert } from 'lucide-vue-next';
 import { usePrices } from '@/composables/usePrices';
 import { useDebugMode } from '@/composables/useDebugMode';
 import RawDataDialog from './RawDataDialog.vue';
+import StatusBadge from './StatusBadge.vue';
 
 const { getPrice, formatPrice } = usePrices();
 
@@ -23,6 +24,7 @@ const props = defineProps<{
   search?: string;
   rarityFilter?: string[];
   entityFilter?: string[];
+  statusFilter?: TradeStatus[];
   sortBy?: SortBy;
 }>();
 
@@ -37,6 +39,7 @@ const { groups } = useItemGroups({
   search: toRef(() => props.search ?? ''),
   rarityFilter: toRef(() => props.rarityFilter ?? []),
   entityFilter: toRef(() => props.entityFilter ?? []),
+  statusFilter: toRef(() => props.statusFilter ?? []),
   sortBy: toRef(() => props.sortBy ?? 'name'),
   getPrice,
 });
@@ -103,6 +106,18 @@ function openOnMarket(marketHashName: string) {
   window.open(url, '_blank');
 }
 
+// Dim only items that are non-movable for "system" reasons (coins, base weapons).
+// Market-listed / trade-hold items stay full opacity — only their checkbox is disabled.
+function groupDimmed(group: ItemGroup): boolean {
+  return !group.movable && group.status === 'tradable';
+}
+function itemDimmed(item: InventoryItem): boolean {
+  return item.movable === false && (item.status ?? 'tradable') === 'tradable';
+}
+function groupMarketable(group: ItemGroup): boolean {
+  return group.items[0]?.marketable === true;
+}
+
 // Flatten groups + expanded children into a single row list for virtualization
 type FlatRow =
   | { type: 'group'; key: string; group: ItemGroup }
@@ -154,10 +169,21 @@ const openMenuId = ref<string | null>(null);
 // Debug mode
 const { debugEnabled } = useDebugMode();
 const debugItem = ref<InventoryItem | null>(null);
+const debugData = ref<string | undefined>(undefined);
+const debugTitle = ref('Raw Item Data');
 const debugModalOpen = ref(false);
 
 function showRawData(item: InventoryItem) {
   debugItem.value = item;
+  debugData.value = item._rawData;
+  debugTitle.value = 'Raw Item Data';
+  debugModalOpen.value = true;
+}
+
+function showResolvedData(item: InventoryItem) {
+  debugItem.value = item;
+  debugData.value = item._resolvedData;
+  debugTitle.value = 'Resolved Data (cs2-inventory-resolver)';
   debugModalOpen.value = true;
 }
 </script>
@@ -270,7 +296,7 @@ function showRawData(item: InventoryItem) {
                     <tr
                       class="border-t border-(--ui-border)/50 transition-colors hover:bg-(--ui-bg-elevated)/50"
                       :class="{
-                        'opacity-40': !groupAt(vRow.index).movable,
+                        'opacity-40': groupDimmed(groupAt(vRow.index)),
                         'cursor-pointer': groupAt(vRow.index).items.length > 1,
                       }"
                       :tabindex="groupAt(vRow.index).items.length > 1 ? 0 : -1"
@@ -320,7 +346,13 @@ function showRawData(item: InventoryItem) {
                         </div>
                       </td>
                       <td class="px-2 py-0 align-middle font-medium">
-                        {{ groupAt(vRow.index).market_hash_name }}
+                        <span class="inline-flex items-center gap-1.5">
+                          <span class="truncate">{{ groupAt(vRow.index).market_hash_name }}</span>
+                          <StatusBadge
+                            :status="groupAt(vRow.index).status"
+                            :trade-hold-expires="groupAt(vRow.index).items[0].trade_hold_expires"
+                          />
+                        </span>
                       </td>
                       <td class="px-2 py-0 align-middle tabular-nums text-(--ui-text-muted)">
                         {{ groupAt(vRow.index).items.length }}
@@ -339,10 +371,10 @@ function showRawData(item: InventoryItem) {
                       </td>
                       <td class="px-2 py-0 align-middle" @click.stop>
                         <UDropdownMenu
-                          v-if="groupAt(vRow.index).movable || debugEnabled"
+                          v-if="groupMarketable(groupAt(vRow.index)) || debugEnabled"
                           :open="openMenuId === groupAt(vRow.index).market_hash_name"
                           :items="[
-                            ...(groupAt(vRow.index).movable
+                            ...(groupMarketable(groupAt(vRow.index))
                               ? [
                                   {
                                     label: 'View in Community Market',
@@ -356,6 +388,10 @@ function showRawData(item: InventoryItem) {
                                   {
                                     label: 'View raw data',
                                     onSelect: () => showRawData(groupAt(vRow.index).items[0]),
+                                  },
+                                  {
+                                    label: 'View resolved data',
+                                    onSelect: () => showResolvedData(groupAt(vRow.index).items[0]),
                                   },
                                 ]
                               : []),
@@ -396,7 +432,7 @@ function showRawData(item: InventoryItem) {
                   <tbody>
                     <tr
                       class="transition-colors hover:bg-(--ui-bg-elevated)/30"
-                      :class="{ 'opacity-40': itemAt(vRow.index).movable === false }"
+                      :class="{ 'opacity-40': itemDimmed(itemAt(vRow.index)) }"
                     >
                       <td class="relative px-2 py-0 align-middle" @click.stop>
                         <div
@@ -423,9 +459,20 @@ function showRawData(item: InventoryItem) {
                         </div>
                       </td>
                       <td class="px-2 py-0 align-middle text-xs text-(--ui-text-muted)">
-                        {{ itemAt(vRow.index).custom_name || itemAt(vRow.index).name }}
-                        <span v-if="itemAt(vRow.index).paint_wear != null" class="ml-1 opacity-60">
-                          ({{ itemAt(vRow.index).paint_wear!.toFixed(4) }})
+                        <span class="inline-flex items-center gap-1.5">
+                          <span class="truncate">
+                            {{ itemAt(vRow.index).custom_name || itemAt(vRow.index).name }}
+                            <span
+                              v-if="itemAt(vRow.index).paint_wear != null"
+                              class="ml-1 opacity-60"
+                            >
+                              ({{ itemAt(vRow.index).paint_wear!.toFixed(4) }})
+                            </span>
+                          </span>
+                          <StatusBadge
+                            :status="itemAt(vRow.index).status"
+                            :trade-hold-expires="itemAt(vRow.index).trade_hold_expires"
+                          />
                         </span>
                       </td>
                       <td></td>
@@ -436,12 +483,29 @@ function showRawData(item: InventoryItem) {
                       </td>
                       <td class="px-2 py-0 align-middle" @click.stop>
                         <UDropdownMenu
-                          v-if="debugEnabled"
+                          v-if="itemAt(vRow.index).marketable || debugEnabled"
                           :items="[
-                            {
-                              label: 'View raw data',
-                              onSelect: () => showRawData(itemAt(vRow.index)),
-                            },
+                            ...(itemAt(vRow.index).marketable
+                              ? [
+                                  {
+                                    label: 'View in Community Market',
+                                    onSelect: () =>
+                                      openOnMarket(itemAt(vRow.index).market_hash_name),
+                                  },
+                                ]
+                              : []),
+                            ...(debugEnabled
+                              ? [
+                                  {
+                                    label: 'View raw data',
+                                    onSelect: () => showRawData(itemAt(vRow.index)),
+                                  },
+                                  {
+                                    label: 'View resolved data',
+                                    onSelect: () => showResolvedData(itemAt(vRow.index)),
+                                  },
+                                ]
+                              : []),
                           ]"
                         >
                           <UButton
@@ -464,8 +528,9 @@ function showRawData(item: InventoryItem) {
 
     <RawDataDialog
       :open="debugModalOpen"
+      :title="debugTitle"
       :item-name="debugItem?.name ?? ''"
-      :raw-data="debugItem?._rawData"
+      :raw-data="debugData"
       @update:open="debugModalOpen = $event"
     />
   </div>

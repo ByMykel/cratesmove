@@ -190,7 +190,7 @@ async function refresh(id: string) {
 
       <div
         v-if="debugEnabled"
-        class="flex shrink-0 items-center gap-2 border-b border-amber-500/30 bg-amber-500/10 px-4 py-1.5 text-xs text-amber-400"
+        class="flex shrink-0 items-center gap-2 bg-amber-500/10 px-4 py-1.5 text-xs text-amber-400"
       >
         <Bug class="h-3.5 w-3.5" />
         <span>Debug mode enabled</span>

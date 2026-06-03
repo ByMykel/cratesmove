@@ -3,11 +3,15 @@ import { computed } from 'vue';
 import { useClipboard } from '@vueuse/core';
 import { ref } from 'vue';
 
-const props = defineProps<{
-  open: boolean;
-  itemName: string;
-  rawData?: string;
-}>();
+const props = withDefaults(
+  defineProps<{
+    open: boolean;
+    itemName: string;
+    rawData?: string;
+    title?: string;
+  }>(),
+  { title: 'Raw Item Data' },
+);
 
 const emits = defineEmits<{
   'update:open': [value: boolean];
@@ -37,7 +41,7 @@ async function handleCopy() {
 <template>
   <UModal
     :open="open"
-    title="Raw Item Data"
+    :title="title"
     :description="itemName"
     :ui="{ content: 'sm:max-w-2xl' }"
     @update:open="emits('update:open', $event)"

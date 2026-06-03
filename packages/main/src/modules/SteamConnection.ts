@@ -740,6 +740,9 @@ class SteamConnection implements AppModule {
    * Based on casemove's itemProcessorCanBeMoved logic.
    */
   #isItemMovable(item: RawInventoryItem, resolved: ResolvedItemData | null): boolean {
+    // Items listed on the Market or under a trade-protection hold can't be moved
+    if (resolved && resolved.status !== 'tradable') return false;
+
     // ★ items (quality 3, e.g. knives/gloves) are always movable
     if (item.quality === 3) return true;
 
@@ -1004,6 +1007,8 @@ class SteamConnection implements AppModule {
       paint_wear: null,
       custom_name: null,
       stickers: [],
+      status: 'tradable',
+      trade_hold_expires: null,
       movable: false,
       _parseError: true,
       _rawData: SteamConnection.#safeStringify(item),
@@ -1033,6 +1038,9 @@ class SteamConnection implements AppModule {
       paint_wear: item.paint_wear ?? null,
       custom_name: item.custom_name || null,
       stickers: item.stickers || [],
+      status: resolved?.status ?? 'tradable',
+      trade_hold_expires: resolved?.trade_hold_expires ?? null,
+      _resolvedData: JSON.stringify(resolved), // Formatted resolver output for debug view
       _resolved: resolved, // Used internally for movability check, stripped before sending
     };
   }
