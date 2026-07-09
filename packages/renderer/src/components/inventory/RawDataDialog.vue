@@ -49,8 +49,7 @@ async function handleCopy() {
     <template #body>
       <pre
         class="max-h-96 overflow-auto rounded-md bg-(--ui-bg-elevated) p-3 text-xs leading-relaxed"
-        >{{ formatted }}</pre
-      >
+        >{{ formatted }}</pre>
     </template>
 
     <template #footer>

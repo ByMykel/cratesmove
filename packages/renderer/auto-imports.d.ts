@@ -44,4 +44,5 @@ declare global {
   const useScrollShadow: typeof import('../../node_modules/@nuxt/ui/dist/runtime/composables/useScrollShadow').useScrollShadow
   const useScrollspy: typeof import('../../node_modules/@nuxt/ui/dist/runtime/composables/useScrollspy').useScrollspy
   const useToast: typeof import('../../node_modules/@nuxt/ui/dist/runtime/composables/useToast').useToast
+  const useTour: typeof import('../../node_modules/@nuxt/ui/dist/runtime/composables/useTour').useTour
 }

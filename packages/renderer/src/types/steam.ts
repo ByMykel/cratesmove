@@ -55,11 +55,7 @@ export interface SavedAccountMeta {
 }
 
 export type AuthState =
-  | 'disconnected'
-  | 'connecting'
-  | 'waiting-for-steam-guard'
-  | 'connected'
-  | 'error';
+  'disconnected' | 'connecting' | 'waiting-for-steam-guard' | 'connected' | 'error';
 
 export interface OperationProgress {
   current: number;
