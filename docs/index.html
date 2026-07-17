@@ -6,6 +6,7 @@
   <title>cratesmove</title>
   <meta name="description" content="Deposit, retrieve, and organize your CS2 inventory across storage units. A desktop app. No web app, no login server, no nonsense.">
   <meta name="theme-color" content="#0a0a0a">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/ByMykel/cratesmove/main/buildResources/icon.png">
 
   <meta property="og:title" content="cratesmove — CS2 storage unit manager">
@@ -146,9 +147,9 @@
       cursor: pointer;
       transition: background .15s, color .15s, border-color .15s;
     }
-    .btn .arw { color: var(--fg-3); transition: color .15s, transform .15s; }
+    .btn .arw { color: var(--fg-3); transition: color .15s; }
     .btn:hover { background: var(--fg); color: var(--bg); border-color: var(--fg); }
-    .btn:hover .arw { color: var(--bg); transform: translateX(3px); }
+    .btn:hover .arw { color: var(--bg); }
     .btn.solid { background: var(--fg); color: var(--bg); border-color: var(--fg); }
     .btn.solid .arw { color: var(--bg); }
     .btn.solid:hover { background: transparent; color: var(--fg); border-color: var(--line-bright); }
@@ -215,9 +216,7 @@
       gap: 24px;
       padding: 18px 8px;
       border-bottom: 1px solid var(--line);
-      transition: background .12s;
     }
-    .row:hover { background: var(--surface); }
     .row .key { color: var(--fg); font-weight: 700; font-size: 14px; }
     .row .val { color: var(--fg-2); font-size: 14px; }
 
