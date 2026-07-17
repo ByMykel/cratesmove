@@ -4,3 +4,12 @@
 body {
   font-family: system-ui, -apple-system, sans-serif;
 }
+
+/* Monochrome accent: high-contrast off-white in dark, near-black in light.
+   Overrides Nuxt UI's zinc-derived --ui-primary so buttons/active states pop. */
+:root {
+  --ui-primary: #18181b;
+}
+.dark {
+  --ui-primary: #ededed;
+}

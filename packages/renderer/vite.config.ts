@@ -4,7 +4,7 @@ import ui from '@nuxt/ui/vite';
 import {fileURLToPath, URL} from 'node:url';
 
 export default defineConfig({
-  plugins: [vue(), ui({ui: {colors: {neutral: 'zinc'}}})],
+  plugins: [vue(), ui({ui: {colors: {primary: 'zinc', neutral: 'zinc'}}})],
   build: {
     target: 'chrome131',
     outDir: 'dist',

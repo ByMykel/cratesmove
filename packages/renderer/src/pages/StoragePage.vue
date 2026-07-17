@@ -124,7 +124,7 @@ const toast = useToast();
 async function handleRename(name: string) {
   await store.renameStorage(storageId.value, name);
   await store.fetchStorageUnits();
-  toast.add({ title: `Renamed to "${name}"`, color: 'success' });
+  toast.add({ title: `Renamed to "${name}"`, color: 'neutral' });
 }
 
 async function refresh(id: string) {

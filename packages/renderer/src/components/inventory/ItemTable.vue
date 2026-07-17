@@ -265,7 +265,7 @@ function showResolvedData(item: InventoryItem) {
                         >
                           <Check
                             v-if="copiedId === groupAt(vRow.index).items[0].id"
-                            class="h-3.5 w-3.5 text-green-500"
+                            class="h-3.5 w-3.5 text-(--ui-primary)"
                           />
                           <ClipboardCopy v-else class="h-3.5 w-3.5 text-(--ui-text-muted)" />
                         </button>
