@@ -3,980 +3,558 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cratesmove · CS2 Storage Unit Manager</title>
-  <meta name="description" content="Deposit, retrieve, and organize your CS2 inventory items across storage units — without the clunky in-game interface.">
-  <meta name="theme-color" content="#22c55e">
+  <title>cratesmove</title>
+  <meta name="description" content="Deposit, retrieve, and organize your CS2 inventory across storage units. A desktop app. No web app, no login server, no nonsense.">
+  <meta name="theme-color" content="#0a0a0a">
   <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/ByMykel/cratesmove/main/buildResources/icon.png">
 
-  <meta property="og:title" content="Cratesmove · CS2 Storage Unit Manager">
-  <meta property="og:description" content="Deposit, retrieve, and organize your CS2 inventory items across storage units — without the clunky in-game interface.">
+  <meta property="og:title" content="cratesmove — CS2 storage unit manager">
+  <meta property="og:description" content="Deposit, retrieve, and organize your CS2 inventory across storage units. A desktop app.">
   <meta property="og:type" content="website">
   <meta property="og:image" content="https://raw.githubusercontent.com/ByMykel/cratesmove/main/docs/screenshot.png">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
     :root {
-      --bg: #09090b;
-      --bg-surface: #111113;
-      --bg-surface-raised: #18181b;
-      --border: #27272a;
-      --border-subtle: #1c1c1f;
-      --text: #fafafa;
-      --text-secondary: #a1a1aa;
-      --text-muted: #71717a;
-      --green: #22c55e;
-      --green-dim: #16a34a;
-      --green-glow: rgba(34, 197, 94, 0.08);
-      --green-glow-strong: rgba(34, 197, 94, 0.15);
-      --radius: 12px;
-      --radius-sm: 8px;
-      --font-display: 'Outfit', sans-serif;
-      --font-body: 'DM Sans', sans-serif;
+      --bg: #0a0a0a;
+      --surface: #101010;
+      --surface-2: #161616;
+      --line: #242424;
+      --line-bright: #333;
+      --fg: #ededed;
+      --fg-2: #8a8a8a;
+      --fg-3: #565656;
+      --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
     }
 
-    html {
-      scroll-behavior: smooth;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-    }
+    html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 
     body {
-      font-family: var(--font-body);
+      font-family: var(--mono);
       background: var(--bg);
-      color: var(--text-secondary);
-      line-height: 1.6;
+      color: var(--fg-2);
+      font-size: 15px;
+      line-height: 1.65;
       overflow-x: hidden;
+      font-feature-settings: "liga" 0, "calt" 0;
     }
 
-    /* ─── Noise overlay ─── */
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      z-index: 9999;
-      pointer-events: none;
-      opacity: 0.025;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-      background-repeat: repeat;
-      background-size: 256px 256px;
-    }
+    ::selection { background: var(--fg); color: var(--bg); }
 
-    /* ─── Grid background ─── */
-    .grid-bg {
-      position: fixed;
-      inset: 0;
-      z-index: 0;
-      background-image:
-        linear-gradient(rgba(34, 197, 94, 0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(34, 197, 94, 0.03) 1px, transparent 1px);
-      background-size: 64px 64px;
-      mask-image: radial-gradient(ellipse 60% 50% at 50% 30%, black 20%, transparent 70%);
-      -webkit-mask-image: radial-gradient(ellipse 60% 50% at 50% 30%, black 20%, transparent 70%);
-    }
+    a { color: var(--fg); text-decoration: none; }
 
-    .container {
-      max-width: 1120px;
+    .wrap {
+      max-width: 940px;
       margin: 0 auto;
       padding: 0 24px;
-      position: relative;
-      z-index: 1;
     }
 
-    /* ─── Nav ─── */
-    nav {
-      position: fixed;
+    /* rule / divider */
+    .rule {
+      border: none;
+      border-top: 1px solid var(--line);
+      margin: 0;
+    }
+
+    /* ─── top bar ─── */
+    header {
+      position: sticky;
       top: 0;
-      left: 0;
-      right: 0;
-      z-index: 100;
-      padding: 16px 0;
-      backdrop-filter: blur(16px) saturate(1.2);
-      -webkit-backdrop-filter: blur(16px) saturate(1.2);
-      background: rgba(9, 9, 11, 0.7);
-      border-bottom: 1px solid var(--border-subtle);
+      z-index: 50;
+      background: rgba(10,10,10,0.85);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--line);
     }
-
-    nav .container {
+    .bar {
       display: flex;
       align-items: center;
       justify-content: space-between;
+      height: 52px;
     }
-
-    .nav-brand {
+    .brand {
       display: flex;
       align-items: center;
-      gap: 10px;
-      text-decoration: none;
-      color: var(--text);
-    }
-
-    .nav-brand img {
-      width: 32px;
-      height: 32px;
-      border-radius: 8px;
-    }
-
-    .nav-brand span {
-      font-family: system-ui, -apple-system, sans-serif;
-      font-weight: 600;
-      font-size: 18px;
-    }
-
-    .nav-links {
-      display: flex;
-      align-items: center;
-      gap: 32px;
-      list-style: none;
-    }
-
-    .nav-links a {
-      color: var(--text-muted);
-      text-decoration: none;
+      gap: 9px;
+      font-weight: 700;
+      color: var(--fg);
       font-size: 14px;
-      font-weight: 500;
-      transition: color 0.2s;
+      letter-spacing: -0.02em;
     }
-
-    .nav-links a:hover {
-      color: var(--text);
-    }
-
-    .nav-github {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      color: var(--text-secondary) !important;
-      background: var(--bg-surface-raised);
-      border: 1px solid var(--border);
-      padding: 7px 14px;
-      border-radius: var(--radius-sm);
+    .brand img { width: 20px; height: 20px; }
+    .brand .prompt { color: var(--fg-3); font-weight: 500; }
+    nav.links { display: flex; align-items: center; gap: 4px; }
+    nav.links a {
+      color: var(--fg-2);
       font-size: 13px;
-      transition: all 0.2s;
+      padding: 5px 10px;
+      transition: color .15s, background .15s;
+    }
+    nav.links a:hover { color: var(--bg); background: var(--fg); }
+    nav.links a.src { color: var(--fg); border: 1px solid var(--line-bright); }
+    nav.links a.src:hover { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+
+    /* ─── hero ─── */
+    .hero { padding: 84px 0 68px; }
+    .kicker {
+      color: var(--fg-3);
+      font-size: 12px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: 22px;
     }
 
-    .nav-github:hover {
-      background: var(--border);
-      color: var(--text) !important;
-    }
-
-    .nav-github svg {
-      width: 16px;
-      height: 16px;
-    }
-
-    /* ─── Hero ─── */
-    .hero {
-      padding: 180px 0 80px;
-      text-align: center;
-      position: relative;
-      overflow-x: clip;
-    }
-
-    .hero-glow {
-      position: absolute;
-      top: 80px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 600px;
-      height: 400px;
-      background: radial-gradient(ellipse, rgba(34, 197, 94, 0.08), transparent 70%);
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    .hero-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 6px 16px;
-      background: var(--green-glow);
-      border: 1px solid rgba(34, 197, 94, 0.15);
-      border-radius: 100px;
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--green);
-      margin-bottom: 32px;
-      position: relative;
-      z-index: 1;
-    }
-
-    .hero-badge .dot {
-      width: 6px;
-      height: 6px;
-      background: var(--green);
-      border-radius: 50%;
-      animation: pulse-dot 2s ease-in-out infinite;
-    }
-
-    @keyframes pulse-dot {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.4; }
-    }
-
-    .hero h1 {
-      font-family: var(--font-display);
-      font-size: clamp(40px, 6vw, 72px);
+    h1 {
+      color: var(--fg);
+      font-size: clamp(30px, 5.2vw, 54px);
       font-weight: 800;
-      line-height: 1.05;
-      letter-spacing: -0.035em;
-      color: var(--text);
-      margin-bottom: 20px;
-      position: relative;
-      z-index: 1;
+      line-height: 1.06;
+      letter-spacing: -0.04em;
+      margin-bottom: 22px;
+      max-width: 15ch;
+    }
+    .lede {
+      font-size: 16px;
+      max-width: 58ch;
+      color: var(--fg-2);
+      margin-bottom: 34px;
+    }
+    .lede b { color: var(--fg); font-weight: 600; }
+    .sub {
+      color: var(--fg-3);
+      font-size: 14px;
+      margin-bottom: 36px;
     }
 
-    .hero h1 .accent {
-      background: linear-gradient(135deg, var(--green), #4ade80);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .hero p {
-      font-size: clamp(16px, 2vw, 19px);
-      max-width: 560px;
-      margin: 0 auto 40px;
-      line-height: 1.7;
-      color: var(--text-muted);
-      position: relative;
-      z-index: 1;
-    }
-
-    .hero-actions {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      position: relative;
-      z-index: 1;
-      flex-wrap: wrap;
-    }
-
-    /* ─── Buttons ─── */
+    .actions { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
     .btn {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      padding: 12px 24px;
-      border-radius: var(--radius-sm);
-      font-family: var(--font-body);
-      font-size: 15px;
+      gap: 9px;
+      font-family: var(--mono);
+      font-size: 14px;
       font-weight: 600;
-      text-decoration: none;
+      padding: 11px 18px;
+      border: 1px solid var(--line-bright);
+      background: transparent;
+      color: var(--fg);
       cursor: pointer;
-      border: none;
-      transition: all 0.2s ease;
+      transition: background .15s, color .15s, border-color .15s;
     }
+    .btn .arw { color: var(--fg-3); transition: color .15s, transform .15s; }
+    .btn:hover { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+    .btn:hover .arw { color: var(--bg); transform: translateX(3px); }
+    .btn.solid { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+    .btn.solid .arw { color: var(--bg); }
+    .btn.solid:hover { background: transparent; color: var(--fg); border-color: var(--line-bright); }
+    .btn.solid:hover .arw { color: var(--fg-3); }
+    .actions .meta { color: var(--fg-3); font-size: 13px; }
 
-    .btn svg {
-      width: 18px;
-      height: 18px;
-    }
-
-    .btn-primary {
-      background: var(--green);
-      color: #052e16;
-      box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.3), 0 2px 8px rgba(34, 197, 94, 0.2);
-    }
-
-    .btn-primary:hover {
-      background: #16a34a;
-      box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.4), 0 4px 16px rgba(34, 197, 94, 0.3);
-      transform: translateY(-1px);
-    }
-
-    .btn-secondary {
-      background: var(--bg-surface-raised);
-      color: var(--text-secondary);
-      border: 1px solid var(--border);
-    }
-
-    .btn-secondary:hover {
-      background: var(--border);
-      color: var(--text);
-      transform: translateY(-1px);
-    }
-
-    /* ─── Screenshot ─── */
-    .hero-screenshot {
-      margin-top: 64px;
-      position: relative;
-      z-index: 1;
-    }
-
-    .hero-screenshot .screenshot-wrapper {
-      position: relative;
-      border-radius: var(--radius);
+    /* ─── window / screenshot ─── */
+    .shot { padding-bottom: 40px; }
+    .window {
+      border: 1px solid var(--line-bright);
+      background: var(--surface);
       overflow: hidden;
-      border: 1px solid var(--border);
-      box-shadow:
-        0 0 0 1px var(--border-subtle),
-        0 24px 80px -12px rgba(0, 0, 0, 0.5),
-        0 0 120px -20px rgba(34, 197, 94, 0.07);
     }
-
-    .hero-screenshot img {
-      display: block;
-      width: 100%;
-      height: auto;
+    .titlebar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      height: 34px;
+      padding: 0 12px;
+      border-bottom: 1px solid var(--line);
+      background: var(--surface-2);
     }
-
-    .scroll-hint {
-      display: none;
+    .dots { display: flex; gap: 7px; }
+    .dots i {
+      width: 11px; height: 11px;
+      border-radius: 50%;
+      border: 1px solid var(--fg-3);
     }
-
-    .screenshot-glow {
-      position: absolute;
-      bottom: -120px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 80%;
-      height: 240px;
-      background: radial-gradient(ellipse, rgba(34, 197, 94, 0.06), transparent 70%);
-      pointer-events: none;
+    .titlebar .name {
+      flex: 1;
+      text-align: center;
+      color: var(--fg-3);
+      font-size: 12px;
+      letter-spacing: 0.02em;
+      /* offset so text is optically centered against the dots */
+      margin-right: 52px;
     }
+    .window img { display: block; width: 100%; height: auto; }
+    .scroll-hint { display: none; }
 
-    /* ─── Features ─── */
-    .features {
-      padding: 120px 0;
-    }
-
-    .section-label {
-      font-family: var(--font-display);
-      font-size: 13px;
-      font-weight: 600;
-      letter-spacing: 0.08em;
+    /* ─── section scaffolding ─── */
+    section { padding: 60px 0; scroll-margin-top: 68px; }
+    .label {
+      color: var(--fg-3);
+      font-size: 12px;
+      letter-spacing: 0.14em;
       text-transform: uppercase;
-      color: var(--green);
-      margin-bottom: 16px;
+      margin-bottom: 26px;
     }
-
-    .section-title {
-      font-family: var(--font-display);
-      font-size: clamp(28px, 4vw, 40px);
+    .stitle {
+      color: var(--fg);
+      font-size: 22px;
       font-weight: 700;
       letter-spacing: -0.03em;
-      color: var(--text);
-      margin-bottom: 16px;
-      line-height: 1.15;
+      margin-bottom: 6px;
     }
+    .sdesc { color: var(--fg-3); font-size: 14px; margin-bottom: 34px; max-width: 56ch; }
 
-    .section-desc {
-      font-size: 17px;
-      color: var(--text-muted);
-      max-width: 480px;
-      margin-bottom: 56px;
-      line-height: 1.7;
-    }
-
-    .features-grid {
+    /* ─── features: --help style spec list ─── */
+    .spec { border-top: 1px solid var(--line); }
+    .row {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 1px;
-      background: var(--border-subtle);
-      border-radius: var(--radius);
-      overflow: hidden;
-      border: 1px solid var(--border-subtle);
+      grid-template-columns: 190px 1fr;
+      gap: 24px;
+      padding: 18px 8px;
+      border-bottom: 1px solid var(--line);
+      transition: background .12s;
     }
+    .row:hover { background: var(--surface); }
+    .row .key { color: var(--fg); font-weight: 700; font-size: 14px; }
+    .row .val { color: var(--fg-2); font-size: 14px; }
 
-    .feature-card {
-      background: var(--bg-surface);
-      padding: 36px 32px;
-      transition: background 0.3s;
+    /* ─── changelog ─── */
+    #log-list { border-top: 1px solid var(--line); }
+    .entry {
+      padding: 20px 8px;
+      border-bottom: 1px solid var(--line);
     }
-
-    .feature-card:hover {
-      background: var(--bg-surface-raised);
-    }
-
-    .feature-icon {
-      width: 40px;
-      height: 40px;
-      border-radius: 10px;
-      background: var(--green-glow-strong);
-      border: 1px solid rgba(34, 197, 94, 0.12);
+    .entry .head {
       display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 20px;
-      color: var(--green);
+      align-items: baseline;
+      gap: 14px;
+      margin-bottom: 10px;
     }
-
-    .feature-icon svg {
-      width: 20px;
-      height: 20px;
+    .entry .tag { color: var(--fg); font-weight: 700; font-size: 15px; }
+    .entry .tag a:hover { text-decoration: underline; }
+    .entry .date { color: var(--fg-3); font-size: 13px; }
+    .entry .latest {
+      color: var(--bg);
+      background: var(--fg);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 1px 7px;
+      letter-spacing: 0.04em;
     }
-
-    .feature-card h3 {
-      font-family: var(--font-display);
-      font-size: 16px;
-      font-weight: 600;
-      color: var(--text);
-      margin-bottom: 8px;
-      letter-spacing: -0.01em;
-    }
-
-    .feature-card p {
+    .entry ul { list-style: none; }
+    .entry li {
+      color: var(--fg-2);
       font-size: 14px;
-      color: var(--text-muted);
+      padding-left: 18px;
+      position: relative;
       line-height: 1.6;
     }
+    .entry li::before { content: '+'; position: absolute; left: 0; color: var(--fg-3); }
+    .log-more { padding: 20px 8px; }
+    .log-more a { color: var(--fg-2); font-size: 13px; }
+    .log-more a:hover { color: var(--fg); text-decoration: underline; }
+    .log-loading { padding: 20px 8px; color: var(--fg-3); font-size: 13px; }
 
-    /* ─── Download ─── */
-    .download {
-      padding: 120px 0;
-      text-align: center;
-    }
-
-    .download .section-title {
-      margin-bottom: 12px;
-    }
-
-    .download > .container > p {
-      color: var(--text-muted);
-      font-size: 16px;
-      margin-bottom: 48px;
-    }
-
-    .download-grid {
+    /* ─── download ─── */
+    #dl-list { border-top: 1px solid var(--line); }
+    .dl {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
-    }
-
-    .platform-card {
-      position: relative;
-      display: flex;
-      flex-direction: column;
+      grid-template-columns: 140px 100px 1fr auto;
       align-items: center;
-      padding: 40px 24px 32px;
-      background: var(--bg-surface);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius);
-      text-decoration: none;
-      color: var(--text-secondary);
-      transition: all 0.3s ease;
-      overflow: hidden;
+      gap: 20px;
+      padding: 18px 8px;
+      border-bottom: 1px solid var(--line);
+      color: var(--fg);
+      transition: background .12s;
+    }
+    .dl:hover { background: var(--surface); }
+    .dl .os { font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 10px; }
+    .dl .os svg { width: 16px; height: 16px; color: var(--fg-2); }
+    .dl .ext { color: var(--fg-3); font-size: 13px; }
+    .dl .size { color: var(--fg-3); font-size: 13px; }
+    .dl .get {
+      display: inline-flex; align-items: center; gap: 8px;
+      border: 1px solid var(--line-bright);
+      padding: 7px 14px;
+      font-size: 13px; font-weight: 600;
+      transition: background .15s, color .15s, border-color .15s;
+    }
+    .dl .get:hover { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+    .dl.here { position: relative; }
+    .dl.here .os::after {
+      content: '← you';
+      color: var(--fg-3);
+      font-weight: 400;
+      font-size: 12px;
     }
 
-    .platform-card::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      border-radius: var(--radius);
-      padding: 1px;
-      background: linear-gradient(160deg, transparent 40%, rgba(34, 197, 94, 0.25));
-      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-      -webkit-mask-composite: xor;
-      mask-composite: exclude;
-      opacity: 0;
-      transition: opacity 0.3s;
-      pointer-events: none;
+    /* ─── footer ─── */
+    footer { padding: 30px 0 48px; }
+    .foot {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap;
+      color: var(--fg-3); font-size: 13px;
     }
+    .foot .comment { color: var(--fg-3); }
+    .foot a { color: var(--fg-2); }
+    .foot a:hover { color: var(--fg); text-decoration: underline; }
+    .foot .fl { display: flex; gap: 18px; }
 
-    .platform-card:hover::before {
-      opacity: 1;
-    }
-
-    .platform-card:hover {
-      background: var(--bg-surface-raised);
-      transform: translateY(-4px);
-      box-shadow: 0 12px 40px -8px rgba(0, 0, 0, 0.4), 0 0 60px -20px rgba(34, 197, 94, 0.1);
-    }
-
-    .platform-card.recommended {
-      border-color: rgba(34, 197, 94, 0.2);
-      background: linear-gradient(180deg, rgba(34, 197, 94, 0.04), var(--bg-surface));
-    }
-
-    .platform-card.recommended::after {
-      content: 'Recommended';
-      position: absolute;
-      top: 12px;
-      right: 12px;
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--green);
-      background: var(--green-glow-strong);
-      border: 1px solid rgba(34, 197, 94, 0.15);
-      padding: 3px 10px;
-      border-radius: 100px;
-      letter-spacing: 0.02em;
-    }
-
-    .platform-icon {
-      width: 48px;
-      height: 48px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 20px;
-      color: var(--text-muted);
-      transition: color 0.3s;
-    }
-
-    .platform-card:hover .platform-icon {
-      color: var(--text);
-    }
-
-    .platform-card.recommended .platform-icon {
-      color: var(--green);
-    }
-
-    .platform-icon svg {
-      width: 40px;
-      height: 40px;
-    }
-
-    .platform-name {
-      font-family: var(--font-display);
-      font-size: 18px;
-      font-weight: 600;
-      color: var(--text);
-      margin-bottom: 4px;
-    }
-
-    .platform-ext {
-      font-size: 13px;
-      color: var(--text-muted);
-      margin-bottom: 24px;
-      font-family: monospace;
-    }
-
-    .platform-dl-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 24px;
-      border-radius: var(--radius-sm);
-      font-size: 14px;
-      font-weight: 600;
-      transition: all 0.2s;
-      border: none;
-      cursor: pointer;
-      background: var(--bg-surface-raised);
-      color: var(--text-secondary);
-      border: 1px solid var(--border);
-    }
-
-    .platform-card:hover .platform-dl-btn {
-      background: var(--border);
-      color: var(--text);
-    }
-
-    .platform-card.recommended .platform-dl-btn {
-      background: var(--green);
-      color: #052e16;
-      border-color: transparent;
-      box-shadow: 0 2px 8px rgba(34, 197, 94, 0.2);
-    }
-
-    .platform-card.recommended:hover .platform-dl-btn {
-      background: var(--green-dim);
-      box-shadow: 0 4px 16px rgba(34, 197, 94, 0.3);
-    }
-
-    .platform-dl-btn svg {
-      width: 16px;
-      height: 16px;
-    }
-
-    /* ─── Footer ─── */
-    footer {
-      padding: 40px 0;
-      border-top: 1px solid var(--border-subtle);
-    }
-
-    footer .container {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .footer-left {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 14px;
-      color: var(--text-muted);
-    }
-
-    .footer-left img {
-      width: 20px;
-      height: 20px;
-      border-radius: 5px;
-    }
-
-    .footer-links {
-      display: flex;
-      align-items: center;
-      gap: 24px;
-      list-style: none;
-    }
-
-    .footer-links a {
-      font-size: 13px;
-      color: var(--text-muted);
-      text-decoration: none;
-      transition: color 0.2s;
-    }
-
-    .footer-links a:hover {
-      color: var(--text-secondary);
-    }
-
-    /* ─── Version badge in hero ─── */
-    #version-badge {
-      display: none;
-    }
-
-    /* ─── Animations ─── */
-    @keyframes fade-up {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .animate {
-      opacity: 0;
-      animation: fade-up 0.7s ease forwards;
-    }
-
-    .delay-1 { animation-delay: 0.1s; }
-    .delay-2 { animation-delay: 0.2s; }
-    .delay-3 { animation-delay: 0.3s; }
-    .delay-4 { animation-delay: 0.4s; }
-    .delay-5 { animation-delay: 0.5s; }
-
-    /* ─── Responsive ─── */
-    @media (max-width: 768px) {
-      .features-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .hero {
-        padding: 140px 0 60px;
-      }
-
-      .hero-screenshot .screenshot-wrapper {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-      }
-
-      .hero-screenshot .screenshot-wrapper img {
-        min-width: 900px;
-      }
-
-      .scroll-hint {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-        margin-top: 12px;
-        font-size: 13px;
-        color: var(--text-muted);
-      }
-
-      .scroll-hint svg {
-        width: 16px;
-        height: 16px;
-        animation: hint-nudge 1.5s ease-in-out infinite;
-      }
-
-      @keyframes hint-nudge {
-        0%, 100% { transform: translateX(0); }
-        50% { transform: translateX(5px); }
-      }
-
-      .nav-links .hide-mobile {
-        display: none;
-      }
-
-      .download-grid {
-        grid-template-columns: 1fr;
-        max-width: 360px;
-        margin: 0 auto;
-      }
-
-      footer .container {
-        flex-direction: column;
-        gap: 16px;
-        text-align: center;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .hero-actions {
-        flex-direction: column;
-        width: 100%;
-      }
-
-      .hero-actions .btn {
-        width: 100%;
-        justify-content: center;
-      }
+    /* ─── responsive ─── */
+    @media (max-width: 720px) {
+      .row { grid-template-columns: 1fr; gap: 4px; }
+      .dl { grid-template-columns: 1fr auto; gap: 8px 16px; }
+      .dl .ext, .dl .size { grid-column: 1; }
+      nav.links a[href="#features"], nav.links a[href="#changelog"] { display: none; }
+      .window img { min-width: 820px; }
+      .shot .window { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      .scroll-hint { display: block; color: var(--fg-3); font-size: 12px; margin-top: 10px; }
     }
   </style>
 </head>
 <body>
-  <div class="grid-bg"></div>
 
-  <!-- Nav -->
-  <nav>
-    <div class="container">
-      <a href="#" class="nav-brand">
-        <img src="https://raw.githubusercontent.com/ByMykel/cratesmove/main/buildResources/icon.png" alt="Cratesmove" width="32" height="32">
-        <span>cratesmove</span>
+  <header>
+    <div class="wrap bar">
+      <a href="#" class="brand">
+        cratesmove
       </a>
-      <ul class="nav-links">
-        <li class="hide-mobile"><a href="#features">Features</a></li>
-        <li class="hide-mobile"><a href="#download">Download</a></li>
-        <li>
-          <a href="https://github.com/ByMykel/cratesmove" target="_blank" rel="noopener" class="nav-github">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-            GitHub
-          </a>
-        </li>
-      </ul>
+      <nav class="links">
+        <a href="#features">features</a>
+        <a href="#changelog">changelog</a>
+        <a href="#download">download</a>
+        <a href="https://github.com/ByMykel/cratesmove" target="_blank" rel="noopener" class="src">github ↗</a>
+      </nav>
     </div>
-  </nav>
+  </header>
 
-  <!-- Hero -->
+  <!-- hero -->
   <section class="hero">
-    <div class="hero-glow"></div>
-    <div class="container">
-      <div class="animate delay-1">
-        <div class="hero-badge">
-          <span class="dot"></span>
-          <span>Open Source & Free</span>
-        </div>
-      </div>
-
-      <h1 class="animate delay-2">
-        Manage your CS2<br><span class="accent">Storage Units</span>
-      </h1>
-
-      <p class="animate delay-3">
-        Deposit, retrieve, and organize your CS2 inventory items across storage units — without the clunky in-game interface.
+    <div class="wrap">
+      <h1>Your CS2 storage units, without the pain.</h1>
+      <p class="lede">
+        Deposit, retrieve, and organize inventory items across storage units in bulk —
+        <b>everything the in-game menu makes you do one click at a time.</b>
       </p>
-
-      <div class="hero-actions animate delay-4">
-        <a href="https://github.com/ByMykel/cratesmove/releases/latest" class="btn btn-primary" id="download-btn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Download
+      <div class="actions">
+        <a href="https://github.com/ByMykel/cratesmove/releases/latest" class="btn solid" id="download-btn">
+          download <span class="arw">↓</span>
         </a>
-        <a href="https://github.com/ByMykel/cratesmove" target="_blank" rel="noopener" class="btn btn-secondary">
-          <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-          View on GitHub
+        <a href="https://github.com/ByMykel/cratesmove" target="_blank" rel="noopener" class="btn">
+          read the source <span class="arw">→</span>
         </a>
-      </div>
-
-      <div class="hero-screenshot animate delay-5">
-        <div class="screenshot-wrapper">
-          <img src="screenshot.png" alt="Cratesmove application screenshot" width="1120" height="auto" loading="eager">
-        </div>
-        <div class="scroll-hint">
-          <span>Swipe to explore</span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-        </div>
-        <div class="screenshot-glow"></div>
+        <span class="meta" id="ver-meta">free · open source · MIT</span>
       </div>
     </div>
   </section>
 
-  <!-- Features -->
-  <section class="features" id="features">
-    <div class="container">
-      <div class="section-label">Features</div>
-      <h2 class="section-title">Everything you need to<br>manage your inventory</h2>
-      <p class="section-desc">A fast, native desktop app that makes working with CS2 storage units painless.</p>
-
-      <div class="features-grid">
-        <div class="feature-card">
-          <div class="feature-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
-          </div>
-          <h3>Bulk Operations</h3>
-          <p>Move multiple items to or from storage units at once. No more one-by-one clicking.</p>
+  <!-- screenshot -->
+  <div class="shot">
+    <div class="wrap">
+      <div class="window">
+        <div class="titlebar">
+          <div class="dots"><i></i><i></i><i></i></div>
+          <span class="name">cratesmove — inventory</span>
         </div>
+        <img src="screenshot.png" alt="cratesmove inventory view" width="1120" loading="eager">
+      </div>
+      <p class="scroll-hint">→ scroll to see the full window</p>
+    </div>
+  </div>
 
-        <div class="feature-card">
-          <div class="feature-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-          </div>
-          <h3>Item Pricing</h3>
-          <p>See the total value of your inventory and each storage unit at a glance.</p>
-        </div>
+  <hr class="rule">
 
-        <div class="feature-card">
-          <div class="feature-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4-4v-2"/><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-          </div>
-          <h3>Multi-Account</h3>
-          <p>Save and switch between multiple Steam accounts with ease.</p>
-        </div>
+  <!-- features -->
+  <section id="features">
+    <div class="wrap">
+      <p class="label">Features</p>
+      <h2 class="stitle">What it actually does</h2>
+      <p class="sdesc">Six things. Each one is a thing the in-game interface makes annoying.</p>
 
-        <div class="feature-card">
-          <div class="feature-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-          </div>
-          <h3>Item Grouping</h3>
-          <p>Items are grouped by type with collapsible sections for a clean overview.</p>
-        </div>
-
-        <div class="feature-card">
-          <div class="feature-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-          </div>
-          <h3>Search & Filter</h3>
-          <p>Quickly find items across your inventory and storage units.</p>
-        </div>
-
-        <div class="feature-card">
-          <div class="feature-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-          </div>
-          <h3>Cross Platform</h3>
-          <p>Available on Windows, macOS, and Linux. Native desktop experience.</p>
-        </div>
+      <div class="spec">
+        <div class="row"><span class="key">bulk-move</span><span class="val">Select as many items as you want and move them in or out of a unit in one action.</span></div>
+        <div class="row"><span class="key">pricing</span><span class="val">Total value per storage unit and per inventory, shown inline. Know what's where.</span></div>
+        <div class="row"><span class="key">multi-account</span><span class="val">Save several Steam accounts and switch between them without logging in again.</span></div>
+        <div class="row"><span class="key">grouping</span><span class="val">Items collapse by type into sections. Scroll a screen, not a thousand rows.</span></div>
+        <div class="row"><span class="key">search</span><span class="val">Filter across your whole inventory and every storage unit at once.</span></div>
+        <div class="row"><span class="key">cross-platform</span><span class="val">Windows, macOS, Linux — one native build for each. No browser required.</span></div>
       </div>
     </div>
   </section>
 
-  <!-- Download -->
-  <section class="download" id="download">
-    <div class="container">
-      <div class="section-label">Download</div>
-      <h2 class="section-title">Get Cratesmove</h2>
-      <p>Free and open source. Available for all platforms.</p>
+  <hr class="rule">
 
-      <div class="download-grid" id="download-buttons">
-        <a href="https://github.com/ByMykel/cratesmove/releases/latest" class="platform-card" data-platform="windows">
-          <div class="platform-icon">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/></svg>
-          </div>
-          <div class="platform-name">Windows</div>
-          <div class="platform-ext">.exe</div>
-          <div class="platform-dl-btn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Download
-          </div>
+  <!-- changelog -->
+  <section id="changelog">
+    <div class="wrap">
+      <p class="label">Changelog</p>
+      <h2 class="stitle">Recent releases</h2>
+      <p class="sdesc">Pulled live from GitHub. This is the real list — not a marketing timeline.</p>
+
+      <div id="log-list">
+        <p class="log-loading">loading releases…</p>
+      </div>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <!-- download -->
+  <section id="download">
+    <div class="wrap">
+      <p class="label">Download</p>
+      <h2 class="stitle">Get the app</h2>
+      <p class="sdesc">Free, open source, no account. Grab the build for your OS.</p>
+
+      <div id="dl-list">
+        <a class="dl" data-platform="windows" href="https://github.com/ByMykel/cratesmove/releases/latest">
+          <span class="os"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/></svg>windows</span>
+          <span class="ext">.exe</span>
+          <span class="size" data-size></span>
+          <span class="get">download ↓</span>
         </a>
-
-        <a href="https://github.com/ByMykel/cratesmove/releases/latest" class="platform-card" data-platform="mac">
-          <div class="platform-icon">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
-          </div>
-          <div class="platform-name">macOS</div>
-          <div class="platform-ext">.dmg</div>
-          <div class="platform-dl-btn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Download
-          </div>
+        <a class="dl" data-platform="mac" href="https://github.com/ByMykel/cratesmove/releases/latest">
+          <span class="os"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>macos</span>
+          <span class="ext">.dmg</span>
+          <span class="size" data-size></span>
+          <span class="get">download ↓</span>
         </a>
-
-        <a href="https://github.com/ByMykel/cratesmove/releases/latest" class="platform-card" data-platform="linux">
-          <div class="platform-icon">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.581 19.049c-.55-.446-.336-1.431-.907-1.917.553-3.365-.997-6.331-2.845-8.232-1.551-1.595-1.051-3.147-1.051-4.49 0-2.146-.881-4.41-3.55-4.41-2.853 0-3.635 2.38-3.663 3.738-.068 3.262.659 4.11-1.25 6.484-2.246 2.793-2.577 5.579-2.07 7.057a2.924 2.924 0 0 1-.455 1.77c-.407.564-.67 1.205-.088 1.874.481.553 1.237.624 1.85.399.667-.245 1.561-.665 2.467-.472.674.143 1.06.478 1.581.742.853.432 1.807.161 2.392-.457.584-.618.586-1.48-.066-2.097-.206-.196-1.167-.487-1.167-.487-.37-.12-.632-.485-.654-.867-.067-1.16.461-2.272.86-2.85.277-.399.655-.563 1.065-.553 1.165.03 2.384.678 3.168.344.545-.233.704-.655.776-1.033.103-.54.07-.858-.241-1.312-.175-.255-.762-.605-.915-1.017-.257-.692-.03-1.453.148-2.131.105-.397.313-1.126.057-1.56-.235-.397-.669-.36-.938-.127a10.57 10.57 0 0 0-.904.866c-.136.155-.256.3-.397.468-1.267-.302-2.7-.396-3.97-.09-.187-.199-.404-.42-.615-.64a7.014 7.014 0 0 0-.881-.758c-.267-.183-.63-.17-.836.16-.175.28-.136.658-.007.997.184.483.437.967.227 1.553-.13.36-.393.754-.553 1.074-.147.294-.215.537-.081.858.118.282.383.534.622.64.826.368 1.94-.22 3.136-.21.405.004.824.076 1.204.267.315.157.47.383.657.697.353.588.804 1.86.803 2.965-.001.47-.205.79-.532.934 0 0-.936.282-1.14.474-.648.608-.656 1.478-.072 2.096.584.618 1.538.891 2.392.457.52-.264.907-.599 1.581-.742.906-.193 1.8.227 2.467.472.613.225 1.369.154 1.85-.399.582-.669.319-1.31-.088-1.874z"/></svg>
-          </div>
-          <div class="platform-name">Linux</div>
-          <div class="platform-ext">.AppImage</div>
-          <div class="platform-dl-btn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Download
-          </div>
+        <a class="dl" data-platform="linux" href="https://github.com/ByMykel/cratesmove/releases/latest">
+          <span class="os"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.581 19.049c-.55-.446-.336-1.431-.907-1.917.553-3.365-.997-6.331-2.845-8.232-1.551-1.595-1.051-3.147-1.051-4.49 0-2.146-.881-4.41-3.55-4.41-2.853 0-3.635 2.38-3.663 3.738-.068 3.262.659 4.11-1.25 6.484-2.246 2.793-2.577 5.579-2.07 7.057a2.924 2.924 0 0 1-.455 1.77c-.407.564-.67 1.205-.088 1.874.481.553 1.237.624 1.85.399.667-.245 1.561-.665 2.467-.472.674.143 1.06.478 1.581.742.853.432 1.807.161 2.392-.457.584-.618.586-1.48-.066-2.097-.206-.196-1.167-.487-1.167-.487-.37-.12-.632-.485-.654-.867-.067-1.16.461-2.272.86-2.85.277-.399.655-.563 1.065-.553 1.165.03 2.384.678 3.168.344.545-.233.704-.655.776-1.033.103-.54.07-.858-.241-1.312-.175-.255-.762-.605-.915-1.017-.257-.692-.03-1.453.148-2.131.105-.397.313-1.126.057-1.56-.235-.397-.669-.36-.938-.127a10.57 10.57 0 0 0-.904.866c-.136.155-.256.3-.397.468-1.267-.302-2.7-.396-3.97-.09-.187-.199-.404-.42-.615-.64a7.014 7.014 0 0 0-.881-.758c-.267-.183-.63-.17-.836.16-.175.28-.136.658-.007.997.184.483.437.967.227 1.553-.13.36-.393.754-.553 1.074-.147.294-.215.537-.081.858.118.282.383.534.622.64.826.368 1.94-.22 3.136-.21.405.004.824.076 1.204.267.315.157.47.383.657.697.353.588.804 1.86.803 2.965-.001.47-.205.79-.532.934 0 0-.936.282-1.14.474-.648.608-.656 1.478-.072 2.096.584.618 1.538.891 2.392.457.52-.264.907-.599 1.581-.742.906-.193 1.8.227 2.467.472.613.225 1.369.154 1.85-.399.582-.669.319-1.31-.088-1.874z"/></svg>linux</span>
+          <span class="ext">.AppImage</span>
+          <span class="size" data-size></span>
+          <span class="get">download ↓</span>
         </a>
       </div>
     </div>
   </section>
 
-  <!-- Footer -->
+  <hr class="rule">
+
   <footer>
-    <div class="container">
-      <div class="footer-left">
-        <img src="https://raw.githubusercontent.com/ByMykel/cratesmove/main/buildResources/icon.png" alt="" width="20" height="20">
-        <span>cratesmove</span>
-        <span>&middot;</span>
-        <span id="footer-version">MIT License</span>
-      </div>
-      <ul class="footer-links">
-        <li><a href="https://github.com/ByMykel/cratesmove" target="_blank" rel="noopener">GitHub</a></li>
-        <li><a href="https://github.com/ByMykel/cratesmove/releases" target="_blank" rel="noopener">Releases</a></li>
-        <li><a href="https://github.com/ByMykel/cratesmove/issues" target="_blank" rel="noopener">Issues</a></li>
-      </ul>
+    <div class="wrap foot">
+      <span class="comment">MIT licensed · built by <a href="https://github.com/ByMykel" target="_blank" rel="noopener">ByMykel</a></span>
+      <span class="fl">
+        <a href="https://github.com/ByMykel/cratesmove" target="_blank" rel="noopener">source</a>
+        <a href="https://github.com/ByMykel/cratesmove/releases" target="_blank" rel="noopener">releases</a>
+        <a href="https://github.com/ByMykel/cratesmove/issues" target="_blank" rel="noopener">issues</a>
+      </span>
     </div>
   </footer>
 
   <script>
-    // Fetch latest release and update download links with direct asset URLs
-    async function updateDownloadLinks() {
+    const REPO = 'ByMykel/cratesmove';
+
+    function esc(s) {
+      return s.replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
+    }
+
+    // "2 days ago" style relative time (no deps)
+    function ago(iso) {
+      const d = (Date.now() - new Date(iso).getTime()) / 1000;
+      const t = [[31536000,'year'],[2592000,'month'],[604800,'week'],[86400,'day'],[3600,'hour'],[60,'minute']];
+      for (const [s, name] of t) {
+        const n = Math.floor(d / s);
+        if (n >= 1) return n + ' ' + name + (n > 1 ? 's' : '') + ' ago';
+      }
+      return 'just now';
+    }
+
+    function fmtSize(bytes) {
+      if (!bytes) return '';
+      const mb = bytes / 1048576;
+      return mb >= 1 ? mb.toFixed(1) + ' MB' : Math.round(bytes / 1024) + ' KB';
+    }
+
+    // Pull bullet lines out of a GitHub release body; fall back to the first line.
+    function bullets(body) {
+      if (!body) return [];
+      const lines = body.split(/\r?\n/).map(l => l.trim());
+      const items = lines
+        .filter(l => /^[-*]\s+/.test(l))
+        .map(l => l.replace(/^[-*]\s+/, '')
+                   .replace(/\*\*(.+?)\*\*/g, '$1')
+                   .replace(/`(.+?)`/g, '$1')
+                   .replace(/\[(.+?)\]\(.+?\)/g, '$1')
+                   .replace(/#\d+/g, '')       // drop PR/issue refs
+                   .replace(/\bby @\S+/gi, '') // drop "by @author"
+                   .replace(/\s{2,}/g, ' ')
+                   .trim())
+        .filter(Boolean);
+      if (items.length) return items.slice(0, 4);
+      const first = lines.find(l => l && !/^#/.test(l));
+      return first ? [first.replace(/[#*`]/g, '').trim()] : [];
+    }
+
+    async function loadReleases() {
+      const logEl = document.getElementById('log-list');
       try {
-        const res = await fetch('https://api.github.com/repos/ByMykel/cratesmove/releases/latest');
-        if (!res.ok) return;
-        const release = await res.json();
+        const res = await fetch(`https://api.github.com/repos/${REPO}/releases?per_page=5`);
+        if (!res.ok) throw new Error('http ' + res.status);
+        const releases = (await res.json()).filter(r => !r.draft && !r.prerelease);
+        if (!releases.length) throw new Error('empty');
 
-        const assets = release.assets || [];
-        const links = document.querySelectorAll('.download-btn');
+        wireDownloads(releases[0], document.getElementById('ver-meta'));
 
-        links.forEach(link => {
-          const platform = link.dataset.platform;
-          let asset;
-
-          if (platform === 'windows') {
-            asset = assets.find(a => a.name.endsWith('.exe'));
-          } else if (platform === 'mac') {
-            asset = assets.find(a => a.name.endsWith('.dmg'));
-          } else if (platform === 'linux') {
-            asset = assets.find(a => a.name.endsWith('.AppImage'));
-          }
-
-          if (asset) {
-            link.href = asset.browser_download_url;
-          }
-        });
-
-        // Also update the hero download button and highlight recommended platform
-        const heroBtn = document.getElementById('download-btn');
-        const ua = navigator.userAgent.toLowerCase();
-        let heroAsset;
-        let detectedPlatform;
-        if (ua.includes('win')) {
-          heroAsset = assets.find(a => a.name.endsWith('.exe'));
-          detectedPlatform = 'windows';
-        } else if (ua.includes('mac')) {
-          heroAsset = assets.find(a => a.name.endsWith('.dmg'));
-          detectedPlatform = 'mac';
-        } else if (ua.includes('linux')) {
-          heroAsset = assets.find(a => a.name.endsWith('.AppImage'));
-          detectedPlatform = 'linux';
-        }
-        if (heroAsset && heroBtn) {
-          heroBtn.href = heroAsset.browser_download_url;
-        }
-
-        // Highlight recommended platform card
-        if (detectedPlatform) {
-          const card = document.querySelector(`.platform-card[data-platform="${detectedPlatform}"]`);
-          if (card) card.classList.add('recommended');
-        }
-
-        // Show version
-        if (release.tag_name) {
-          const badge = document.querySelector('.hero-badge span:last-child');
-          if (badge) {
-            badge.textContent = `Open Source & Free — ${release.tag_name}`;
-          }
-        }
+        logEl.innerHTML = releases.map((r, i) => {
+          const items = bullets(r.body);
+          const list = items.length
+            ? '<ul>' + items.map(b => `<li>${esc(b)}</li>`).join('') + '</ul>'
+            : '<ul><li>Maintenance and dependency updates.</li></ul>';
+          return `<div class="entry">
+            <div class="head">
+              <span class="tag"><a href="${esc(r.html_url)}" target="_blank" rel="noopener">${esc(r.tag_name)}</a></span>
+              <span class="date">${ago(r.published_at)}</span>
+              ${i === 0 ? '<span class="latest">latest</span>' : ''}
+            </div>
+            ${list}
+          </div>`;
+        }).join('') +
+        `<p class="log-more"><a href="https://github.com/${REPO}/releases" target="_blank" rel="noopener">see all releases →</a></p>`;
       } catch (e) {
-        // Fallback: links already point to releases/latest
+        logEl.innerHTML = `<p class="log-more"><a href="https://github.com/${REPO}/releases" target="_blank" rel="noopener">view the changelog on GitHub →</a></p>`;
       }
     }
 
-    updateDownloadLinks();
+    // Point download rows + hero button at real asset URLs, fill sizes, mark the visitor's OS.
+    function wireDownloads(release, verMeta) {
+      const assets = release.assets || [];
+      const pick = {
+        windows: a => a.name.endsWith('.exe'),
+        mac:     a => a.name.endsWith('.dmg'),
+        linux:   a => a.name.endsWith('.AppImage'),
+      };
+
+      document.querySelectorAll('.dl').forEach(row => {
+        const asset = assets.find(pick[row.dataset.platform]);
+        if (asset) {
+          row.href = asset.browser_download_url;
+          const sizeEl = row.querySelector('[data-size]');
+          if (sizeEl) sizeEl.textContent = fmtSize(asset.size);
+        }
+      });
+
+      const ua = navigator.userAgent.toLowerCase();
+      const os = ua.includes('win') ? 'windows' : ua.includes('mac') ? 'mac' : ua.includes('linux') ? 'linux' : null;
+      if (os) {
+        const row = document.querySelector(`.dl[data-platform="${os}"]`);
+        if (row) {
+          row.classList.add('here');
+          const asset = assets.find(pick[os]);
+          const hero = document.getElementById('download-btn');
+          if (asset && hero) hero.href = asset.browser_download_url;
+        }
+      }
+
+      if (release.tag_name && verMeta) {
+        verMeta.textContent = `${release.tag_name} · free · MIT`;
+      }
+    }
+
+    loadReleases();
   </script>
 </body>
 </html>
