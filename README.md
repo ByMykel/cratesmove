@@ -1,6 +1,6 @@
 <div align="center">
 
-<h1><img src="docs/logo-icon.svg" alt="" width="28" style="vertical-align: middle;" /> cratesmove</h1>
+<h1>cratesmove</h1>
 
 **A modern desktop app for managing your CS2 storage units.**
 
