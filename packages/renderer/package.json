@@ -13,7 +13,7 @@
     "vue": "^3.5.41",
     "vue-router": "^5.2.0",
     "@vueuse/core": "^14.4.0",
-    "@nuxt/ui": "^4.10.0",
+    "@nuxt/ui": "^4.11.0",
     "lucide-vue-next": "^0.577.0"
   },
   "devDependencies": {
@@ -21,6 +21,6 @@
     "@vitejs/plugin-vue": "^6.0.8",
     "typescript": "7.0.2",
     "vite": "8.2.2",
-    "vue-tsc": "^3.3.10"
+    "vue-tsc": "^3.3.11"
   }
 }
