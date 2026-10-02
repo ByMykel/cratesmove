@@ -13,7 +13,7 @@
     "vue": "^3.5.43",
     "vue-router": "^5.3.1",
     "@vueuse/core": "^15.0.0",
-    "@nuxt/ui": "^4.11.1",
+    "@nuxt/ui": "^4.11.2",
     "lucide-vue-next": "^0.577.0"
   },
   "devDependencies": {
