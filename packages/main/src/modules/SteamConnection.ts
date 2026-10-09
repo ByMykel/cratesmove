@@ -155,8 +155,21 @@ class SteamConnection implements AppModule {
 
       // Explicitly request our own persona data so the 'user' event fires
       if (this.#steamUser.steamID) {
-        this.#activeSteamId = this.#steamUser.steamID.toString();
+        const steamId = this.#steamUser.steamID.toString();
+        this.#activeSteamId = steamId;
         this.#steamUser.getPersonas([this.#steamUser.steamID]);
+
+        // Steam may not resend persona data for an account seen earlier in this session
+        void this.#loadAccountsMeta().then(accounts => {
+          const saved = accounts.find(a => a.steamId === steamId);
+          if (saved && this.#activeSteamId === steamId) {
+            broadcastToRenderers('steam:user-info', {
+              steamId,
+              personaName: saved.personaName,
+              avatarUrl: saved.avatarUrl,
+            });
+          }
+        });
       }
     });
 
