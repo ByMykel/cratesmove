@@ -798,6 +798,9 @@ class SteamConnection implements AppModule {
     // Non-marketable collectibles (coins, service medals) are non-movable
     if (resolved?.entity === 'collectible' && !resolved.marketable) return false;
 
+    // Non-marketable pets (e.g. default Pet Chick) are non-movable
+    if (resolved?.entity === 'pet' && !resolved.marketable) return false;
+
     // Promotional music kits (origin 0 = timed drop for default music kit)
     if (resolved?.entity === 'music_kit' && item.origin === 0) return false;
 
