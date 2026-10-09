@@ -4,7 +4,7 @@ import { useClipboard } from '@vueuse/core';
 import { useVirtualizer } from '@tanstack/vue-virtual';
 import type { InventoryItem, TradeStatus } from '@/types/steam';
 import { useItemGroups, type ItemGroup, type SortBy } from '@/composables/useItemGroups';
-import { ChevronRight, ClipboardCopy, Check, TriangleAlert } from 'lucide-vue-next';
+import { ChevronRight, ClipboardCopy, Check, Tag, TriangleAlert } from 'lucide-vue-next';
 import { usePrices } from '@/composables/usePrices';
 import { useDebugMode } from '@/composables/useDebugMode';
 import RawDataDialog from './RawDataDialog.vue';
@@ -348,6 +348,16 @@ function showResolvedData(item: InventoryItem) {
                       <td class="px-2 py-0 align-middle font-medium">
                         <span class="inline-flex items-center gap-1.5">
                           <span class="truncate">{{ groupAt(vRow.index).market_hash_name }}</span>
+                          <span
+                            v-if="
+                              groupAt(vRow.index).items.length === 1 &&
+                              groupAt(vRow.index).items[0].custom_name
+                            "
+                            class="inline-flex shrink-0 items-center gap-1 font-normal text-(--ui-text-muted)"
+                          >
+                            <Tag class="h-3 w-3" />
+                            "{{ groupAt(vRow.index).items[0].custom_name }}"
+                          </span>
                           <StatusBadge
                             :status="groupAt(vRow.index).status"
                             :trade-hold-expires="groupAt(vRow.index).items[0].trade_hold_expires"
@@ -461,13 +471,20 @@ function showResolvedData(item: InventoryItem) {
                       <td class="px-2 py-0 align-middle text-xs text-(--ui-text-muted)">
                         <span class="inline-flex items-center gap-1.5">
                           <span class="truncate">
-                            {{ itemAt(vRow.index).custom_name || itemAt(vRow.index).name }}
+                            {{ itemAt(vRow.index).name }}
                             <span
                               v-if="itemAt(vRow.index).paint_wear != null"
                               class="ml-1 opacity-60"
                             >
                               ({{ itemAt(vRow.index).paint_wear!.toFixed(4) }})
                             </span>
+                          </span>
+                          <span
+                            v-if="itemAt(vRow.index).custom_name"
+                            class="inline-flex shrink-0 items-center gap-1"
+                          >
+                            <Tag class="h-3 w-3" />
+                            "{{ itemAt(vRow.index).custom_name }}"
                           </span>
                           <StatusBadge
                             :status="itemAt(vRow.index).status"
