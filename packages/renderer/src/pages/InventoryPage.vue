@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, computed, watch } from 'vue';
+import { onMounted, onUnmounted, ref, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useVirtualizer } from '@tanstack/vue-virtual';
 import AppLayout from '@/components/layout/AppLayout.vue';
@@ -15,12 +15,21 @@ import { useSteam } from '@/composables/useSteam';
 import type { SortBy } from '@/composables/useItemGroups';
 import type { TradeStatus } from '@/types/steam';
 import FilterPanel from '@/components/inventory/FilterPanel.vue';
-import { Loader2, RefreshCw, Archive, Search, SlidersHorizontal, Bug } from 'lucide-vue-next';
+import {
+  Loader2,
+  RefreshCw,
+  Archive,
+  Search,
+  SlidersHorizontal,
+  Bug,
+  CloudOff,
+  PackageOpen,
+} from 'lucide-vue-next';
 import { useDebugMode } from '@/composables/useDebugMode';
 
 const router = useRouter();
 const store = useInventoryStore();
-const { switchingAccount } = useSteam();
+const { switchingAccount, gcStatus } = useSteam();
 const {
   selectedIds,
   selectionCount,
@@ -42,6 +51,35 @@ const sortBy = ref<SortBy>('name');
 // else" — including non-marketable collectibles — so it's not offered.
 const STATUS_ORDER: TradeStatus[] = ['market_listed', 'trade_hold'];
 const sidebarOpen = ref(false);
+
+const GC_SLOW_MS = 20_000;
+const gcSlow = ref(false);
+let gcSlowTimer: ReturnType<typeof setTimeout> | null = null;
+
+watch(
+  gcStatus,
+  status => {
+    if (gcSlowTimer) clearTimeout(gcSlowTimer);
+    gcSlowTimer = null;
+    gcSlow.value = false;
+    if (status === 'connecting') {
+      gcSlowTimer = setTimeout(() => (gcSlow.value = true), GC_SLOW_MS);
+    }
+  },
+  { immediate: true },
+);
+
+onUnmounted(() => {
+  if (gcSlowTimer) clearTimeout(gcSlowTimer);
+});
+
+const emptyState = computed(() => {
+  if (store.inventoryItems.value.length > 0) return null;
+  if (store.loading.value) return 'loading';
+  if (gcStatus.value === 'connected') return 'empty';
+  if (gcSlow.value) return 'unavailable';
+  return 'connecting';
+});
 const filterPanelOpen = ref(false);
 
 const availableRarities = computed(() => {
@@ -259,11 +297,41 @@ const slideoverVirtualizer = useVirtualizer({
         <button class="ml-auto underline hover:no-underline" @click="toggleDebug">Disable</button>
       </div>
 
-      <div
-        v-if="store.loading.value && store.inventoryItems.value.length === 0"
-        class="flex flex-1 items-center justify-center"
-      >
+      <div v-if="emptyState === 'loading'" class="flex flex-1 items-center justify-center">
         <Loader2 class="h-8 w-8 animate-spin text-(--ui-text-muted)" />
+      </div>
+
+      <div
+        v-else-if="emptyState"
+        class="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center"
+      >
+        <Loader2
+          v-if="emptyState === 'connecting'"
+          class="h-6 w-6 animate-spin text-(--ui-text-muted)"
+        />
+        <CloudOff v-else-if="emptyState === 'unavailable'" class="h-6 w-6 text-(--ui-text-muted)" />
+        <PackageOpen v-else class="h-6 w-6 text-(--ui-text-muted)" />
+
+        <div class="flex max-w-sm flex-col gap-1">
+          <p class="text-sm font-medium">
+            {{
+              emptyState === 'connecting'
+                ? 'Connecting to Counter-Strike 2…'
+                : emptyState === 'unavailable'
+                  ? "CS2 servers aren't responding"
+                  : 'Your inventory is empty'
+            }}
+          </p>
+          <p class="text-xs text-(--ui-text-muted)">
+            {{
+              emptyState === 'connecting'
+                ? 'Loading your inventory. This usually takes a few seconds.'
+                : emptyState === 'unavailable'
+                  ? "Steam's CS2 servers may be busy, or this account doesn't have CS2 in its library. We'll keep trying automatically."
+                  : 'Items you get in CS2 will show up here.'
+            }}
+          </p>
+        </div>
       </div>
 
       <ItemTable

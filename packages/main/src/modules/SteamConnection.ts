@@ -147,8 +147,10 @@ class SteamConnection implements AppModule {
   #registerSteamEvents() {
     this.#steamUser.on('loggedOn', () => {
       debugLog('steam', 'loggedOn', this.#steamUser.steamID?.toString());
+      broadcastToRenderers('steam:gc-status', 'connecting');
       broadcastToRenderers('steam:auth-state', { state: 'connected' });
       this.#steamUser.gamesPlayed([730], true);
+      debugLog('gc', 'requested CS2 session');
 
       // Explicitly request our own persona data so the 'user' event fires
       if (this.#steamUser.steamID) {
@@ -225,6 +227,15 @@ class SteamConnection implements AppModule {
 
     this.#csgo.on('disconnectedFromGC', (reason: number) => {
       debugLog('gc', 'disconnectedFromGC', { reason });
+      broadcastToRenderers('steam:gc-status', 'connecting');
+    });
+
+    this.#csgo.on('debug', (msg: string) => {
+      debugLog('gc', msg);
+    });
+
+    this.#steamUser.on('playingState', (blocked: boolean, playingApp: number) => {
+      debugLog('steam', 'playingState', { blocked, playingApp });
     });
 
     this.#csgo.on('itemAcquired', () => {
@@ -1070,6 +1081,8 @@ class SteamConnection implements AppModule {
       broadcastToRenderers('steam:inventory-updated', items);
       const units = this.#getStorageUnits();
       broadcastToRenderers('steam:storage-units-updated', units);
+      debugLog('gc', 'inventory sent', { items: items.length, storageUnits: units.length });
+      broadcastToRenderers('steam:gc-status', 'connected');
     }, 100);
   }
 

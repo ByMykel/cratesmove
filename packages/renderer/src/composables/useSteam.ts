@@ -9,7 +9,7 @@ import {
   steamSwitchAccount,
   steamRemoveAccount,
 } from '@app/preload';
-import type { AuthState, UserInfo, SavedAccountMeta } from '@/types/steam';
+import type { AuthState, UserInfo, SavedAccountMeta, GcStatus } from '@/types/steam';
 import { useInventoryStore } from '@/composables/useInventoryStore';
 
 const ERROR_MESSAGES: Record<string, string> = {
@@ -51,6 +51,7 @@ const steamGuardType = ref<'email' | 'mobile' | null>(null);
 const isConnected = ref(false);
 const savedAccounts = ref<SavedAccountMeta[]>([]);
 const switchingAccount = ref(false);
+const gcStatus = ref<GcStatus>('connecting');
 
 let listenersRegistered = false;
 let connectedDuringSwitch = false;
@@ -95,6 +96,10 @@ function registerListeners() {
       authState.value = 'waiting-for-steam-guard';
     },
   );
+
+  onSteamEvent('steam:gc-status', (_event: unknown, status: GcStatus) => {
+    gcStatus.value = status;
+  });
 
   onSteamEvent('steam:user-info', (_event: unknown, data: UserInfo) => {
     userInfo.value = data;
@@ -188,6 +193,7 @@ export function useSteam() {
     isConnected: readonly(isConnected),
     savedAccounts: readonly(savedAccounts),
     switchingAccount: readonly(switchingAccount),
+    gcStatus: readonly(gcStatus),
     credentialLogin,
     webtokenLogin,
     submitSteamGuard,

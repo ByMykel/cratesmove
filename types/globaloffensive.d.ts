@@ -5,6 +5,7 @@ declare module 'globaloffensive' {
   type EventListener = (...args: any[]) => void;
 
   export default class GlobalOffensive {
+    haveGCSession: boolean;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     inventory: any[] | null;
     constructor(steamUser: SteamUser);

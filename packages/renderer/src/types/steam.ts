@@ -54,6 +54,8 @@ export interface SavedAccountMeta {
   addedAt: number;
 }
 
+export type GcStatus = 'connecting' | 'connected';
+
 export type AuthState =
   'disconnected' | 'connecting' | 'waiting-for-steam-guard' | 'connected' | 'error';
 
