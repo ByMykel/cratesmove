@@ -22,7 +22,8 @@ const { switchingAccount } = useSteam();
           v-if="switchingAccount"
           class="absolute inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-(--ui-bg)"
         >
-          <Loader2 class="h-8 w-8 animate-spin text-(--ui-primary)" />
+          <Loader2 class="h-6 w-6 animate-spin text-(--ui-text-muted)" />
+          <p class="text-sm font-medium">Switching account…</p>
         </div>
       </Transition>
     </div>

@@ -54,7 +54,6 @@ const switchingAccount = ref(false);
 const gcStatus = ref<GcStatus>('connecting');
 
 let listenersRegistered = false;
-let connectedDuringSwitch = false;
 
 function registerListeners() {
   if (listenersRegistered) return;
@@ -70,17 +69,11 @@ function registerListeners() {
       if (data.state === 'connected') {
         isConnected.value = true;
         error.value = null;
-
-        // Mark that the new account has connected — the next inventory-updated
-        // event is from the new account and can safely clear switchingAccount
-        if (switchingAccount.value) {
-          connectedDuringSwitch = true;
-        }
+        switchingAccount.value = false;
       } else if (data.state === 'error') {
         isConnected.value = false;
 
         switchingAccount.value = false;
-        connectedDuringSwitch = false;
       } else if (data.state === 'disconnected') {
         isConnected.value = false;
 
@@ -109,19 +102,11 @@ function registerListeners() {
     error.value = data.message;
     if (switchingAccount.value) {
       switchingAccount.value = false;
-      connectedDuringSwitch = false;
     }
   });
 
   onSteamEvent('steam:saved-accounts-updated', (_event: unknown, data: SavedAccountMeta[]) => {
     savedAccounts.value = data;
-  });
-
-  onSteamEvent('steam:inventory-updated', () => {
-    if (switchingAccount.value && connectedDuringSwitch) {
-      switchingAccount.value = false;
-      connectedDuringSwitch = false;
-    }
   });
 }
 
@@ -169,7 +154,7 @@ export function useSteam() {
 
   async function switchAccount(steamId: string) {
     switchingAccount.value = true;
-    connectedDuringSwitch = false;
+    gcStatus.value = 'connecting';
     error.value = null;
     useInventoryStore().reset();
     try {
@@ -177,7 +162,6 @@ export function useSteam() {
     } catch (err: unknown) {
       error.value = err instanceof Error ? err.message : String(err);
       switchingAccount.value = false;
-      connectedDuringSwitch = false;
     }
   }
 
