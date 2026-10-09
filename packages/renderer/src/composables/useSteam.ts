@@ -5,6 +5,7 @@ import {
   steamWebtokenLogin,
   steamSubmitSteamGuard,
   steamLogout,
+  steamDisconnect,
   steamGetSavedAccounts,
   steamSwitchAccount,
   steamRemoveAccount,
@@ -148,6 +149,14 @@ export function useSteam() {
     error.value = null;
   }
 
+  async function disconnect() {
+    await steamDisconnect();
+    useInventoryStore().reset();
+    isConnected.value = false;
+    userInfo.value = null;
+    authState.value = 'disconnected';
+  }
+
   async function getSavedAccounts() {
     savedAccounts.value = await steamGetSavedAccounts();
   }
@@ -182,6 +191,7 @@ export function useSteam() {
     webtokenLogin,
     submitSteamGuard,
     logout,
+    disconnect,
     getSavedAccounts,
     switchAccount,
     removeAccount,

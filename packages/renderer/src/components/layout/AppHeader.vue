@@ -8,7 +8,7 @@ import { useTheme } from '@/composables/useTheme';
 import { useSettings } from '@/composables/useSettings';
 import ProxyDialog from '@/components/layout/ProxyDialog.vue';
 
-const { userInfo, savedAccounts, logout, switchAccount, switchingAccount } = useSteam();
+const { userInfo, savedAccounts, logout, disconnect, switchAccount, switchingAccount } = useSteam();
 const { updateDownloaded, updateVersion, downloadProgress, updateAvailable, installUpdate } =
   useUpdater();
 const { preference, resolvedTheme } = useTheme();
@@ -60,7 +60,10 @@ const dropdownItems = computed(() => {
       label: 'Add account',
       icon: 'i-lucide-user-plus',
       ui: iconUi,
-      onSelect: () => router.push('/login?addAccount=true'),
+      onSelect: async () => {
+        await router.push('/login?addAccount=true');
+        await disconnect();
+      },
     },
   ]);
 

@@ -31,7 +31,7 @@ router.beforeEach(to => {
 watch(isConnected, connected => {
   if (connected) {
     router.push('/inventory');
-  } else if (!connected && !switchingAccount.value) {
+  } else if (!switchingAccount.value && router.currentRoute.value.path !== '/login') {
     router.push('/login');
   }
 });

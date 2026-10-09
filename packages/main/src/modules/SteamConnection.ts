@@ -120,6 +120,7 @@ class SteamConnection implements AppModule {
     );
     ipcMain.handle('steam:submit-steam-guard', (_e, code: string) => this.#submitSteamGuard(code));
     ipcMain.handle('steam:logout', () => this.#logout());
+    ipcMain.handle('steam:disconnect', () => this.#disconnect());
     ipcMain.handle('steam:try-saved-session', () => this.#trySavedSession());
     ipcMain.handle('steam:get-saved-accounts', () => this.#getSavedAccounts());
     ipcMain.handle('steam:switch-account', (_e, steamId: string) => this.#switchAccount(steamId));
@@ -673,6 +674,13 @@ class SteamConnection implements AppModule {
       broadcastToRenderers('steam:saved-accounts-updated', await this.#loadAccountsMeta());
     }
     broadcastToRenderers('steam:auth-state', { state: 'disconnected' });
+  }
+
+  async #disconnect() {
+    debugLog('steam', 'disconnect', this.#activeSteamId);
+    this.#activeSteamId = null;
+    await this.#clearLastAccount();
+    await this.#logOffCurrent();
   }
 
   // --- Multi-account IPC handlers ---

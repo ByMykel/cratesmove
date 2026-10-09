@@ -4,14 +4,17 @@ import CredentialLogin from '@/components/auth/CredentialLogin.vue';
 import WebtokenLogin from '@/components/auth/WebtokenLogin.vue';
 import SavedAccountList from '@/components/auth/SavedAccountList.vue';
 import ProxyDialog from '@/components/layout/ProxyDialog.vue';
+import { useRoute } from 'vue-router';
 import { useSteam } from '@/composables/useSteam';
 import { useSettings } from '@/composables/useSettings';
 
 const { savedAccounts } = useSteam();
 const { proxyMode } = useSettings();
 
+const route = useRoute();
+
 const view = ref<'accounts' | 'credentials' | 'webtoken'>(
-  savedAccounts.value.length > 0 ? 'accounts' : 'credentials',
+  savedAccounts.value.length > 0 && route.query.addAccount !== 'true' ? 'accounts' : 'credentials',
 );
 
 watch(

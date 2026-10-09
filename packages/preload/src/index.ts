@@ -23,6 +23,10 @@ function steamLogout() {
   return ipcRenderer.invoke('steam:logout');
 }
 
+function steamDisconnect() {
+  return ipcRenderer.invoke('steam:disconnect');
+}
+
 function steamTrySavedSession(): Promise<boolean> {
   return ipcRenderer.invoke('steam:try-saved-session');
 }
@@ -137,6 +141,7 @@ export {
   steamWebtokenLogin,
   steamSubmitSteamGuard,
   steamLogout,
+  steamDisconnect,
   steamTrySavedSession,
   steamGetInventory,
   steamGetStorageUnits,
