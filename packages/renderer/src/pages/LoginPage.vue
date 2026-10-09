@@ -7,7 +7,7 @@ import ProxyDialog from '@/components/layout/ProxyDialog.vue';
 import { useSteam } from '@/composables/useSteam';
 import { useSettings } from '@/composables/useSettings';
 
-const { savedAccounts, switchingAccount } = useSteam();
+const { savedAccounts } = useSteam();
 const { proxyMode } = useSettings();
 
 const view = ref<'accounts' | 'credentials' | 'webtoken'>(
@@ -33,18 +33,7 @@ const showProxyDialog = ref(false);
         >
           <!-- Saved accounts list -->
           <div v-if="view === 'accounts'" key="saved">
-            <SavedAccountList />
-
-            <UButton
-              variant="link"
-              color="neutral"
-              block
-              class="mt-4"
-              :disabled="switchingAccount"
-              @click="view = 'credentials'"
-            >
-              Sign in with a different account
-            </UButton>
+            <SavedAccountList @add="view = 'credentials'" />
           </div>
 
           <!-- Credential login form -->

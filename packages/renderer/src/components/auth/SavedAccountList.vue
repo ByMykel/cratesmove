@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useSteam } from '@/composables/useSteam';
-import { Loader2, X } from 'lucide-vue-next';
+import { Loader2, Plus, X } from 'lucide-vue-next';
+
+const emit = defineEmits<{ add: [] }>();
 
 const { savedAccounts, switchingAccount, switchAccount, removeAccount } = useSteam();
 
@@ -80,6 +82,23 @@ async function handleSwitch(steamId: string) {
         >
           <X class="h-3.5 w-3.5" />
         </UButton>
+      </div>
+
+      <div
+        class="flex items-center gap-3 rounded-xl border border-(--ui-border) bg-(--ui-bg) px-3 py-3 transition-all duration-150"
+        :class="
+          switchingAccount
+            ? 'pointer-events-none opacity-50'
+            : 'cursor-pointer hover:border-(--ui-primary)/30 hover:bg-(--ui-bg-elevated) hover:shadow-sm'
+        "
+        @click="!switchingAccount && emit('add')"
+      >
+        <div
+          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-(--ui-text-highlighted)/6 text-(--ui-text-muted)"
+        >
+          <Plus class="h-4 w-4" />
+        </div>
+        <span class="text-sm font-medium">Add account</span>
       </div>
     </div>
   </div>
