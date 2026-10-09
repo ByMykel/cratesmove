@@ -145,7 +145,10 @@ function getStorageContents(storageId: string): NormalizedItem[] {
   return itemIndex.value.byStorage.get(storageId) ?? EMPTY_ARRAY;
 }
 
+let accountGeneration = 0;
+
 function reset() {
+  accountGeneration++;
   items.value = new Map();
   storageUnits.value = new Map();
   loading.value = false;
@@ -180,7 +183,10 @@ async function refreshAll() {
 }
 
 async function inspectStorage(storageId: string) {
+  const generation = accountGeneration;
   const contents = await steamInspectStorage(storageId);
+  // Account switched while waiting: these contents belong to the previous account
+  if (generation !== accountGeneration) return contents;
   reconcileStorageContents(storageId, contents);
   return contents;
 }

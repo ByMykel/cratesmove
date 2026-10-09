@@ -734,7 +734,7 @@ class SteamConnection implements AppModule {
 
   #getInventory() {
     const inventory = this.#csgo.inventory;
-    if (!inventory || inventory.length === 0) return [];
+    if (!this.#csgo.haveGCSession || !inventory || inventory.length === 0) return [];
 
     const result = [];
     for (const item of inventory) {
@@ -788,7 +788,7 @@ class SteamConnection implements AppModule {
 
   #getStorageUnits() {
     const inventory = this.#csgo.inventory;
-    if (!inventory || inventory.length === 0) return [];
+    if (!this.#csgo.haveGCSession || !inventory || inventory.length === 0) return [];
     return inventory
       .filter((item: RawInventoryItem) => item.def_index === 1201)
       .map((item: RawInventoryItem) => ({
@@ -800,6 +800,9 @@ class SteamConnection implements AppModule {
   }
 
   #inspectStorage(id: string) {
+    if (!this.#csgo.inventory?.some((item: RawInventoryItem) => String(item.id) === id)) {
+      return Promise.reject(new Error('Storage unit not found'));
+    }
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(
         () => reject(new Error('Inspect storage timed out')),
@@ -1077,6 +1080,7 @@ class SteamConnection implements AppModule {
     if (this.#inventoryUpdateTimer) return;
     this.#inventoryUpdateTimer = setTimeout(() => {
       this.#inventoryUpdateTimer = null;
+      if (!this.#csgo.haveGCSession) return;
       const items = this.#getInventory();
       broadcastToRenderers('steam:inventory-updated', items);
       const units = this.#getStorageUnits();

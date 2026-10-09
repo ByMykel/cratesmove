@@ -147,10 +147,13 @@ function storageValue(unitId: string): number {
 }
 
 const inspectedIds = new Set<string>();
+let inspectRun = 0;
 
 async function inspectAllUnits() {
+  const run = inspectRun;
   const units = store.storageUnitList.value.filter(u => !inspectedIds.has(u.id));
   for (const unit of units) {
+    if (run !== inspectRun) return;
     inspectedIds.add(unit.id);
     try {
       await store.inspectStorage(unit.id);
@@ -176,6 +179,7 @@ watch([search, rarityFilter, entityFilter, statusFilter, sortBy], () => clearSel
 // don't prevent re-inspection or leave phantom selections.
 watch(switchingAccount, switching => {
   if (switching) {
+    inspectRun++;
     inspectedIds.clear();
     clearSelection();
   }
