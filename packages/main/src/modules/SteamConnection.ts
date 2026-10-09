@@ -2,6 +2,7 @@ import type { AppModule } from '../AppModule.js';
 import type { ModuleContext } from '../ModuleContext.js';
 import { ipcMain, safeStorage, app } from 'electron';
 import { broadcastToRenderers } from '../broadcastToRenderers.js';
+import { debugLog } from '../debugLog.js';
 import { join } from 'node:path';
 import { readFile, writeFile, unlink, mkdir, access } from 'node:fs/promises';
 import SteamUser from 'steam-user';
@@ -145,6 +146,7 @@ class SteamConnection implements AppModule {
 
   #registerSteamEvents() {
     this.#steamUser.on('loggedOn', () => {
+      debugLog('steam', 'loggedOn', this.#steamUser.steamID?.toString());
       broadcastToRenderers('steam:auth-state', { state: 'connected' });
       this.#steamUser.gamesPlayed([730], true);
 
@@ -186,11 +188,17 @@ class SteamConnection implements AppModule {
     );
 
     this.#steamUser.on('error', async (err: Error & { eresult?: number }) => {
+      debugLog('steam', 'error', {
+        message: err.message,
+        eresult: err.eresult,
+        steamId: this.#activeSteamId,
+      });
       broadcastToRenderers('steam:error', { message: err.message, code: err.eresult });
       broadcastToRenderers('steam:auth-state', { state: 'error', error: err.message });
 
       // Auto-clean stale tokens on invalid token errors
       if (err.eresult && INVALID_TOKEN_ERESULTS.has(err.eresult) && this.#activeSteamId) {
+        debugLog('steam', 'invalid token, removing saved account', this.#activeSteamId);
         await this.#clearRefreshTokenForAccount(this.#activeSteamId);
         await this.#removeAccountMeta(this.#activeSteamId);
         await this.#clearLastAccount();
@@ -199,7 +207,8 @@ class SteamConnection implements AppModule {
       }
     });
 
-    this.#steamUser.on('disconnected', (_eresult: number, msg?: string) => {
+    this.#steamUser.on('disconnected', (eresult: number, msg?: string) => {
+      debugLog('steam', 'disconnected', { eresult, msg });
       broadcastToRenderers('steam:auth-state', { state: 'disconnected' });
 
       // Attempt automatic reconnection if we have a saved token
@@ -210,7 +219,12 @@ class SteamConnection implements AppModule {
     });
 
     this.#csgo.on('connectedToGC', () => {
+      debugLog('gc', 'connectedToGC');
       this.#sendInventoryUpdate();
+    });
+
+    this.#csgo.on('disconnectedFromGC', (reason: number) => {
+      debugLog('gc', 'disconnectedFromGC', { reason });
     });
 
     this.#csgo.on('itemAcquired', () => {
@@ -471,6 +485,7 @@ class SteamConnection implements AppModule {
 
   async #attemptReconnect(steamId: string) {
     const token = await this.#loadRefreshTokenForAccount(steamId);
+    debugLog('steam', 'attemptReconnect', { steamId, hasToken: !!token });
     if (!token) return;
 
     try {
@@ -492,6 +507,7 @@ class SteamConnection implements AppModule {
     if (!lastSteamId) return false;
 
     const token = await this.#loadRefreshTokenForAccount(lastSteamId);
+    debugLog('steam', 'trySavedSession', { lastSteamId, hasToken: !!token });
     if (!token) return false;
 
     try {
@@ -551,8 +567,8 @@ class SteamConnection implements AppModule {
         this.#steamUser.logOn({ refreshToken });
       });
 
-      this.#loginSession.on('error', (err: Error) => {
-        broadcastToRenderers('steam:error', { message: err.message });
+      this.#loginSession.on('error', (err: Error & { eresult?: number }) => {
+        broadcastToRenderers('steam:error', { message: err.message, code: err.eresult });
       });
 
       const startResult = await this.#loginSession.startWithCredentials({
@@ -656,6 +672,7 @@ class SteamConnection implements AppModule {
 
   async #switchAccount(steamId: string): Promise<boolean> {
     const token = await this.#loadRefreshTokenForAccount(steamId);
+    debugLog('steam', 'switchAccount', { steamId, hasToken: !!token });
     if (!token) {
       await this.#removeAccountMeta(steamId);
       broadcastToRenderers('steam:saved-accounts-updated', await this.#loadAccountsMeta());

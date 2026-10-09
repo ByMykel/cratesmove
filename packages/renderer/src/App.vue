@@ -4,13 +4,15 @@ import { watch, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { onSteamEvent } from '@app/preload';
 import TitleBar from '@/components/layout/TitleBar.vue';
+import { debugLog } from '@/utils/debugLog';
 
 const { isConnected, switchingAccount, getSavedAccounts } = useSteam();
 const toast = useToast();
 const router = useRouter();
 
-onSteamEvent('steam:error', (_event: unknown, data: { message: string }) => {
-  toast.add({ title: friendlyError(data.message), color: 'error' });
+onSteamEvent('steam:error', (_event: unknown, data: { message: string; code?: number }) => {
+  debugLog('steam', 'error', data);
+  toast.add({ title: friendlyError(data.message, data.code), color: 'error' });
 });
 
 // Auth guard

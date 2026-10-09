@@ -13,18 +13,35 @@ import type { AuthState, UserInfo, SavedAccountMeta } from '@/types/steam';
 import { useInventoryStore } from '@/composables/useInventoryStore';
 
 const ERROR_MESSAGES: Record<string, string> = {
+  Expired: 'Your saved session has expired. Please sign in again.',
+  Revoked: 'Your saved session is no longer valid. Please sign in again.',
   InvalidPassword: 'Incorrect password. Please try again.',
   InvalidLoginAuthCode: 'Invalid Steam Guard code. Please try again.',
   TwoFactorCodeMismatch: 'Invalid authenticator code. Please try again.',
+  AccountLoginDeniedNeedTwoFactor: 'Steam Guard authentication required.',
+  AccountLogonDenied: 'Steam Guard code required. Check your email.',
+  ExpiredLoginAuthCode: 'Steam Guard code expired. Please request a new one.',
   RateLimitExceeded: 'Too many attempts. Please wait and try again.',
   AccountDisabled: 'This account has been disabled.',
-  AccountLoginDeniedNeedTwoFactor: 'Steam Guard authentication required.',
+  AccountLocked: 'This account is locked. Contact Steam Support to unlock it.',
+  AccountLockedDown: 'This account is locked. Contact Steam Support to unlock it.',
+  Banned: 'This account is banned from this service.',
+  LoggedInElsewhere: 'This account was signed in from another location.',
+  LogonSessionReplaced: 'This account was signed in from another location.',
+  NoConnection: "Couldn't reach Steam. Check your internet connection.",
+  ServiceUnavailable: 'Steam is temporarily unavailable. Please try again later.',
+  TryAnotherCM: 'Steam servers are busy. Please try again in a moment.',
+  Busy: 'Steam servers are busy. Please try again in a moment.',
   Timeout: 'Connection timed out. Please try again.',
 };
 
-export function friendlyError(raw: string | null): string {
+export function friendlyError(raw: string | null, code?: number): string {
   if (!raw) return '';
-  return ERROR_MESSAGES[raw] ?? raw;
+  if (ERROR_MESSAGES[raw]) return ERROR_MESSAGES[raw];
+  if (code !== undefined || /^[A-Z][A-Za-z0-9]*$/.test(raw)) {
+    return `Steam couldn't complete the request (${raw}${code !== undefined ? `, code ${code}` : ''}). Please try again.`;
+  }
+  return raw;
 }
 
 const authState = ref<AuthState>('disconnected');
