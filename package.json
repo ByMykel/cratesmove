@@ -38,8 +38,8 @@
     "eslint": "^10.12.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-vue": "^10.11.1",
-    "prettier": "^3.9.9",
-    "typescript-eslint": "^8.71.1"
+    "prettier": "^3.9.10",
+    "typescript-eslint": "^8.71.2"
   },
   "dependencies": {
     "@app/main": "*",
