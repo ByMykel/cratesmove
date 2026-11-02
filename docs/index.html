@@ -483,7 +483,7 @@
                    .replace(/\s{2,}/g, ' ')
                    .trim())
         .filter(Boolean);
-      if (items.length) return items.slice(0, 4);
+      if (items.length) return items;
       const first = lines.find(l => l && !/^#/.test(l));
       return first ? [first.replace(/[#*`]/g, '').trim()] : [];
     }
