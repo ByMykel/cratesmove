@@ -19,5 +19,6 @@ declare module 'globaloffensive' {
     nameItem(toolId: number, targetId: string, name: string): void;
     on(event: string, listener: EventListener): this;
     once(event: string, listener: EventListener): this;
+    off(event: string, listener: EventListener): this;
   }
 }

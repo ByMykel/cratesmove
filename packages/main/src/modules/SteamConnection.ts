@@ -1023,14 +1023,48 @@ class SteamConnection implements AppModule {
   }
 
   async #renameStorage({ storageId, name }: RenameArgs) {
-    return new Promise<void>(resolve => {
-      this.#csgo.nameItem(0, storageId, name);
-      const timeout = setTimeout(() => resolve(), 2000);
-      this.#csgo.once('itemChanged', () => {
+    return new Promise<void>((resolve, reject) => {
+      const onCustomization = (itemId: string, request: number) => {
+        if (String(itemId) !== storageId || request !== 1006) return;
         clearTimeout(timeout);
+        this.#csgo.off('itemCustomizationNotification', onCustomization);
         resolve();
-      });
+      };
+      const timeout = setTimeout(() => {
+        this.#csgo.off('itemCustomizationNotification', onCustomization);
+        reject(new Error('Steam did not respond to the rename request'));
+      }, 10000);
+      this.#csgo.on('itemCustomizationNotification', onCustomization);
+      this.#steamUser.sendToGC(
+        730,
+        1006,
+        {},
+        SteamConnection.#encodeModifyItemStringAttr(storageId, name),
+      );
     });
+  }
+
+  // CMsgModifyItemStringAttr { tool_item_id = 1; subject_item_id = 2; attr_value = 4 }.
+  // Since the 2026-10-08 CS2 update the GC ignores the legacy binary NameItem payload
+  // that globaloffensive.nameItem() sends: https://github.com/DoctorMcKay/node-globaloffensive/issues/122
+  static #encodeModifyItemStringAttr(subjectItemId: string, value: string): Buffer {
+    const varint = (n: bigint) => {
+      const bytes: number[] = [];
+      do {
+        let byte = Number(n & 0x7fn);
+        n >>= 7n;
+        if (n > 0n) byte |= 0x80;
+        bytes.push(byte);
+      } while (n > 0n);
+      return bytes;
+    };
+    const str = Buffer.from(value, 'utf8');
+    return Buffer.concat([
+      Buffer.from([0x08, ...varint(0n)]),
+      Buffer.from([0x10, ...varint(BigInt(subjectItemId))]),
+      Buffer.from([0x22, ...varint(BigInt(str.length))]),
+      str,
+    ]);
   }
 
   static #safeStringify(item: RawInventoryItem): string {

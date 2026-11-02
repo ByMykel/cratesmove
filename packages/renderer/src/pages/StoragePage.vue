@@ -122,7 +122,16 @@ async function handleMoveToStorage(targetStorageId: string) {
 const toast = useToast();
 
 async function handleRename(name: string) {
-  await store.renameStorage(storageId.value, name);
+  try {
+    await store.renameStorage(storageId.value, name);
+  } catch {
+    toast.add({
+      title: 'Rename failed',
+      description: 'Steam did not respond. Try again.',
+      color: 'error',
+    });
+    return;
+  }
   await store.fetchStorageUnits();
   toast.add({ title: `Renamed to "${name}"`, color: 'neutral' });
 }

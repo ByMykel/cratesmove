@@ -92,6 +92,8 @@ Renames an item. **Fire-and-forget.**
 
 Completion detected via `itemChanged`.
 
+> **Broken since the 2026-10-08 CS2 update:** the GC silently ignores this legacy binary payload. Send `CMsgModifyItemStringAttr { tool_item_id: 0, subject_item_id, attr_value }` as protobuf msg 1006 via `steamUser.sendToGC` instead. The GC replies with `itemCustomizationNotification` (request `1006`). See [node-globaloffensive#122](https://github.com/DoctorMcKay/node-globaloffensive/issues/122).
+
 ---
 
 ## Events

@@ -12,5 +12,6 @@ declare module 'steam-user' {
     setOptions(options: Record<string, unknown>): void;
     on(event: string, listener: EventListener): this;
     once(event: string, listener: EventListener): this;
+    sendToGC(appid: number, msgType: number, protoBufHeader: object | null, payload: Buffer): void;
   }
 }
