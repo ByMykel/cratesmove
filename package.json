@@ -43,7 +43,7 @@
   },
   "dependencies": {
     "@app/main": "*",
-    "@tanstack/vue-virtual": "^3.13.51",
+    "@tanstack/vue-virtual": "^3.13.52",
     "vue-eslint-parser": "^10.4.1"
   }
 }
